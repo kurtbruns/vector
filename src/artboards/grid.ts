@@ -10,22 +10,22 @@ import { SVG } from "../elements/svg/svg";
  */
 export interface GridConfiguration {
 
-	// These dimensions affect the visible area of the plot
-	x?:number
-	y?:number
-	width?:number
+  // These dimensions affect the visible area of the plot
+  x?:number
+  y?:number
+  width?:number
   height?:number
   maxWidth?:number
 
-	// These dimensions affect the coordinate system used for plotting
-	internalX?:number
-	internalY?:number
-	internalWidth?:number
-	internalHeight?:number
+  // These dimensions affect the coordinate system used for plotting
+  internalX?:number
+  internalY?:number
+  internalWidth?:number
+  internalHeight?:number
 
-	// Toggles weather the plot fills the available space of the container
-	responsive?:boolean
-	
+  // Toggles weather the plot fills the available space of the container
+  responsive?:boolean
+  
   title?:string
   align?:alignment
   origin?:string
@@ -37,15 +37,15 @@ export interface GridConfiguration {
  */
 export class GridArtboard extends ResponsiveArtboard {
 
-	/**
-	 * Contains the grid lines
-	 */
+  /**
+   * Contains the grid lines
+   */
   gridGroup:Group;
   
-	/**
-	 * Contains the axis lines
-	 */
-	axisGroup:Group;
+  /**
+   * Contains the axis lines
+   */
+  axisGroup:Group;
 
   /**
    * Foreground
@@ -57,30 +57,30 @@ export class GridArtboard extends ResponsiveArtboard {
    */
   border:Rectangle;
 
-	/**
-	 * Nested SVG to fix firefox bug with viewbox
-	 */
-	private internalSVG:SVG;
+  /**
+   * Nested SVG to fix firefox bug with viewbox
+   */
+  private internalSVG:SVG;
   private internalViewBox: SVGAnimatedRect;
 
-	/**
-	 * Contructs a SVG plot within the corresponding HTML Element and draws a plot of the function.
-	 */
-	constructor(container:string|HTMLElement, config : GridConfiguration ) {
+  /**
+   * Contructs a SVG plot within the corresponding HTML Element and draws a plot of the function.
+   */
+  constructor(container:string|HTMLElement, config : GridConfiguration ) {
 
-		// Default values 
-		let defaultConfig : GridConfiguration = {
+    // Default values 
+    let defaultConfig : GridConfiguration = {
 
-			// view port
-			x:0,
-			y:0,
-			width:600,
-			height:300,
+      // view port
+      x:0,
+      y:0,
+      width:600,
+      height:300,
 
-			// internal coordinates
-			internalX:-300,
-			internalY:-150,
-			internalWidth:600,
+      // internal coordinates
+      internalX:-300,
+      internalY:-150,
+      internalWidth:600,
       internalHeight:300,
       
       align: 'left',
@@ -89,17 +89,17 @@ export class GridArtboard extends ResponsiveArtboard {
       border: true
     }
 
-		// choose users config over default
+    // choose users config over default
     config = { ...defaultConfig, ...config};
 
     // if no max-width specified, default to specified width if responsive is set to false
     if (!config.maxWidth && !config.responsive) { config.maxWidth = config.width };
     
-		super(container, config);
+    super(container, config);
     
     this.classList.add('grid');
-		this.x = config.x;
-		this.y = config.y;
+    this.x = config.x;
+    this.y = config.y;
 
     // Create an internal SVG to do the heavy lifting
     this.setViewBox(config.internalX, config.internalY, config.internalWidth, config.internalHeight);
@@ -107,16 +107,16 @@ export class GridArtboard extends ResponsiveArtboard {
     this.internalViewBox = this.root.viewBox;
 
     // Store a reference to fix firefox viewbox issue
-		if( navigator.userAgent.indexOf("Firefox") > -1 ) {
-			this.internalSVG = svg.appendChild(new SVG());
-		} else {
-			this.internalSVG = svg as SVG;
+    if( navigator.userAgent.indexOf("Firefox") > -1 ) {
+      this.internalSVG = svg.appendChild(new SVG());
+    } else {
+      this.internalSVG = svg as SVG;
     }
 
-		this.classList.add('outline');		
+    this.classList.add('outline');		
 
-		this.gridGroup = this.group();
-		this.axisGroup = this.group();
+    this.gridGroup = this.group();
+    this.axisGroup = this.group();
     this.foreground = this.group();
     
     // TODO: draw axis
@@ -127,52 +127,59 @@ export class GridArtboard extends ResponsiveArtboard {
     return this.internalSVG;
   }
 
-	/**
-	 * Converts a point in the SVG's coordinate system to the screen's coordinate system.
-	 */
-	screenToSVG(screenX:number, screenY:number) {
+  /**
+   * Converts a point in the SVG's coordinate system to the screen's coordinate system.
+   */
+  screenToSVG(screenX:number, screenY:number) {
 
     let svg = this.internalSVG.root;
-		let p = svg.createSVGPoint()
-		p.x = screenX
-		p.y = screenY
-		return p.matrixTransform(svg.getScreenCTM().inverse());
-	}
-	
-	/**
-	 * Converts a point in the screen's coordinate system to the SVG's coordinate system.
-	 */
-	SVGToScreen(svgX:number, svgY:number) {
-		
-    let svg = this.internalSVG.root;
-		let p = svg.createSVGPoint()
-		p.x = svgX
-		p.y = svgY
-		return p.matrixTransform(svg.getScreenCTM());
+    let p = svg.createSVGPoint()
+    p.x = screenX
+    p.y = screenY
+    return p.matrixTransform(svg.getScreenCTM().inverse());
   }
   
-	/**
-	 * Converts a point in the screen's coordinate system to the SVG's coordinate system.
-	 */
-	SVGToRelative(svgX:number, svgY:number) {
+  /**
+   * Converts a point in the screen's coordinate system to the SVG's coordinate system.
+   */
+  SVGToScreen(svgX:number, svgY:number) {
+    
+    let svg = this.internalSVG.root;
+    let p = svg.createSVGPoint()
+    p.x = svgX
+    p.y = svgY
+    return p.matrixTransform(svg.getScreenCTM());
+  }
+  
+  /**
+   * Converts a point in the screen's coordinate system to the SVG's coordinate system.
+   */
+  SVGToRelative(svgX:number, svgY:number) {
     
     let bbox = this.root.getBoundingClientRect();
     let svg = this.internalSVG.root;
-		let p = svg.createSVGPoint()
-		p.x = svgX
-		p.y = svgY
+    let p = svg.createSVGPoint()
+    p.x = svgX
+    p.y = svgY
     let point = p.matrixTransform(svg.getScreenCTM())
     point.x -= bbox.left
     point.y -= bbox.top
     return point
-	}
+  }
 
-	/**
-	 * Draws a border around the plot SVG that does not change the dimensions of the plot object.
-	 */
-	drawBorder() {
+  drawBackground( fill:string = '#ffffff' ) {
+    let viewbox = this.root.viewBox.baseVal
+    let background = this.prependChild(this.rectangle(viewbox.x, viewbox.y, viewbox.width, viewbox.height));
+    background.style.fill = fill;
+    background.style.stroke = 'none';
+  }
 
-		// Or use clipping path
+  /**
+   * Draws a border around the plot SVG that does not change the dimensions of the plot object.
+   */
+  drawBorder() {
+
+    // Or use clipping path
     let spacing = 0;
     let viewbox = this.root.viewBox.baseVal
 
@@ -180,21 +187,31 @@ export class GridArtboard extends ResponsiveArtboard {
     this.border.appendSelfWithin(this.root);
 
     this.border.root.setAttribute('vector-effect', 'non-scaling-stroke');
-		this.border.style.strokeWidth = '2';
+    this.border.style.strokeWidth = '2';
   }
   
+  /**
+   * Draws grid lines
+   */
   drawGridLines() {
 
     let viewBox = this.internalViewBox.baseVal;
     
-		let group3 = this.gridGroup.group();
-		group3.style.stroke = '#f8f8f8'
-		
-		let group2 = this.gridGroup.group();
-		group2.style.stroke = '#f0f0f0'
+    let group3 = this.gridGroup.group();
+    let group2 = this.gridGroup.group();
+    let group1 = this.gridGroup.group();
 
-		let group1 = this.gridGroup.group();
-		group1.style.stroke = '#dddddd'
+    // group3.style.opacity = '0.08'
+    // group2.style.opacity = '0.16'
+    // group1.style.opacity = '0.24'
+
+    group3.style.opacity = '0.15'
+    group2.style.opacity = '0.25'
+    group1.style.opacity = '0.4'
+
+    // group3.style.stroke = '#f8f8f8'
+    // group2.style.stroke = '#f0f0f0'
+    // group1.style.stroke = '#dddddd'
 
     let x1 = Math.floor(viewBox.x);
     let y1 = Math.floor(viewBox.y);
@@ -202,53 +219,56 @@ export class GridArtboard extends ResponsiveArtboard {
     let x2 = Math.ceil(viewBox.x + viewBox.width);
     let y2 = Math.ceil(viewBox.y + viewBox.height);
 
-		for( let x = x1; x <= x2; x++ ) {
-			if( x % 10 === 0) {
-				group1.line(x, y1, x, y2);
-			} else if( x % 5 === 0 ) {
-				group2.line(x, y1, x, y2);
-			} else {
-				group3.line(x, y1, x, y2);
-			}
+    for( let x = x1; x <= x2; x++ ) {
+      if( x % 10 === 0) {
+        group1.line(x, y1, x, y2);
+      } else if( x % 5 === 0 ) {
+        group2.line(x, y1, x, y2);
+      } else {
+        group3.line(x, y1, x, y2);
+      }
     }
 
-		for( let y = y1; y <= y2; y ++ ) {
+    for( let y = y1; y <= y2; y ++ ) {
       
-			if( y % 10 === 0) {
-				group1.line(x1, y, x2, y);
-			} else if( y % 5 === 0 ) {
-				group2.line(x1, y, x2, y);
-			} else {
-				group3.line(x1, y, x2, y);
-			}
-		}
+      if( y % 10 === 0) {
+        group1.line(x1, y, x2, y);
+      } else if( y % 5 === 0 ) {
+        group2.line(x1, y, x2, y);
+      } else {
+        group3.line(x1, y, x2, y);
+      }
+    }
 
-		// let startY = Math.ceil(p1.y*10);
-		// let endY = Math.ceil(p2.y*10);
-		// for( let i = startY; i < endY; i+= 10) {
-		// 	let y = i/10;
-		// 	if( i % 10 === 0 ) {
-		// 		group1.line(p1.x, y, p2.x, y);
-		// 	} else if( i % 5 === 0) {
-		// 		group2.line(p1.x, y, p2.x, y);
-		// 	} else {
-		// 		group3.line(p1.x, y, p2.x, y);
-		// 	}
-		// }
+    // let startY = Math.ceil(p1.y*10);
+    // let endY = Math.ceil(p2.y*10);
+    // for( let i = startY; i < endY; i+= 10) {
+    // 	let y = i/10;
+    // 	if( i % 10 === 0 ) {
+    // 		group1.line(p1.x, y, p2.x, y);
+    // 	} else if( i % 5 === 0) {
+    // 		group2.line(p1.x, y, p2.x, y);
+    // 	} else {
+    // 		group3.line(p1.x, y, p2.x, y);
+    // 	}
+    // }
   }
   
   drawGridLinesTest( step1, step2, step3) {
 
     let viewBox = this.internalViewBox.baseVal;
     
-		let group3 = this.gridGroup.group();
-		group3.style.stroke = '#f8f8f8'
-		
-		let group2 = this.gridGroup.group();
-		group2.style.stroke = '#f0f0f0'
+    let group3 = this.gridGroup.group();
+    group3.style.opacity = '0.2'
+    // group3.style.stroke = '#f8f8f8'
+    
+    let group2 = this.gridGroup.group();
+    group2.style.opacity = '0.4'
+    // group2.style.stroke = '#f0f0f0'
 
-		let group1 = this.gridGroup.group();
-		group1.style.stroke = '#dddddd'
+    let group1 = this.gridGroup.group();
+    group1.style.opacity = '0.6'
+    // group1.style.stroke = '#dddddd'
 
     let x1 = Math.floor(viewBox.x);
     let y1 = Math.floor(viewBox.y);
@@ -264,38 +284,38 @@ export class GridArtboard extends ResponsiveArtboard {
     x1 = x1 - (x1 % step3) - step3;
     y1 = y1 - (y1 % step3) - step3;
 
-		for( let x = x1; x <= x2; x += step3 ) {
-			if( x % step1 === 0) {
-				group1.line(x, y1, x, y2);
-			} else if( x % step2 === 0 ) {
-				group2.line(x, y1, x, y2);
-			} else {
-				group3.line(x, y1, x, y2);
-			}
+    for( let x = x1; x <= x2; x += step3 ) {
+      if( x % step1 === 0) {
+        group1.line(x, y1, x, y2);
+      } else if( x % step2 === 0 ) {
+        group2.line(x, y1, x, y2);
+      } else {
+        group3.line(x, y1, x, y2);
+      }
     }
 
-		for( let y = y1; y <= y2; y += step3 ) {
+    for( let y = y1; y <= y2; y += step3 ) {
       
-			if( y % step1 === 0) {
-				group1.line(x1, y, x2, y);
-			} else if( y % step2 === 0 ) {
-				group2.line(x1, y, x2, y);
-			} else {
-				group3.line(x1, y, x2, y);
-			}
-		}
+      if( y % step1 === 0) {
+        group1.line(x1, y, x2, y);
+      } else if( y % step2 === 0 ) {
+        group2.line(x1, y, x2, y);
+      } else {
+        group3.line(x1, y, x2, y);
+      }
+    }
 
-		// let startY = Math.ceil(p1.y*10);
-		// let endY = Math.ceil(p2.y*10);
-		// for( let i = startY; i < endY; i+= 10) {
-		// 	let y = i/10;
-		// 	if( i % 10 === 0 ) {
-		// 		group1.line(p1.x, y, p2.x, y);
-		// 	} else if( i % 5 === 0) {
-		// 		group2.line(p1.x, y, p2.x, y);
-		// 	} else {
-		// 		group3.line(p1.x, y, p2.x, y);
-		// 	}
-		// }
+    // let startY = Math.ceil(p1.y*10);
+    // let endY = Math.ceil(p2.y*10);
+    // for( let i = startY; i < endY; i+= 10) {
+    // 	let y = i/10;
+    // 	if( i % 10 === 0 ) {
+    // 		group1.line(p1.x, y, p2.x, y);
+    // 	} else if( i % 5 === 0) {
+    // 		group2.line(p1.x, y, p2.x, y);
+    // 	} else {
+    // 		group3.line(p1.x, y, p2.x, y);
+    // 	}
+    // }
   }
 }

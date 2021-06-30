@@ -17,12 +17,12 @@ function createContainer() {
 }
 
 let plot = new Plot(createContainer(), {
-  width: 540,
-  height: 540,
-  internalX: -20,
-  internalY: -30,
-  internalHeight: 40,
-  internalWidth: 40,
+  width: 600,
+  height: 600,
+  internalX: 0,
+  internalY: -20,
+  internalHeight: 20,
+  internalWidth: 20,
   responsive: true  
 });
 
@@ -31,6 +31,9 @@ plot.addFunction((x) => s*Math.sin(x/s)).style.stroke = '#58c4dd'
 plot.addFunction((x) => s*x/s*x/s).style.stroke = '#83c167'
 plot.addFunction((x) => s*(Math.sin(x/s) + x/s*x/s)).style.stroke = '#fff933'
 plot.draw();
+
+plot.gridGroup.style.stroke = '#ffffff';
+plot.drawBackground('#000000');
  
 (window as any).download = () => {
   File.download(plot.id, `${plot.id}.svg`, 'assets/main.css');
