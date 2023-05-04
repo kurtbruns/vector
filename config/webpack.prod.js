@@ -9,8 +9,8 @@ const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
 // Remove scope from output name i.e. @example/name
-// const name = pkg.name.split("/")[1];
-const name = pkg.name
+const name = pkg.name.split("/")[1];
+// const name = pkg.name
 
 module.exports = merge(common, {
   mode: 'production',
