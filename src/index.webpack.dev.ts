@@ -1,7 +1,7 @@
 import './assets/styles/normalize.css';
 import './assets/styles/reset.css';
 
-import { Plot } from './modules/plot/plot-grid-based';
+import { PlotGridBased } from './modules/plot/plot-grid-based';
 import { File } from './index';
 
 let root = document.getElementById('root');
@@ -16,7 +16,7 @@ function createContainer() {
   return container;
 }
 
-let plot = new Plot(createContainer(), {
+let plot = new PlotGridBased(createContainer(), {
   width: 500,
   height: 300,
   internalX: 0,

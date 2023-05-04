@@ -37,7 +37,7 @@ interface Configuration {
 /**
  * A plot visualizes one or more one-to-one functinos.
  */
-export class Plot extends GridArtboard {
+export class PlotGridBased extends GridArtboard {
 
   /**
    * Array of functions paths

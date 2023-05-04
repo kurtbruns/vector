@@ -36,6 +36,7 @@ export {
 
 export {
   Plot,
+  PlotGridBased,
   TrigPlot
 } from './modules/plot';
 
