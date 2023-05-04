@@ -57,6 +57,7 @@ export class SVG extends Element implements Descriptive, Shape, Structural, Typo
 
 		super(svg);
 
+		svg.setAttribute('fill', 'none');
 	}
 
 	/**

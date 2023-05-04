@@ -197,13 +197,14 @@ export class GridArtboard extends ResponsiveArtboard {
 
     let viewBox = this.internalViewBox.baseVal;
     
+    this.gridGroup.setAttribute('class', 'grid-lines')
     let group3 = this.gridGroup.group();
     let group2 = this.gridGroup.group();
     let group1 = this.gridGroup.group();
 
-    group3.setAttribute('class', 'primary-grid-lines')
-    group3.setAttribute('class', 'secondary-grid-lines')
-    group3.setAttribute('class', 'tertiary-grid-lines')
+    group1.setAttribute('class', 'primary')
+    group2.setAttribute('class', 'secondary')
+    group3.setAttribute('class', 'tertiary')
 
     // group3.style.opacity = '0.08'
     // group2.style.opacity = '0.16'
@@ -213,9 +214,9 @@ export class GridArtboard extends ResponsiveArtboard {
     // group2.style.opacity = '0.25'
     // group1.style.opacity = '0.4'
 
-    // group3.style.stroke = '#f8f8f8'
-    // group2.style.stroke = '#f0f0f0'
-    // group1.style.stroke = '#dddddd'
+    // group1.style.stroke = 'var(--grid--primary)'
+    // group2.style.stroke = 'var(--grid--secondary)'
+    // group3.style.stroke = 'var(--grid--tertiary)'
 
     let x1 = Math.floor(viewBox.x);
     let y1 = Math.floor(viewBox.y);

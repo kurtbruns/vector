@@ -46,26 +46,64 @@ export class File {
     }
   }
 
+  static createInlineStyledSvg(originalSvg) : SVGSVGElement {
+    // Create a deep copy of the original SVG
+    const copiedSvg = originalSvg.cloneNode(true);
+  
+    // Temporarily append the copied SVG to the DOM, hidden from view
+    // copiedSvg.style.position = 'absolute';
+    // copiedSvg.style.visibility = 'hidden';
+    document.body.appendChild(copiedSvg);
+  
+    // Helper function to copy the computed styles to inline styles if they differ from the parent's styles
+    function copyComputedStyles(element, parentElement) {
+      const elementStyles = window.getComputedStyle(element);
+      const parentStyles = parentElement ? window.getComputedStyle(parentElement) : null;
+  
+      const styleAttributes = [
+        'fill', 'fill-opacity', 'opacity', // 'fill-rule',
+        'stroke', 'stroke-width', 'stroke-opacity', // 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 
+        'vector-effect'
+      ];
+  
+      styleAttributes.forEach((styleAttr) => {
+        const elementStyleValue = elementStyles.getPropertyValue(styleAttr);
+        const parentStyleValue = parentStyles ? parentStyles.getPropertyValue(styleAttr) : '';
+  
+        if (elementStyleValue !== parentStyleValue) {
+          element.style.setProperty(styleAttr, elementStyleValue);
+        }
+      });
+    }
+  
+    // Recursive function to traverse the DOM tree and apply inline styles if they differ from the parent's styles
+    function traverseDOMTree(node, parentNode = null) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        copyComputedStyles(node, parentNode);
+  
+        Array.from(node.children).forEach((child) => {
+          traverseDOMTree(child, node);
+        });
+      }
+    }
+  
+    // Traverse the copied SVG tree and apply inline styles where necessary
+    traverseDOMTree(copiedSvg);
+  
+    // Remove the copied SVG from the DOM
+    document.body.removeChild(copiedSvg);
+  
+    return copiedSvg;
+  }
+  
   /**
   * Downloads the current drawing as an svg file.
   */
-  static download( id:string, filename:String, stylesheet:string ) : Promise<any> {
+  static download( id:string, filename:String ) {
 
-    return File.getURL(stylesheet).then((response) => {
-      // Add the styling into the css document
-      let svg = document.getElementById(id);
-      let style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-      style.type = "text/css";
-      style.innerHTML = response.toString();
-      svg.prepend(style);
-      File.saveSVG( filename, (svg as HTMLElement).outerHTML);
-      style.remove();
-    });
-
-
-    // svg.appendChild(style);
-    // best piece of code i have written in 2019
-    // style.remove();
+    let svg = document.getElementById(id);
+    const inlineSvg = this.createInlineStyledSvg(document.getElementById(id))
+    File.saveSVG( filename, inlineSvg.outerHTML )
   }
 
   static processRule(rule) {

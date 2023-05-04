@@ -1,22 +1,24 @@
 
 :root {
 
-  /* color scheme */
   --background: #ffffff;
-  --light1: #f0f0f0;
-  --light2: #d0d0d0;
-  --light3: #a0a0a0;
+  --font-color: #181818;
 
-  /* contrast */
+  --grid--primary: #a0a0a0;
+  --grid--secondary: #d0d0d0;
+  --grid--tertiary: #f0f0f0;
+
   --main: #404040;
 
-  /* contrast colors */
   --primary: #485bfc;
   --secondary: #4bb77e;
   --tertiary: #c74440;
-
-  /* colors */
-  --coral: hsl(23, 83%, 82%);
+ 
+  --red: #c74440;
+  --green: #4bb77e;
+  --blue: #485bfc;
+  
+  /* --coral: hsl(23, 83%, 82%);
   --coral--b: hsl(23, 99%, 75%);
   --pink: hsl(335, 10%, 45%);
   --pink--b: hsl(335, 82%, 86%);
@@ -26,7 +28,28 @@
   --green--b: hsl(100, 41%, 76%);
   --blue: hsl(187, 61%, 79%);
   --blue--b: hsl(187, 54%, 68%);
-  --light-gray-blue: hsl(182, 29%, 96%);
+  --light-gray-blue: hsl(182, 29%, 96%); */
+}
+
+.function-group path {
+  vector-effect: non-scaling-stroke;
+  stroke: var(--primary);
+  stroke-width: 1.5px;
+}
+
+.grid-lines line {
+  vector-effect: non-scaling-stroke;
+  stroke: 1px;
+}
+
+.grid-lines .primary line {
+  stroke: var(--grid--primary)
+}
+.grid-lines .secondary line {
+  stroke: var(--grid--secondary)
+}
+.grid-lines .tertiary line {
+  stroke: var(--grid--tertiary)
 }
 
 .non-scaling-stroke {
@@ -269,10 +292,6 @@ rect.default {
 
 .button text {
   fill: #ffffff;
-}
-
-.grid line {
-  vector-effect: non-scaling-stroke;
 }
 
 .feature path {

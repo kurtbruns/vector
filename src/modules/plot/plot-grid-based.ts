@@ -70,8 +70,9 @@ export class PlotGridBased extends GridArtboard {
       this.drawGridLines()
     }
 
+    this.classList.add('plot-grid-based')
     this.fnGroup = this.foreground.group();
-    this.fnGroup.classList.add('test')
+    this.fnGroup.classList.add('function-group')
     this.functionPaths = [];
     this.functions = [];
 
@@ -86,9 +87,9 @@ export class PlotGridBased extends GridArtboard {
   addFunction( f:FunctionType ):Path {
 
     let path = this.fnGroup.path('');
-    path.style.stroke = '#404040'
-    path.style.strokeWidth = '1.5px'
-    path.classList.add('non-scaling-stroke');
+    // path.style.stroke = '#404040'
+    // path.style.strokeWidth = '1.5px'
+    // path.classList.add('non-scaling-stroke');
 
     this.functions.push(f);
     this.functionPaths.push(path);
