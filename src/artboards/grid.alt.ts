@@ -1,6 +1,6 @@
 import { ResponsiveArtboard } from "./responsive";
 import { Group} from "../elements/svg/group";
-import { SVG } from "../elements/svg/svg";
+import { SVG } from "../elements/svg";
 
 /**
  * Configuration passed the the plot constructor

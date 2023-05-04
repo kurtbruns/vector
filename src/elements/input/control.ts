@@ -4,7 +4,7 @@ import { Input } from './input'
 import { Path } from '../svg/path'
 import { Circle } from '../svg/circle'
 import { Rectangle } from '../svg/rectangle'
-import { TAU } from '../../util/constants'
+import { TAU } from '../../util/math'
 import { Point } from '../../model/point'
 
 /**

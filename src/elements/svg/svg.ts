@@ -1,25 +1,29 @@
 import { Descriptive, Shape, Structural, Typography } from './content-model'
 import { Element, CoreAttributes } from './element'
 
-import { Circle } from './circle'
-import { ClipPath } from './clip-path'
-import { Definitions } from './definitions'
-import { Description } from './description'
-import { Ellipse } from './ellipse'
-import { Group } from './group'
-import { Image } from './image'
-import { Line } from './line'
-import { Marker } from './marker'
-import { MetaData } from './meta-data'
-import { Path } from './path'
-import { Polygon } from './polygon'
-import { Rectangle } from './rectangle'
-import { Symbol} from './symbol'
-import { Text } from './text'
-import { Title } from './title'
-import { Use } from './use'
-import { A } from './a'
-import { Script } from './script'
+import {
+	Circle,
+	ClipPath,
+	Definitions,
+	Description,
+	Ellipse,
+	Group,
+	Image,
+	Line,
+	Marker,
+	MetaData,
+	Path,
+	Polygon,
+	Rectangle,
+	Symbol,
+	Text,
+	TSpan,
+	Title,
+	Use,
+	A,
+	Script
+  } from '.';
+  
 
 type SVGAttributes = 'viewBox' | 'preserveAspectRatio' | 'transform';
 

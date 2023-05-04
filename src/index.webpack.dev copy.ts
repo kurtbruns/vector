@@ -17,12 +17,12 @@ function createContainer() {
 }
 
 let plot = new Plot(createContainer(), {
-  width: 500,
+  width: 600,
   height: 300,
-  internalX: 0,
-  internalY: 0,
-  internalWidth: 50,
-  internalHeight: 30,
+  internalX: -50,
+  internalY: -50,
+  internalHeight: 50,
+  internalWidth: 100,
   responsive: true  
 });
 

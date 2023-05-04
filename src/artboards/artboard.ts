@@ -3,7 +3,7 @@
 import { Input } from '../elements/input/input'
 
 // svg elements
-import { SVG } from '../elements/svg/svg'
+import { SVG } from '../elements/svg'
 import { Element } from '../elements/svg/element'
 import { Group } from '../elements/svg/group'
 

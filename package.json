@@ -20,16 +20,17 @@
     "watch": "tsc -w",
     "website": "cd website && hugo"
   },
-  "homepage": "https://vectorjs.org",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vector-js/vector.git"
+    "url": "https://github.com/kurtbruns/vector"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
   },
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "sass": "^1.52.1"
+  },
   "devDependencies": {
     "@babel/core": "^7.12.3",
     "@babel/plugin-proposal-class-properties": "^7.12.1",
@@ -45,7 +46,6 @@
     "html-webpack-plugin": "^4.5.0",
     "jest": "^26.6.3",
     "mini-css-extract-plugin": "^1.0.0",
-    "node-sass": "^4.14.1",
     "optimize-css-assets-webpack-plugin": "^5.0.4",
     "postcss-loader": "^4.0.4",
     "postcss-preset-env": "^6.7.0",
