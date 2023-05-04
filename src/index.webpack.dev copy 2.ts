@@ -1,7 +1,7 @@
 import './assets/styles/normalize.css';
 import './assets/styles/reset.css';
 
-import { Plot } from './modules/plot/plot-grid-based';
+import { PlotGridBased } from './modules/plot/plot-grid-based';
 import { File, GridArtboard } from './index';
 
 let root = document.getElementById('root');
