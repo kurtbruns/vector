@@ -1,5 +1,5 @@
-import './assets/styles/main.css';
-// import './assets/styles/dark.css';
+import './assets/styles/vector.css';
+import './assets/styles/dark.css';
 import './template.scss';
 
 import { PlotGridBased } from './modules/plot/plot-grid-based';
