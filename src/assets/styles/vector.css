@@ -9,9 +9,10 @@
   --main: #f0f0f0;
   --primary: hsl(44, 97%, 84%);
 
-  --grid-primary: #666666;
+  --grid-primary: #505050;
   --grid-secondary: #404040;
   --grid-tertiary: #303030;
+
   --grid-quaternary: #282828;
   --grid-quinary: #202020;
 

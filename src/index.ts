@@ -1,4 +1,6 @@
-export { BaseElement } from './elements/base-element';
+export { 
+  BaseElement
+} from './elements/base-element';
 
 export {
   Circle,
@@ -63,8 +65,10 @@ export {
   floor,
   pointWhereTwoLinesIntersect,
   trapezoidalWave
-} from './util/math'
+} from './util/math';
 
 export { 
   File,
-} from './util/file'
+} from './util/file';
+
+export { version } from './version';

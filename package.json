@@ -7,7 +7,7 @@
   "browser": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "scripts": {
-    "build": "yarn webpack --config config/webpack.prod.js && yarn tsc",
+    "build": "node version.js && yarn webpack --config config/webpack.prod.js && yarn tsc",
     "build:dev": "yarn webpack --config ./config/webpack.common.js",
     "start": "webpack serve --config config/webpack.dev.js",
     "clean": "rm -rf dist/",
