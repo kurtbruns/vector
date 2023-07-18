@@ -12,7 +12,7 @@
     "start": "webpack serve --config config/webpack.dev.js",
     "clean": "rm -rf dist/",
     "clean-install": "rm -rf node_modules/ && yarn clean && yarn",
-    "prepublish": "yarn run build",
+    "prepare": "yarn run build",
     "package": "tar --exclude=\"*.js.map\" -czvf ./dist/library.tar.gz ./dist/ ./css/library.css",
     "rollup": "rollup --config",
     "test": "jest",

@@ -3,10 +3,12 @@ import './assets/styles/dark.css';
 import './template.scss';
 
 import { PlotGridBased } from './modules/plot/plot-grid-based';
-import { Artboard, File } from './index';
+import { Artboard, File, version} from './index';
 import { Point } from './model/point';
 
 const root = document.querySelector('#root') as HTMLDivElement;
+
+console.log(version)
 
 // root.style.maxWidth = `${300}px`;
 // root.style.margin = `${(720-300)/2}px`;
