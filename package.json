@@ -18,7 +18,7 @@
     "test": "jest",
     "test:update": "jest -u",
     "tsc": "tsc --declaration true --sourceMap false --skipLibCheck",
-    "version": "node version.js && git add ./src/version.ts",
+    "version": "node version.js && npm run build && git add ./src/version.ts",
     "watch": "tsc -w"
   },
   "repository": {
