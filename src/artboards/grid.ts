@@ -11,25 +11,25 @@ import { SVG } from "../elements/svg";
 export interface GridConfiguration {
 
   // These dimensions affect the visible area of the plot
-  x?:number
-  y?:number
-  width?:number
-  height?:number
-  maxWidth?:number
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  maxWidth?: number
 
   // These dimensions affect the coordinate system used for plotting
-  internalX?:number
-  internalY?:number
-  internalWidth?:number
-  internalHeight?:number
+  internalX?: number
+  internalY?: number
+  internalWidth?: number
+  internalHeight?: number
 
   // Toggles weather the plot fills the available space of the container
-  responsive?:boolean
-  
-  title?:string
-  align?:alignment
-  origin?:string
-  border?:boolean
+  responsive?: boolean
+
+  title?: string
+  align?: alignment
+  origin?: string
+  border?: boolean
 }
 
 /**
@@ -40,63 +40,68 @@ export class GridArtboard extends ResponsiveArtboard {
   /**
    * Contains the grid lines
    */
-  gridGroup:Group;
-  
+  gridGroup: Group;
+
   /**
    * Contains the axis lines
    */
-  axisGroup:Group;
+  axisGroup: Group;
 
   /**
    * Foreground
    */
-  foreground:Group;
+  foreground: Group;
 
   /**
    * 
    */
-  border:Rectangle;
+  border: Rectangle;
+
+  /**
+   * 
+   */
+  backgroundRectangle: Rectangle;
 
   /**
    * Nested SVG to fix firefox bug with viewbox
    */
-  private internalSVG:SVG;
+  private internalSVG: SVG;
   private internalViewBox: SVGAnimatedRect;
 
   /**
    * Contructs a SVG plot within the corresponding HTML Element and draws a plot of the function.
    */
-  constructor(container:string|HTMLElement, config : GridConfiguration ) {
+  constructor(container: string | HTMLElement, config: GridConfiguration) {
 
     // Default values 
-    let defaultConfig : GridConfiguration = {
+    let defaultConfig: GridConfiguration = {
 
       // view port
-      x:0,
-      y:0,
-      width:600,
-      height:300,
+      x: 0,
+      y: 0,
+      width: 600,
+      height: 300,
 
       // internal coordinates
-      internalX:-300,
-      internalY:-150,
-      internalWidth:600,
-      internalHeight:300,
-      
+      internalX: -300,
+      internalY: -150,
+      internalWidth: 600,
+      internalHeight: 300,
+
       align: 'left',
-      origin:'default',
+      origin: 'default',
       responsive: true,
       border: true
     }
 
     // choose users config over default
-    config = { ...defaultConfig, ...config};
+    config = { ...defaultConfig, ...config };
 
     // if no max-width specified, default to specified width if responsive is set to false
     if (!config.maxWidth && !config.responsive) { config.maxWidth = config.width };
-    
+
     super(container, config);
-    
+
     this.classList.add('grid');
     this.x = config.x;
     this.y = config.y;
@@ -107,30 +112,35 @@ export class GridArtboard extends ResponsiveArtboard {
     this.internalViewBox = this.root.viewBox;
 
     // Store a reference to fix firefox viewbox issue
-    if( navigator.userAgent.indexOf("Firefox") > -1 ) {
+    if (navigator.userAgent.indexOf("Firefox") > -1) {
       this.internalSVG = svg.appendChild(new SVG());
     } else {
       this.internalSVG = svg as SVG;
     }
 
-    this.classList.add('outline');		
+    this.classList.add('outline');
 
     this.gridGroup = this.group();
     this.axisGroup = this.group();
     this.foreground = this.group();
-    
+
+    this.backgroundRectangle = new Rectangle(config.internalX, config.internalY, config.internalWidth, config.internalHeight);
+    this.backgroundRectangle.style.fill = 'var(--background)';
+    this.backgroundRectangle.stroke = 'none';
+    this.root.prepend(this.backgroundRectangle.root)
+
     // TODO: draw axis
 
   }
 
-  getInternalSVG() : SVG {
+  getInternalSVG(): SVG {
     return this.internalSVG;
   }
 
   /**
-   * Converts a point in the SVG's coordinate system to the screen's coordinate system.
+   * Converts a point in the screen's coordinate system into the SVG's coordinate system
    */
-  screenToSVG(screenX:number, screenY:number) {
+  screenToSVG(screenX: number, screenY: number) {
 
     let svg = this.internalSVG.root;
     let p = svg.createSVGPoint()
@@ -138,36 +148,40 @@ export class GridArtboard extends ResponsiveArtboard {
     p.y = screenY
     return p.matrixTransform(svg.getScreenCTM().inverse());
   }
-  
+
   /**
-   * Converts a point in the screen's coordinate system to the SVG's coordinate system.
+   * Converts a point in the SVG's coordinate system to the *absolute* screen coordindate
    */
-  SVGToScreen(svgX:number, svgY:number) {
-    
+  SVGToScreen(svgX: number, svgY: number) {
+
     let svg = this.internalSVG.root;
     let p = svg.createSVGPoint()
     p.x = svgX
     p.y = svgY
     return p.matrixTransform(svg.getScreenCTM());
   }
-  
+
   /**
-   * Converts a point in the screen's coordinate system to the SVG's coordinate system.
+   * Converts a point in the SVG's coordinate system to the *relative* screen coordindate
    */
-  SVGToRelative(svgX:number, svgY:number) {
-    
-    let bbox = this.root.getBoundingClientRect();
+  SVGToRelative(svgX: number, svgY: number) {
+
+    // TODO: test of something is drawn outside of the initial bounding box, that it still returns the correct relative point
+    // TODO: if a user draws something outside of the region, this returns a bounding box including whatever crazy dimensions they have drawn!!
+    // TODO: maybe have a mirrored SVG or another approach
+    // let bbox = this.root.getBoundingClientRect();
+    let bbox = this.backgroundRectangle.root.getBoundingClientRect();
     let svg = this.internalSVG.root;
     let p = svg.createSVGPoint()
-    p.x = svgX
-    p.y = svgY
+    p.x = svgX;
+    p.y = svgY;
     let point = p.matrixTransform(svg.getScreenCTM())
-    point.x -= bbox.left
-    point.y -= bbox.top
+    point.x -= bbox.left;
+    point.y -= bbox.top;
     return point
   }
 
-  drawBackground( fill:string = '#ffffff' ) {
+  drawBackground(fill: string = '#ffffff') {
     let viewbox = this.root.viewBox.baseVal
     let background = this.prependChild(this.rectangle(viewbox.x, viewbox.y, viewbox.width, viewbox.height));
     background.style.fill = fill;
@@ -188,15 +202,16 @@ export class GridArtboard extends ResponsiveArtboard {
 
     this.border.root.setAttribute('vector-effect', 'non-scaling-stroke');
     this.border.style.strokeWidth = '2';
+    return this.border;
   }
-  
+
   /**
    * Draws grid lines
    */
   drawGridLines() {
 
     let viewBox = this.internalViewBox.baseVal;
-    
+
     this.gridGroup.setAttribute('class', 'grid-lines')
     let group3 = this.gridGroup.group();
     let group2 = this.gridGroup.group();
@@ -224,21 +239,21 @@ export class GridArtboard extends ResponsiveArtboard {
     let x2 = Math.ceil(viewBox.x + viewBox.width);
     let y2 = Math.ceil(viewBox.y + viewBox.height);
 
-    for( let x = x1; x <= x2; x++ ) {
-      if( x % 10 === 0) {
+    for (let x = x1; x <= x2; x++) {
+      if (x % 10 === 0) {
         group1.line(x, y1, x, y2);
-      } else if( x % 5 === 0 ) {
+      } else if (x % 5 === 0) {
         group2.line(x, y1, x, y2);
       } else {
         group3.line(x, y1, x, y2);
       }
     }
 
-    for( let y = y1; y <= y2; y ++ ) {
-      
-      if( y % 10 === 0) {
+    for (let y = y1; y <= y2; y++) {
+
+      if (y % 10 === 0) {
         group1.line(x1, y, x2, y);
-      } else if( y % 5 === 0 ) {
+      } else if (y % 5 === 0) {
         group2.line(x1, y, x2, y);
       } else {
         group3.line(x1, y, x2, y);
@@ -258,69 +273,126 @@ export class GridArtboard extends ResponsiveArtboard {
     // 	}
     // }
   }
-  
-  drawGridLinesTest( step1, step2, step3) {
+
+  generateValues(range, magnitude: string = 'big') {
+    const [start, end] = range;
+    const rangeSize = end - start;
+    let baseStep = Math.pow(10, Math.floor(Math.log10(rangeSize)));
+
+    // Adjust the base step if the range size is smaller than the base step
+    while (baseStep > rangeSize) {
+      baseStep /= 10;
+    }
+
+    let step;
+    switch (magnitude) {
+      case 'big':
+        step = baseStep;
+        break;
+      case 'half':
+        step = baseStep / 2;
+        break;
+      case 'small':
+        step = baseStep / 10;
+        break;
+      case 'small-half':
+        step = baseStep / 20;
+        break;
+      case 'tiny':
+        step = baseStep / 100;
+        break;
+      default:
+        throw new Error('Invalid magnitude');
+    }
+
+    const values = [];
+    let currentValue = Math.ceil(start / step) * step;
+
+    while (currentValue <= end) {
+      values.push(Number(currentValue.toFixed(10)));
+      currentValue += step;
+    }
+
+    return values;
+  }
+
+  /**
+  * Draws grid lines
+  * TODO: seems problematic that this method creates the gridline groups. What if the user wanted to redraw the grid lines?
+  */
+  drawGridLines2() {
 
     let viewBox = this.internalViewBox.baseVal;
-    
+
+    this.gridGroup.setAttribute('class', 'grid-lines')
+    let group5 = this.gridGroup.group();
+    let group4 = this.gridGroup.group();
     let group3 = this.gridGroup.group();
-    group3.style.opacity = '0.2'
-    // group3.style.stroke = '#f8f8f8'
-    
     let group2 = this.gridGroup.group();
-    group2.style.opacity = '0.4'
-    // group2.style.stroke = '#f0f0f0'
-
     let group1 = this.gridGroup.group();
-    group1.style.opacity = '0.6'
-    // group1.style.stroke = '#dddddd'
 
-    let x1 = Math.floor(viewBox.x);
-    let y1 = Math.floor(viewBox.y);
+    group1.setAttribute('class', 'primary')
+    group2.setAttribute('class', 'secondary')
+    group3.setAttribute('class', 'tertiary')
+    group4.setAttribute('class', 'quaternary')
+    group5.setAttribute('class', 'quinary')
 
-    let x2 = Math.floor(viewBox.x + viewBox.width);
-    let y2 = Math.floor(viewBox.y + viewBox.height);
+    // let x1 = Math.floor(viewBox.x);
+    // let y1 = Math.floor(viewBox.y);
+    // let x2 = Math.ceil(viewBox.x + viewBox.width);
+    // let y2 = Math.ceil(viewBox.y + viewBox.height);
 
-    // let step1 = 100; // full magnitude step up
-    // let step2 = 50;  // half magnitude
-    // let step3 = 10;  // full magnitude step down
+    let x1 = viewBox.x;
+    let y1 = viewBox.y;
+    let x2 = viewBox.x + viewBox.width;
+    let y2 = viewBox.y + viewBox.height;
 
-    // Make sure to start on the smallest step down
-    x1 = x1 - (x1 % step3) - step3;
-    y1 = y1 - (y1 % step3) - step3;
+    // horizontal grid lines
 
-    for( let x = x1; x <= x2; x += step3 ) {
-      if( x % step1 === 0) {
-        group1.line(x, y1, x, y2);
-      } else if( x % step2 === 0 ) {
-        group2.line(x, y1, x, y2);
-      } else {
-        group3.line(x, y1, x, y2);
+    let horizontalLines : Set<number> = new Set()
+    let drawHorizontal = (g:Group) => {
+      return (x:number) => {
+        if(!horizontalLines.has(x)) {
+          g.line(x, y1, x, y2);
+          horizontalLines.add(x)
+        }
       }
     }
 
-    for( let y = y1; y <= y2; y += step3 ) {
-      
-      if( y % step1 === 0) {
-        group1.line(x1, y, x2, y);
-      } else if( y % step2 === 0 ) {
-        group2.line(x1, y, x2, y);
-      } else {
-        group3.line(x1, y, x2, y);
+    // vertical lines
+    let verticalLines : Set<number> = new Set()
+    let drawVertical = (g:Group) => {
+      return (y:number) => {
+        if(!verticalLines.has(y)) {
+          g.line(x1, y, x2, y)
+          verticalLines.add(y)
+        }
       }
     }
 
-    // let startY = Math.ceil(p1.y*10);
-    // let endY = Math.ceil(p2.y*10);
-    // for( let i = startY; i < endY; i+= 10) {
-    // 	let y = i/10;
-    // 	if( i % 10 === 0 ) {
-    // 		group1.line(p1.x, y, p2.x, y);
-    // 	} else if( i % 5 === 0) {
-    // 		group2.line(p1.x, y, p2.x, y);
-    // 	} else {
-    // 		group3.line(p1.x, y, p2.x, y);
-    // 	}
-    // }
+    this.generateValues([x1, x2], 'big').map(drawHorizontal(group1))
+    this.generateValues([x1, x2], 'half').map(drawHorizontal(group2))
+    this.generateValues([x1, x2], 'small').map(drawHorizontal(group3))
+
+    this.generateValues([y1, y2], 'big').map(drawVertical(group1))
+    this.generateValues([y1, y2], 'half').map(drawVertical(group2))
+    this.generateValues([y1, y2], 'small').map(drawVertical(group3))
+
+    // this.generateValues([x1, x2], 'half').map(drawHorizontal(group1))
+    // this.generateValues([x1, x2], 'small').map(drawHorizontal(group1))
+    // this.generateValues([x1, x2], 'small-half').map(drawHorizontal(group2))
+    // this.generateValues([x1, x2], 'tiny').map(drawHorizontal(group3))
+
+    // this.generateValues([y1, y2], 'big').map(drawVertical(group1))
+    // this.generateValues([y1, y2], 'half').map(drawVertical(group2))
+    // this.generateValues([y1, y2], 'small').map(drawVertical(group3))
+
+
+    // this.generateValues([y1, y2], 'big').map(drawVertical(group1))
+    // this.generateValues([y1, y2], 'half').map(drawVertical(group1))
+    // this.generateValues([y1, y2], 'small').map(drawVertical(group1))
+    // this.generateValues([y1, y2], 'small-half').map(drawVertical(group2))
+    // this.generateValues([y1, y2], 'tiny').map(drawVertical(group3))
+
   }
 }

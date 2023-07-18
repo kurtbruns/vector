@@ -1,10 +1,11 @@
 {
   "name": "@kurtbruns/vector",
-  "version": "0.1.12",
+  "version": "0.1.14",
   "description": "A library for creating interactive vector graphics on the web.",
   "author": "Kurt Bruns",
   "main": "dist/lib/index.js",
   "browser": "dist/lib/index.js",
+  "types": "dist/lib/index.d.ts",
   "scripts": {
     "build": "yarn webpack --config config/webpack.prod.js && yarn tsc",
     "build:dev": "yarn webpack --config ./config/webpack.common.js",

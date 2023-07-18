@@ -19,7 +19,7 @@ import {Description} from './description'
 import {MetaData} from './meta-data'
 import { Label } from '../visual/label'
 
-type GroupAttributes = 'clip-path' | 'transform' ;
+type GroupAttributes = 'clip-path' | 'transform';
 
 /**
 * A group is a structural element that allows for elements to be grouped

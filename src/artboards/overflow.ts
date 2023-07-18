@@ -12,9 +12,9 @@ export class OverflowArtboard extends Artboard {
 	private _lines2 : Group;
 	private _lines3 : Group;
 		
-	static lightStroke = 'var(--light1)';
-	static mediumStroke = 'var(--light2)';
-	static darkStroke = 'var(--light3)';
+	static lightStroke = 'var(--grid-tertiary)';
+	static mediumStroke = 'var(--grid-secondary)';
+	static darkStroke = 'var(--grid-primary)';
 
 	/**
 	 * Constructs a responsive SVG Document that is optimized to prevent cumulative layout shift in 

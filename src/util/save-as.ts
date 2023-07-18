@@ -8,7 +8,7 @@
 * source  : http://purl.eligrey.com/github/FileSaver.js
 */
 
-function download (url, name, opts) {
+function download(url, name, opts) {
   var xhr = new XMLHttpRequest()
   xhr.open('GET', url)
   xhr.responseType = 'blob'
@@ -21,7 +21,7 @@ function download (url, name, opts) {
   xhr.send()
 }
 
-function corsEnabled (url: string) : boolean {
+function corsEnabled(url: string): boolean {
   var xhr = new XMLHttpRequest()
   // use sync to avoid popup blocker
   xhr.open('HEAD', url, false)
@@ -36,31 +36,31 @@ function click(node) {
   } catch (e) {
     var evt = document.createEvent('MouseEvents')
     evt.initMouseEvent('click', true, true, window, 0, 0, 0, 80,
-                          20, false, false, false, false, 0, null)
+      20, false, false, false, false, 0, null)
     node.dispatchEvent(evt)
   }
 }
 
-export function saveAs (blob, name, opts) {
+export function saveAs(blob, name, opts) {
 
-    var a = document.createElement('a')
-    name = name || blob.name || 'download'
+  var a = document.createElement('a')
+  name = name || blob.name || 'download'
 
-    a.download = name
-    a.rel = 'noopener' // tabnabbing
+  a.download = name
+  a.rel = 'noopener' // tabnabbing
 
-    if (typeof blob === 'string') {
-      // Support regular links
-      a.href = blob
-      if (a.origin !== location.origin) {
-        corsEnabled(a.href) ? download(blob, name, opts) : click(a)
-      } else {
-        click(a)
-      }
+  if (typeof blob === 'string') {
+    // Support regular links
+    a.href = blob
+    if (a.origin !== location.origin) {
+      corsEnabled(a.href) ? download(blob, name, opts) : click(a)
     } else {
-      // Support blobs
-      a.href = URL.createObjectURL(blob)
-      setTimeout(function () { URL.revokeObjectURL(a.href) }, 4E4) // 40s
-      setTimeout(function () { click(a) }, 0)
+      click(a)
     }
+  } else {
+    // Support blobs
+    a.href = URL.createObjectURL(blob)
+    setTimeout(function () { URL.revokeObjectURL(a.href) }, 4E4) // 40s
+    setTimeout(function () { click(a) }, 0)
+  }
 }

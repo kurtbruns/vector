@@ -1,12 +1,19 @@
 
+
 /* default dark theme */
 :root {
   --background: #181818;
   --font-color: #f0f0f0;
+  --border-color: #606060;
 
-  --grid--primary: #666666;
-  --grid--secondary: #404040;
-  --grid--tertiary: #262626;
+  --main: #f0f0f0;
+  --primary: hsl(44, 97%, 84%);
+
+  --grid-primary: #666666;
+  --grid-secondary: #404040;
+  --grid-tertiary: #303030;
+  --grid-quaternary: #282828;
+  --grid-quinary: #202020;
 
   --red: #F2777A;
   --green: #92D192;
@@ -18,10 +25,13 @@
 
   --background: #ffffff;
   --font-color: #181818;
+  --border-color: #d0d0d0;
 
   --grid--primary: #a0a0a0;
-  --grid--secondary: #d0d0d0;
-  --grid--tertiary: #f0f0f0;
+  --grid-secondary: #d0d0d0;
+  --grid-tertiary: #f0f0f0;
+  --grid-quaternary: #f4f4f4;
+  --grid-quinary: #f8f8f8;
 
   --main: #404040;
 
@@ -58,13 +68,19 @@
 }
 
 .grid-lines .primary line {
-  stroke: var(--grid--primary)
+  stroke: var(--grid-primary)
 }
 .grid-lines .secondary line {
-  stroke: var(--grid--secondary)
+  stroke: var(--grid-secondary)
 }
 .grid-lines .tertiary line {
-  stroke: var(--grid--tertiary)
+  stroke: var(--grid-tertiary)
+}
+.grid-lines .quaternary line {
+  stroke: var(--grid-quaternary)
+}
+.grid-lines .quinary line {
+  stroke: var(--grid-quinary)
 }
 
 .non-scaling-stroke {
@@ -124,8 +140,8 @@ tspan {
 div.display-box {
 	display: grid;
 	align-items: center;
-	background:#fafafa;
-	border: 1px solid #dddddd;
+	background:var(--background);
+	border: 1px solid var(--border-color);
 	border-radius: 5px;
 	margin: 0 0 0.5rem 0;
 }
@@ -158,7 +174,7 @@ div.display-box {
 
 .animation-main {
   overflow: hidden;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--border-color);
 }
 
 .animation-root {
@@ -186,7 +202,7 @@ div.display-box {
 	display:flex;
 	flex-direction:row;
 	justify-content:space-around;
-	border-top: 1px solid #dddddd;
+	border-top: 1px solid var(--border-color);
 }
 
 .animation-slider {
@@ -196,7 +212,7 @@ div.display-box {
 }
 
 .border {
-  border: 1px solid #dddddd;
+  border: 1px solid var(--border-color);
   border-radius: 5px;
 }
 
@@ -215,12 +231,10 @@ input.input {
   height: 2rem;
   padding-left: 8px;
   webkitAppearance: textfield;
-  border: 1px solid grey;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 14px;
 }
-
-
 
 .default * {
   stroke: var(--main);
