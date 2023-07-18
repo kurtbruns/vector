@@ -18,6 +18,7 @@
     "test": "jest",
     "test:update": "jest -u",
     "tsc": "tsc --declaration true --sourceMap false --skipLibCheck",
+    "version": "yarn run build && git add ./src/verstion.ts",
     "watch": "tsc -w"
   },
   "repository": {
