@@ -18,7 +18,7 @@ module.exports = merge(common, {
     filename: 'js/[name].bundle.js',
     library: {
       name: name,
-      type: 'umd',
+      type: 'cjs',
     },
     clean: true,
   },
