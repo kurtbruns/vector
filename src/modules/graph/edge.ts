@@ -1,5 +1,5 @@
 import { Node } from './node'
-import {Line} from '../../elements/svg/line'
+import { Line } from '../../elements/svg/line'
 
 //Make the function static and extend from Line
 

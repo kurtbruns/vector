@@ -1,7 +1,9 @@
-import { GridArtboard } from "../../artboards/grid";
+import { Grid } from "../../elements/grid";
 import { Group } from "../../elements/svg/group";
+import { Line } from "../../elements/svg/line";
 import { Path } from "../../elements/svg/path";
 import { Rectangle } from "../../elements/svg/rectangle";
+import { Point } from "../../model/point";
 
 type FunctionType = (x: number) => number;
 
@@ -37,7 +39,7 @@ interface Configuration {
 /**
  * A plot visualizes one or more one-to-one functinos.
  */
-export class PlotGridBased extends GridArtboard {
+export class PlotGridBased extends Grid {
 
   /**
    * Array of functions paths
@@ -54,7 +56,7 @@ export class PlotGridBased extends GridArtboard {
    */
   fnGroup: Group;
 
-  constructor(container: string | HTMLElement, config: Configuration) {
+  constructor(container: Element, config: Configuration) {
 
     // default configuration
     let defaultConfig = {
@@ -106,11 +108,27 @@ export class PlotGridBased extends GridArtboard {
     return viewBox.x + viewBox.width
   }
 
-  drawAxis() {
-    let axisGroup = this.background.prependChild(new Group())
+  drawAxes(arrows?:boolean): Group {
 
-    axisGroup.line(this.getMinX(), 0, this.getMaxX(), 0).setAttribute('vector-effect', 'non-scaling-stroke')
-    axisGroup.line(0, this.getMinY(), 0, this.getMaxY()).setAttribute('vector-effect', 'non-scaling-stroke')
+    let axisGroup = this.gridGroup.appendChild(new Group());
+    axisGroup.classList.add('axes');
+
+    let xAxis = axisGroup.line(this.getMaxX(), 0, this.getMinX(), 0);
+    let yAxis = axisGroup.line(0, this.getMinY(), 0, this.getMaxY());
+
+    xAxis.setAttribute('vector-effect', 'non-scaling-stroke');
+    yAxis.setAttribute('vector-effect', 'non-scaling-stroke');
+
+    if( arrows ) {
+      let defs = this.defs();
+      xAxis.attatchArrow(defs, true);
+      xAxis.attatchArrow(defs, false);
+      yAxis.attatchArrow(defs, true);
+      yAxis.attatchArrow(defs, false);
+    }
+
+
+    return axisGroup;
   }
 
   addFunction(f: FunctionType): Path {
@@ -135,27 +153,45 @@ export class PlotGridBased extends GridArtboard {
   }
 
   /**
- * Returns a
- */
-  getHorizontalValues2(magnitude = 'big') {
-
+   * Returns a
+   */
+  getHorizontalGridValues(magnitude = 'big'): Map<number, Point> {
     let viewBox = this.root.viewBox.baseVal;
-
     let x1 = Math.floor(viewBox.x);
     let x2 = Math.floor(viewBox.x + viewBox.width);
-    return this.generateValues([x1, x2], magnitude);
+
+    let points = new Map();
+    this.generateValues2([x1, x2], magnitude).map((x) => {
+      points.set(x, new Point(x, 0))
+    })
+
+    return points;
+  }
+
+  /**
+   * Returns the large magnitude horizontal y-values for the gridlines
+   */
+  getVerticalGridValues(magnitude = 'big'): Map<number, { x: number, y: number }> {
+    let viewBox = this.root.viewBox.baseVal;
+    let y1 = Math.floor(viewBox.y);
+    let y2 = Math.floor(viewBox.y + viewBox.height);
+    let points = new Map();
+    this.generateValues2([y1, y2], magnitude).map((y) => {
+      points.set(y, new Point(0, y))
+    })
+    return points;
   }
 
   /**
    * Returns a
    */
-  getHorizontalValues(magnitude = 'big') {
+  getHorizontalValues(magnitude = 'big'): Map<number, DOMPoint> {
     // TODO: some sort of setter getter
     let viewBox = this.root.viewBox.baseVal;
     let x1 = Math.floor(viewBox.x);
     let x2 = Math.floor(viewBox.x + viewBox.width);
-    let points = {}
-    this.generateValues([x1, x2], magnitude).map((x) => {
+    let points = new Map();
+    this.generateValues2([x1, x2], magnitude).map((x) => {
       points[x] = this.SVGToRelative(x, 0)
     })
     return points;
@@ -164,12 +200,12 @@ export class PlotGridBased extends GridArtboard {
   /**
    * Returns the large magnitude horizontal y-values for the gridlines
    */
-  getVerticalValues(magnitude = 'big') {
+  getVerticalValues(magnitude = 'big'): Map<number, DOMPoint> {
     let viewBox = this.root.viewBox.baseVal;
     let y1 = Math.floor(viewBox.y);
     let y2 = Math.floor(viewBox.y + viewBox.height);
-    let points = {}
-    this.generateValues([y1, y2], magnitude).map((y) => {
+    let points = new Map();
+    this.generateValues2([y1, y2], magnitude).map((y) => {
       points[-y] = this.SVGToRelative(0, y)
     })
     return points;
@@ -232,6 +268,51 @@ export class PlotGridBased extends GridArtboard {
       this.functionPaths[i].d = d;
     }
   }
+
+  /**
+ * Draws the plot of the function for all x-values in the view ports range 
+ */
+  drawArea(x1: number, x2: number, fn: (number) => number): Path {
+
+    // let spacing = 0;
+    // let bbox = this.root.getBoundingClientRect();
+    // let x1 = bbox.x + spacing;
+    // let x2 = bbox.x + bbox.width - spacing;
+
+    x1 = this.SVGToScreen(x1, 0).x;
+    x2 = this.SVGToScreen(x2, 0).x;
+
+    let ctm = this.getInternalSVG().root.getScreenCTM();
+    let inverse = ctm.inverse();
+    let point = this.getInternalSVG().root.createSVGPoint();
+
+    point.x = x1;
+    point.y = 0;
+    let p = point.matrixTransform(inverse);
+    let d: string = `M ${p.x} ${0}`;
+    d += `L ${p.x} ${this.call(fn, p.x)}`;
+
+    // Loop through each pixel, convert the x-position to the internal coordinates, call the 
+    // function and add to the path
+    for (let x = x1; x <= x2; x++) {
+      point.x = x;
+      p = point.matrixTransform(inverse);
+      d += `L ${p.x} ${this.call(fn, p.x)}`;
+      // TODO: trim huge y values
+    }
+
+    point.x = x2;
+    point.y = 0;
+    p = point.matrixTransform(inverse);
+    d += `L ${p.x} ${0} Z`;
+
+    let path = this.fnGroup.path(d);
+    path.style.stroke = 'var(--blue)';
+    this.functionPaths.push(path);
+
+    return path;
+  }
+
 
   findXCoordinateForY(lineStart, lineEnd, targetY) {
     // Parse inputs to ensure they're numbers
@@ -347,6 +428,8 @@ export class PlotGridBased extends GridArtboard {
         }
         previous = output;
       }
+
+      // console.log(d)
 
       this.functionPaths[i].d = d;
     }

@@ -1,6 +1,6 @@
 import { Rectangle } from "../../index";
-import { ResponsiveArtboard } from "../../artboards/responsive";
 import { TAU } from "../../util/math";
+import { ResponsiveFrame } from "../../elements/responsive";
 import { Group } from "../../elements/svg/group";
 import { Path } from "../../elements/svg/path";
 import { SVG } from "../../elements/svg/svg";
@@ -35,7 +35,7 @@ export interface PlotConfiguration {
  * The viewport is defined by a position (x,y) relative to its parent, which only applies to nested
  * SVGs.
  */
-export class Plot extends ResponsiveArtboard {
+export class Plot extends ResponsiveFrame {
 
   /**
    * A one-to-one function
@@ -75,7 +75,7 @@ export class Plot extends ResponsiveArtboard {
   /**
    * Contructs a SVG plot within the corresponding HTML Element and draws a plot of the function.
    */
-  constructor(container: string | HTMLElement, fn: (x: number) => number, config: PlotConfiguration) {
+  constructor(container: Element, fn: (x: number) => number, config: PlotConfiguration) {
 
     // Default values 
     let defaultConfig: PlotConfiguration = {
@@ -137,7 +137,18 @@ export class Plot extends ResponsiveArtboard {
   }
 
   /**
-   * Converts a point in the screen's coordinate system to the SVG's coordinate system.
+   * Converts a point in the SVG's coordinate system to the screen's coordinate system.
+   */
+    relativeScreenToSVG(screenX, screenY) {
+      let p = this.internalSVG.createSVGPoint()
+      let bbox = this.root.getBoundingClientRect();
+      p.x = screenX - bbox.left;
+      p.y = screenY - bbox.top;
+      return p.matrixTransform(this.internalSVG.getScreenCTM().inverse());
+    }
+
+  /**
+   * Converts a point in the SVG's coordinate system to the screen's coordinate system.
    */
   SVGToScreen(svgX, svgY) {
     let p = this.internalSVG.createSVGPoint()
@@ -147,8 +158,8 @@ export class Plot extends ResponsiveArtboard {
   }
 
   /**
-* Converts a point in the screen's coordinate system to the SVG's coordinate system.
-*/
+  * Converts a point in the SVG's coordinate system to the *relative* screen's coordinate system.
+  */
   SVGToRelative(svgX: number, svgY: number) {
 
     let bbox = this.root.getBoundingClientRect();

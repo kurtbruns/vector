@@ -1,5 +1,5 @@
-import { alignment } from "./artboard";
-import { ResponsiveArtboard } from "./responsive";
+import { alignment } from "./frame";
+import { ResponsiveFrame } from "./responsive";
 
 import { Rectangle } from "../elements/svg/rectangle";
 import { Group } from "../elements/svg/group";
@@ -30,12 +30,13 @@ export interface GridConfiguration {
   align?: alignment
   origin?: string
   border?: boolean
+
 }
 
 /**
  * A grid object allows a user to specify an internal coordinate system used for drawing.  
  */
-export class GridArtboard extends ResponsiveArtboard {
+export class Grid extends ResponsiveFrame {
 
   /**
    * Contains the grid lines
@@ -71,7 +72,7 @@ export class GridArtboard extends ResponsiveArtboard {
   /**
    * Contructs a SVG plot within the corresponding HTML Element and draws a plot of the function.
    */
-  constructor(container: string | HTMLElement, config: GridConfiguration) {
+  constructor(container:Element, config: GridConfiguration) {
 
     // Default values 
     let defaultConfig: GridConfiguration = {
@@ -118,14 +119,12 @@ export class GridArtboard extends ResponsiveArtboard {
       this.internalSVG = svg as SVG;
     }
 
-    this.classList.add('outline');
-
     this.gridGroup = this.group();
     this.axisGroup = this.group();
     this.foreground = this.group();
 
     this.backgroundRectangle = new Rectangle(config.internalX, config.internalY, config.internalWidth, config.internalHeight);
-    this.backgroundRectangle.style.fill = 'var(--background)';
+    this.backgroundRectangle.style.fill = 'transparent';
     this.backgroundRectangle.stroke = 'none';
     this.root.prepend(this.backgroundRectangle.root)
 
@@ -178,7 +177,8 @@ export class GridArtboard extends ResponsiveArtboard {
     let point = p.matrixTransform(svg.getScreenCTM())
     point.x -= bbox.left;
     point.y -= bbox.top;
-    return point
+    return point;
+    
   }
 
   drawBackground(fill: string = '#ffffff') {
@@ -274,9 +274,60 @@ export class GridArtboard extends ResponsiveArtboard {
     // }
   }
 
-  generateValues(range, magnitude: string = 'big') {
+  generateValues(range, magnitude: string = 'big') : number[] {
+
     const [start, end] = range;
     const rangeSize = end - start;
+    let baseStep = Math.pow(10, Math.floor(Math.log10(rangeSize)));
+
+    // Adjust the base step if the range size is smaller than the base step
+    while (baseStep > rangeSize) {
+      baseStep /= 10;
+    }
+
+    let step;
+    switch (magnitude) {
+      case 'big':
+        step = baseStep;
+        break;
+      case 'half':
+        step = baseStep / 2;
+        break;
+      case 'small':
+        step = baseStep / 10;
+        break;
+      case 'small-half':
+        step = baseStep / 20;
+        break;
+      case 'tiny':
+        step = baseStep / 100;
+        break;
+      default:
+        throw new Error('Invalid magnitude');
+    }
+
+    const values : number[] = [];
+    let currentValue = Math.ceil(start / step) * step;
+
+    while (currentValue <= end) {
+      values.push(Number(currentValue.toFixed(10)));
+      currentValue += step;
+    }
+
+    return values;
+  }
+
+  generateValues2(range, magnitude: string = 'big') : number[] {
+
+    let viewBox = this.internalViewBox.baseVal;
+    let x1 = viewBox.x;
+    let y1 = viewBox.y;
+    let x2 = viewBox.x + viewBox.width;
+    let y2 = viewBox.y + viewBox.height;
+
+    const rangeSize = Math.max(y2 - y1, x2 - x1);
+
+    const [start, end] = range;
     let baseStep = Math.pow(10, Math.floor(Math.log10(rangeSize)));
 
     // Adjust the base step if the range size is smaller than the base step
@@ -316,31 +367,65 @@ export class GridArtboard extends ResponsiveArtboard {
     return values;
   }
 
+  generateValues3(range, magnitude: string = 'big') : number[] {
+
+    let viewBox = this.internalViewBox.baseVal;
+    let x1 = viewBox.x;
+    let y1 = viewBox.y;
+    let x2 = viewBox.x + viewBox.width;
+    let y2 = viewBox.y + viewBox.height;
+
+    const rangeSize = Math.max(y2 - y1, x2 - x1);
+
+    const [start, end] = range;
+    let baseStep = Math.pow(10, Math.floor(Math.log10(rangeSize)));
+
+    // Adjust the base step if the range size is smaller than the base step
+    while (baseStep > rangeSize) {
+      baseStep /= 10;
+    }
+
+    let step;
+    switch (magnitude) {
+      case 'big':
+        step = baseStep;
+        break;
+      case 'half':
+        step = baseStep / 2;
+        break;
+      case 'small':
+        step = baseStep / 10;
+        break;
+      // case 'small-half':
+      //   step = baseStep / 20;
+      //   break;
+      case 'tiny':
+        step = baseStep / 50;
+        break;
+      default:
+        throw new Error('Invalid magnitude');
+    }
+
+    const values = [];
+    let currentValue = Math.ceil(start / step) * step;
+
+    while (currentValue <= end) {
+      values.push(Number(currentValue.toFixed(10)));
+      currentValue += step;
+    }
+
+    return values;
+  }
+
   /**
   * Draws grid lines
   * TODO: seems problematic that this method creates the gridline groups. What if the user wanted to redraw the grid lines?
   */
-  drawGridLines2() {
+  drawGridLines2(xBreaks = ['small', 'half', 'big'], yBreaks = ['small', 'half', 'big'], mapping : any = { 'big': 'primary', 'half': 'secondary', 'small': 'tertiary', 'small-half': 'quaternary', 'tiny': 'quinary', }) {
 
     let viewBox = this.internalViewBox.baseVal;
 
     this.gridGroup.setAttribute('class', 'grid-lines')
-    let group5 = this.gridGroup.group();
-    let group4 = this.gridGroup.group();
-    let group3 = this.gridGroup.group();
-    let group2 = this.gridGroup.group();
-    let group1 = this.gridGroup.group();
-
-    group1.setAttribute('class', 'primary')
-    group2.setAttribute('class', 'secondary')
-    group3.setAttribute('class', 'tertiary')
-    group4.setAttribute('class', 'quaternary')
-    group5.setAttribute('class', 'quinary')
-
-    // let x1 = Math.floor(viewBox.x);
-    // let y1 = Math.floor(viewBox.y);
-    // let x2 = Math.ceil(viewBox.x + viewBox.width);
-    // let y2 = Math.ceil(viewBox.y + viewBox.height);
 
     let x1 = viewBox.x;
     let y1 = viewBox.y;
@@ -349,10 +434,10 @@ export class GridArtboard extends ResponsiveArtboard {
 
     // horizontal grid lines
 
-    let horizontalLines : Set<number> = new Set()
-    let drawHorizontal = (g:Group) => {
-      return (x:number) => {
-        if(!horizontalLines.has(x)) {
+    let horizontalLines: Set<number> = new Set()
+    let drawHorizontal = (g: Group) => {
+      return (x: number) => {
+        if (!horizontalLines.has(x)) {
           g.line(x, y1, x, y2);
           horizontalLines.add(x)
         }
@@ -360,39 +445,109 @@ export class GridArtboard extends ResponsiveArtboard {
     }
 
     // vertical lines
-    let verticalLines : Set<number> = new Set()
-    let drawVertical = (g:Group) => {
-      return (y:number) => {
-        if(!verticalLines.has(y)) {
+    let verticalLines: Set<number> = new Set()
+    let drawVertical = (g: Group) => {
+      return (y: number) => {
+        if (!verticalLines.has(y)) {
           g.line(x1, y, x2, y)
           verticalLines.add(y)
         }
       }
     }
 
-    this.generateValues([x1, x2], 'big').map(drawHorizontal(group1))
-    this.generateValues([x1, x2], 'half').map(drawHorizontal(group2))
-    this.generateValues([x1, x2], 'small').map(drawHorizontal(group3))
+    // TODO: since the new and improved generateValues2, it seems like the gridline logic is attached
+    // the the whole view port instead of each individual axis, so it makes sense to maybe have one
+    // set of breakpoints here?
 
-    this.generateValues([y1, y2], 'big').map(drawVertical(group1))
-    this.generateValues([y1, y2], 'half').map(drawVertical(group2))
-    this.generateValues([y1, y2], 'small').map(drawVertical(group3))
+    let xBreak : string;
+    let yBreak : string;
+    do {
+      xBreak = xBreaks.pop();
+      yBreak = yBreaks.pop();
 
-    // this.generateValues([x1, x2], 'half').map(drawHorizontal(group1))
-    // this.generateValues([x1, x2], 'small').map(drawHorizontal(group1))
-    // this.generateValues([x1, x2], 'small-half').map(drawHorizontal(group2))
-    // this.generateValues([x1, x2], 'tiny').map(drawHorizontal(group3))
+      if (xBreak !== undefined) {
+        let group = new Group();
+        group.classList.add(mapping[xBreak]);
+        this.generateValues2([x1, x2], xBreak).map(drawHorizontal(group));
+        this.gridGroup.prependChild(group);
+      }
 
-    // this.generateValues([y1, y2], 'big').map(drawVertical(group1))
-    // this.generateValues([y1, y2], 'half').map(drawVertical(group2))
-    // this.generateValues([y1, y2], 'small').map(drawVertical(group3))
+      if (yBreak !== undefined) {
+        let group = new Group();
+        group.classList.add(mapping[yBreak]);
+        this.generateValues2([y1, y2], yBreak).map(drawVertical(group))
+        this.gridGroup.prependChild(group);
+      }
 
-
-    // this.generateValues([y1, y2], 'big').map(drawVertical(group1))
-    // this.generateValues([y1, y2], 'half').map(drawVertical(group1))
-    // this.generateValues([y1, y2], 'small').map(drawVertical(group1))
-    // this.generateValues([y1, y2], 'small-half').map(drawVertical(group2))
-    // this.generateValues([y1, y2], 'tiny').map(drawVertical(group3))
+    } while (xBreak !== undefined || yBreak !== undefined)
 
   }
+
+  /**
+  * Draws grid lines
+  * TODO: seems problematic that this method creates the gridline groups. What if the user wanted to redraw the grid lines?
+  */
+  drawGridLines3(xBreaks = ['small', 'half', 'big'], yBreaks = ['small', 'half', 'big'], mapping = { 'big': 'primary', 'half': 'secondary', 'small': 'tertiary', 'smallHalf': 'quaternary', 'tiny': 'quinary', }) {
+
+    let viewBox = this.internalViewBox.baseVal;
+
+    this.gridGroup.setAttribute('class', 'grid-lines')
+
+    let x1 = viewBox.x;
+    let y1 = viewBox.y;
+    let x2 = viewBox.x + viewBox.width;
+    let y2 = viewBox.y + viewBox.height;
+
+    // horizontal grid lines
+
+    let horizontalLines: Set<number> = new Set()
+    let drawHorizontal = (g: Group) => {
+      return (x: number) => {
+        if (!horizontalLines.has(x)) {
+          g.line(x, y1, x, y2);
+          horizontalLines.add(x)
+        }
+      }
+    }
+
+    // vertical lines
+    let verticalLines: Set<number> = new Set()
+    let drawVertical = (g: Group) => {
+      return (y: number) => {
+        if (!verticalLines.has(y)) {
+          g.line(x1, y, x2, y)
+          verticalLines.add(y)
+        }
+      }
+    }
+
+    // TODO: since the new and improved generateValues2, it seems like the gridline logic is attached
+    // the the whole view port instead of each individual axis, so it makes sense to maybe have one
+    // set of breakpoints here?
+
+    let xBreak : string;
+    let yBreak : string;
+    do {
+      xBreak = xBreaks.pop();
+      yBreak = yBreaks.pop();
+
+      if (xBreak !== undefined) {
+        let group = new Group();
+        group.classList.add(mapping[xBreak]);
+        this.generateValues3([x1, x2], xBreak).map(drawHorizontal(group));
+        this.gridGroup.prependChild(group);
+      }
+
+      if (yBreak !== undefined) {
+        let group = new Group();
+        group.classList.add(mapping[yBreak]);
+        this.generateValues3([y1, y2], yBreak).map(drawVertical(group))
+        this.gridGroup.prependChild(group);
+      }
+
+    } while (xBreak !== undefined || yBreak !== undefined)
+
+
+  }
+
 }

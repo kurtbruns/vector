@@ -2,19 +2,22 @@
 
 /* default dark theme */
 :root {
-  --background: #181818;
+  
+  --background: #202020;
+  --background-darker: #181818;
+  --background-lighter: #303030;
   --font-color: #f0f0f0;
   --border-color: #606060;
 
   --main: #f0f0f0;
   --primary: hsl(44, 97%, 84%);
 
-  --grid-primary: #505050;
-  --grid-secondary: #404040;
-  --grid-tertiary: #303030;
+  --grid-primary: #606060;
+  --grid-secondary: #505050;
+  --grid-tertiary: #404040;
 
-  --grid-quaternary: #282828;
-  --grid-quinary: #202020;
+  --grid-quaternary: #303030;
+  --grid-quinary: #282828;
 
   --red: #F2777A;
   --green: #92D192;
@@ -25,12 +28,16 @@
 :root.light-theme {
 
   --background: #ffffff;
-  --font-color: #181818;
+  --background-darker: #f8f8f8;
+  --background-lighter: #f0f0f0;
+
+  --font-color: #404040;
   --border-color: #d0d0d0;
 
-  --grid--primary: #a0a0a0;
+  --grid-primary: #c0c0c0;
   --grid-secondary: #d0d0d0;
   --grid-tertiary: #f0f0f0;
+
   --grid-quaternary: #f4f4f4;
   --grid-quinary: #f8f8f8;
 
@@ -65,7 +72,6 @@
 
 .grid-lines line {
   vector-effect: non-scaling-stroke;
-  stroke: 1px;
 }
 
 .grid-lines .primary line {

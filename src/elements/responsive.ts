@@ -1,11 +1,11 @@
 import { Group } from "../elements/svg/group";
-import { Artboard, Configuration } from "./artboard";
+import { Frame, Configuration } from "./frame";
 
 /**
  * A responsive SVG document that is optimized to prevent cumulative layout shift in the browser 
  * and draw SVG documents within a horizontally constrained vertical layout.
  */
-export class ResponsiveArtboard extends Artboard {
+export class ResponsiveFrame extends Frame {
 
   private _grid: Group;
   private _lines1: Group;
@@ -32,7 +32,7 @@ export class ResponsiveArtboard extends Artboard {
    * optionally specifies the maximum display width of the SVG, otherwise the default is to fill 
    * the availablespace.
    */
-  constructor(container: string | HTMLElement, config: Configuration = {}) {
+  constructor(container: Element, config: Configuration = {}) {
 
     let defaultConfig = {
       origin: 'default',
@@ -106,9 +106,9 @@ export class ResponsiveArtboard extends Artboard {
       this._lines3 = this._grid.group();
 
       // TODO: change to css variables
-      this._lines1.style.stroke = ResponsiveArtboard.lightStroke;
-      this._lines2.style.stroke = ResponsiveArtboard.mediumStroke;
-      this._lines3.style.stroke = ResponsiveArtboard.darkStroke;
+      this._lines1.style.stroke = ResponsiveFrame.lightStroke;
+      this._lines2.style.stroke = ResponsiveFrame.mediumStroke;
+      this._lines3.style.stroke = ResponsiveFrame.darkStroke;
 
       let viewBox = this.root.viewBox.baseVal;
       let x = viewBox.x;

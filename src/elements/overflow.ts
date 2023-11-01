@@ -1,11 +1,11 @@
 import { Group } from "../elements/svg/group";
-import { Artboard, Configuration } from "./artboard";
+import { Frame, Configuration } from "./frame";
 
 /**
  * A responsive SVG document that is optimized to prevent cumulative layout shift in the browser 
  * and draw SVG documents within a horizontally constrained vertical layout.
  */
-export class OverflowArtboard extends Artboard {
+export class OverflowFrame extends Frame {
 
 	private _grid : Group;
 	private _lines1 : Group;
@@ -23,7 +23,7 @@ export class OverflowArtboard extends Artboard {
 	 * optionally specifies the maximum display width of the SVG, otherwise the default is to fill 
 	 * the availablespace.
 	 */
-	constructor( container:string|HTMLElement, config:Configuration ) {
+	constructor( container:HTMLElement, config:Configuration ) {
 
 		let defaultConfig = {
 			origin: 'default'
@@ -39,7 +39,8 @@ export class OverflowArtboard extends Artboard {
 		this.style.maxWidth = '100%';
 		this.style.height = 'auto';
 		this.style.overflow = 'visible';
-		this.container.style.overflow = 'hidden';
+		
+		(this.container as HTMLElement).style.overflow = 'hidden';
 
 		switch(config.align) {
 			case 'center':
@@ -80,9 +81,9 @@ export class OverflowArtboard extends Artboard {
 			this._lines2 = this._grid.group();
 			this._lines3 = this._grid.group();
 
-			this._lines1.style.stroke = OverflowArtboard.lightStroke;
-			this._lines2.style.stroke = OverflowArtboard.mediumStroke;
-			this._lines3.style.stroke = OverflowArtboard.darkStroke;
+			this._lines1.style.stroke = OverflowFrame.lightStroke;
+			this._lines2.style.stroke = OverflowFrame.mediumStroke;
+			this._lines3.style.stroke = OverflowFrame.darkStroke;
 
 			let xMax = x + width;
 			let yMax = y + height;

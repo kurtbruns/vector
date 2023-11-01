@@ -1,7 +1,7 @@
-import { CoreAttributes } from './element'
+import { CoreAttributes, PresentationAttributes } from './base-element'
 import { Shape, ShapeAttributes } from './shape'
 
-type RectangleAttributes = 'rx' | 'ry';
+type RectangleAttributes = 'x' | 'y' | 'width' | 'height' | 'rx' | 'ry';
 
 /**
 * A rectangle is a basic element with a position, width, and height. The
@@ -25,13 +25,13 @@ export class Rectangle extends Shape {
   }
 
   // comment inherited from base class
-  setAttribute(name: RectangleAttributes | ShapeAttributes | CoreAttributes, value: string): Rectangle {
+  setAttribute(name: RectangleAttributes | ShapeAttributes | CoreAttributes | PresentationAttributes, value: string): Rectangle {
     this.root.setAttribute(name,value);
     return this;
   }
 
   // comment inherited from base class
-  getAttribute(name: RectangleAttributes | ShapeAttributes | CoreAttributes): string {
+  getAttribute(name: RectangleAttributes | ShapeAttributes | CoreAttributes | PresentationAttributes): string {
     return this.root.getAttribute(name);
   }
 

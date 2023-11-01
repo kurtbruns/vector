@@ -1,9 +1,9 @@
-import { BaseElement } from '../elements/base-element'
+import { BaseNode } from './node';
 
 /**
 * A point has an x position and y position
 */
-export class Point extends BaseElement {
+export class Point extends BaseNode {
     x:number;
     y:number;
     constructor( x:number, y:number) {

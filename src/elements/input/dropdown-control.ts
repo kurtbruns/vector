@@ -93,7 +93,6 @@ export class DropdownControl extends Input {
       this.collapsedView.appendChild(dropdownButton);
 
       this.root = this.collapsedView.root;
-      this.root.id = this.id;
     }
 
     get value() {

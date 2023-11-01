@@ -1,8 +1,8 @@
-import { Element, CoreAttributes } from './element'
+import { BaseElement, CoreAttributes } from './base-element'
 
 type ScriptAttributes = 'type' | 'crossorigin' | 'href';
 
-export class Script extends Element {
+export class Script extends BaseElement {
 
 	root:SVGScriptElement;
 

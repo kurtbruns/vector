@@ -1,3 +1,4 @@
+import { Definitions } from './definitions';
 import { Shape } from './shape'
 
 /**
@@ -98,28 +99,29 @@ export class Line extends Shape {
   /**
   * Returns the fill style of this line
   */
-  get fill() : string{
-   return this.root.style.fill;
+  get fill(): string {
+    return this.root.style.fill;
   }
 
   /**
   * Sets the fill style of this line
   */
-  set fill(s:string){
-   this.root.style.fill = s;
+  set fill(s: string) {
+    this.root.style.fill = s;
   }
 
   /**
   * Returns the stroke style of this line
   */
-  get stroke() : string{
-   return this.root.style.stroke;
+  get stroke(): string {
+    return this.root.style.stroke;
   }
 
   /**
   * Sets the stroke style of this line
   */
-  set stroke(s: string){
-   this.root.style.stroke = s;
+  set stroke(s: string) {
+    this.root.style.stroke = s;
   }
+
 }

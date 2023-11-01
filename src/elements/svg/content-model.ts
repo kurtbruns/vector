@@ -14,19 +14,19 @@ import { Text } from './text'
 import { Title } from './title'
 import { Use } from './use'
 
-import { Element } from './element'
+import { BaseElement } from './base-element'
 
 // NOTE: these interfaces only extend the Element object for testing purposes.
 
 /*
 * Export the general SVG element
 */
-export { Element };
+export { BaseElement };
 
 /**
 * Describes methods for creating descriptive elements.
 */
-export interface Descriptive extends Element {
+export interface Descriptive extends BaseElement {
 
   /**
   * Creates and appends a description element within this element.
@@ -47,7 +47,7 @@ export interface Descriptive extends Element {
 /**
 * Describes methods for creating structural elements.
 */
-export interface Shape extends Element {
+export interface Shape extends BaseElement {
 
   /**
   * Constructs and appends a circle within this element.
@@ -83,7 +83,7 @@ export interface Shape extends Element {
 /**
 * Describes methods for creating structural elements.
 */
-export interface Structural extends Element {
+export interface Structural extends BaseElement {
 
   /**
   * Creates and appends a defs element within this element.
@@ -115,7 +115,7 @@ export interface Structural extends Element {
 /**
 * Describes methods for creating textual elements.
 */
-export interface Typography extends Element{
+export interface Typography extends BaseElement{
 
   /**
   * Creates and appends a text element within this element.

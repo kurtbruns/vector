@@ -1,4 +1,4 @@
-import { Element, CoreAttributes } from './element'
+import { BaseElement, CoreAttributes } from './base-element'
 import { TSpan } from './t-span'
 import { Typography } from './content-model'
 
@@ -10,7 +10,7 @@ export type TextAttributes = 'baseline-shift' | 'dominant-baseline' | 'text-alig
 /**
 * Text is a basic element containing string contents
 */
-export class Text extends Element implements Typography {
+export class Text extends BaseElement implements Typography {
 
   // make the type of the root to be more specific
   root: SVGTextElement;

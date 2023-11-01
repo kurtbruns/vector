@@ -11,8 +11,11 @@ export interface GraphOptions {
 }
 
 export class Graph extends Group {
+
   nodes: Node[];
+
   options:GraphOptions;
+
   /**
   * Constructs a graph
   */
@@ -90,23 +93,25 @@ export class Graph extends Group {
   * The tidy algorithm. Assuming a tree for now, pass it the root.
   */
   tidy(root:Node){
+
     let orderedNodes:Node[] = []
     this.postTraverse(root, orderedNodes);
 
-    let modMap = {};
-    let centerMap = {};
+    let modMap : Map<Node, number> = new Map()
+    let centerMap : Map<Node, number> = new Map()
 
     let min_dist = 100;
 
     for(let node of orderedNodes){
-      centerMap[node.id] = 0;
+
+      centerMap.set(node, 0);
       node.cx = 0;
       if(node.children.length != 0){
         node.children[0].cx == 0;
         for(let i = 1; i < node.children.length; i++){
           node.children[i].cx = node.children[i-1].cx + min_dist;
         }
-        centerMap[node.id] = (node.children[0].cx + node.children[node.children.length - 1].cx) / 2;
+        centerMap.set(node, (node.children[0].cx + node.children[node.children.length - 1].cx) / 2)
       }
     }
 
@@ -125,12 +130,11 @@ export class Graph extends Group {
 
       if(!leftSiblings)
       {
-        node.cx = centerMap[node.id];
-        modMap[node.id] = 0;
+        node.cx = centerMap.get(node)
       }
       else{
         node.cx = node.parents[0].children[node.parents[0].children.indexOf(node) - 1].cx + min_dist
-        modMap[node.id] = node.cx - centerMap[node.id];
+        modMap.set(node, node.cx - centerMap.get(node))
       }
     }
 
@@ -227,11 +231,11 @@ export class Graph extends Group {
     return modMap;
   }
 
-  shiftChildrenByMod(node:Node, mod, modMap){
+  shiftChildrenByMod(node:Node, mod, modMap:Map<Node, number>){
     node.cx += mod;
 
     for(let child of node.children){
-      this.shiftChildrenByMod(child, mod + modMap[node.id], modMap);
+      this.shiftChildrenByMod(child, mod + modMap.get(node), modMap);
     }
   }
 

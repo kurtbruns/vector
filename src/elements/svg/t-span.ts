@@ -1,11 +1,11 @@
-import { Element, CoreAttributes } from './element'
+import { BaseElement, CoreAttributes } from './base-element'
 import { TextAttributes } from './text'
 
 /**
 * A tspan element is a text element that allows the user to change the style
 * or position of the rendered text inside the tspan.
 */
-export class TSpan extends Element {
+export class TSpan extends BaseElement {
 
   /**
   * The root element of the tspan object

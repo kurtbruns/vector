@@ -1,4 +1,4 @@
-import { Element } from './element'
+import { BaseElement } from './base-element'
 
 interface Configuration {
   width:number
@@ -9,7 +9,7 @@ interface Configuration {
 
 /**
 */
-export class Image extends Element {
+export class Image extends BaseElement {
 
   // make the type of the root to be more specific
   root: SVGImageElement;

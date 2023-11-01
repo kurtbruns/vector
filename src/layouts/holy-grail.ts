@@ -1,10 +1,10 @@
 import { Slider } from '../elements/input/slider'
 import { Input } from '../elements/input/input'
 import { Layout } from './layout';
-import { Artboard } from '../index';
+import { Frame } from '../index';
 
 export interface Configuration {
-  artboard?:Artboard
+  frame?:Frame
 }
 
 /**
@@ -62,9 +62,9 @@ export class HolyGrailLayout extends Layout {
   * user configuration is provided, the user configuration is prioritized over
   * the default configuration stored in the Template.config variable.
   */
-  constructor(idOrElement:string|HTMLElement, options:Configuration = {} )  {
+  constructor(element:HTMLElement, options:Configuration = {} )  {
 
-    super(idOrElement);
+    super(element);
 
     // combine the default configuration with the user's configuration
     let config = { ...HolyGrailLayout.config, ...options };

@@ -3,7 +3,7 @@ export { Circle } from './circle';
 export { ClipPath } from './clip-path';
 export { Definitions } from './definitions';
 export { Description } from './description';
-export { Element } from './element';
+export { BaseElement } from './base-element';
 export { Ellipse } from './ellipse';
 export { Group } from './group';
 export { Image } from './image';

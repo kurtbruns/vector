@@ -1,13 +1,13 @@
 import { Scrubber } from '../elements/input/scrubber'
-import { Artboard } from '../index';
+import { Frame } from '../index';
 import { Layout } from './layout';
 
 export interface Configuration {
-  width?:number;
-  min?:number;
-  max?:number;
-  value?:number;
-  loop?:boolean;
+  width?: number;
+  min?: number;
+  max?: number;
+  value?: number;
+  loop?: boolean;
 }
 
 /**
@@ -16,30 +16,30 @@ export interface Configuration {
 */
 export class PlayerLayout extends Layout {
 
-root:HTMLDivElement;
+  root: HTMLDivElement;
 
-main:HTMLDivElement;
-canvas:HTMLDivElement;
-controls:HTMLDivElement;
-footer:HTMLDivElement;
+  main: HTMLDivElement;
+  canvas: HTMLDivElement;
+  controls: HTMLDivElement;
+  footer: HTMLDivElement;
 
-// playButton:HTMLDivElement;
-// sliderContainer:HTMLDivElement;
-// slider:HTMLInputElement;
+  // playButton:HTMLDivElement;
+  // sliderContainer:HTMLDivElement;
+  // slider:HTMLInputElement;
 
-scrubberInteractive:Artboard;
-scrubber:Scrubber;
+  scrubberInteractive: Frame;
+  scrubber: Scrubber;
 
-min:number;
-max:number;
-value:number;
-loop:boolean;
+  min: number;
+  max: number;
+  value: number;
+  loop: boolean;
 
-  constructor(idOrElement:string|HTMLElement, options:Configuration = {})  {
+  constructor(element: HTMLElement, options: Configuration = {}) {
 
-    super(idOrElement)
+    super(element)
 
-    let defaultOptions : Configuration = {
+    let defaultOptions: Configuration = {
       width: 600
     }
 
@@ -48,11 +48,11 @@ loop:boolean;
 
     // get a handle on the parent and resize if necessary
     let bbox = this.container.getBoundingClientRect();
-    let width = config.width > bbox.width ? bbox.width : config.width ;
+    let width = config.width > bbox.width ? bbox.width : config.width;
     if (width < 288) {
       width = 288;
     }
-  
+
     this.root = document.createElement('div');
     this.main = document.createElement('div');
     this.canvas = document.createElement('div');
@@ -74,21 +74,21 @@ loop:boolean;
 
     this.root.style.width = `${width}px`;
 
-    this.scrubberInteractive = new Artboard(this.controls, {
+    this.scrubberInteractive = new Frame(this.controls, {
       width: width,
       height: 50,
       origin: 'default',
       responsive: false
     });
 
-    this.scrubber = this.scrubberInteractive.scrubber( 25, 25, {
-      min:config.min,
-      max:config.max,
-      value:config.value,
-      width:width - 50,
-      loop:config.loop
+    this.scrubber = this.scrubberInteractive.scrubber(25, 25, {
+      min: config.min,
+      max: config.max,
+      value: config.value,
+      width: width - 50,
+      loop: config.loop
     });
 
-    this.addDependency(this.scrubber);
+    // this.addDependency(this.scrubber);
   }
 }

@@ -1,5 +1,5 @@
 import { Descriptive, Shape, Structural, Typography } from './content-model'
-import { Element, CoreAttributes } from './element'
+import { BaseElement, CoreAttributes } from './base-element'
 
 import {
   Circle,
@@ -32,7 +32,7 @@ type SVGAttributes = 'viewBox' | 'preserveAspectRatio' | 'transform';
 * properties. The "viewPort" defines the width and height of the graphic. The "viewBox" defines the
 * internal coordinate system used to draw elements.
 */
-export class SVG extends Element implements Descriptive, Shape, Structural, Typography {
+export class SVG extends BaseElement implements Descriptive, Shape, Structural, Typography {
 
   // make the type of the root more specific
   root: SVGSVGElement;
@@ -45,20 +45,25 @@ export class SVG extends Element implements Descriptive, Shape, Structural, Typo
   */
   constructor();
   constructor(width: number, height: number);
-  constructor(arg1?: number, arg2?: number) {
-
+  constructor(width: number, height: number, x: number, y: number);
+  constructor(arg1?: number, arg2?: number, arg3?: number, arg4?: number) {
     let svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 
-    if (arg1 && arg2) {
-      svg.setAttributeNS(null, 'width', arg1.toString());
-      svg.setAttributeNS(null, 'height', arg2.toString());
+    if (arg1 !== undefined && arg2 !== undefined) {
+        svg.setAttributeNS(null, 'width', arg1.toString());
+        svg.setAttributeNS(null, 'height', arg2.toString());
+    }
+
+    if (arg3 !== undefined && arg4 !== undefined) {
+        svg.setAttributeNS(null, 'x', arg3.toString());
+        svg.setAttributeNS(null, 'y', arg4.toString());
     }
 
     super(svg);
 
     svg.setAttribute('fill', 'none');
-  }
+}
 
   /**
   * Constructs and returns a SVG object within the DOM.  If the provided

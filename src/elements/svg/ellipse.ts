@@ -1,4 +1,4 @@
-import {Shape} from './shape'
+import { Shape } from './shape'
 
 /**
 * An ellipse is a basic element with a position, x-radius, and y-radius

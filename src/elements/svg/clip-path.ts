@@ -5,13 +5,13 @@ import { Path } from './path'
 import { Polygon } from './polygon'
 import { Rectangle } from './rectangle'
 
-import { Element } from './element'
+import { BaseElement } from './base-element'
 import { Descriptive, Shape } from './content-model'
 import { Description } from './description'
 import { MetaData } from './meta-data'
 import { Title } from './title'
 
-export class ClipPath extends Element implements Descriptive, Shape {
+export class ClipPath extends BaseElement implements Descriptive, Shape {
 
   root:SVGClipPathElement;
 

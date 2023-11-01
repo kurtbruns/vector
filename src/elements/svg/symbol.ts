@@ -1,9 +1,9 @@
-import { Element } from './element'
+import { BaseElement } from './base-element'
 
 /**
 * A symbol is a reusable graphic.
 */
-export class Symbol extends Element {
+export class Symbol extends BaseElement {
 
   constructor() {
     let symbol = document.createElementNS( 'http://www.w3.org/2000/svg', 'symbol');

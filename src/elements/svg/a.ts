@@ -1,11 +1,11 @@
-import { Element, CoreAttributes } from './element'
+import { BaseElement, CoreAttributes } from "./base-element";
 
 type AAttributes = 'href' | 'target' | 'download' | 'rel';
 
 /**
 * A hyper link element.
 */
-export class A extends Element {
+export class A extends BaseElement {
 
   // make the type of the root to be more specific
   root: SVGAElement;

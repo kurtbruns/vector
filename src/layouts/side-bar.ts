@@ -1,8 +1,8 @@
-import { Artboard } from '../index';
+import { Frame } from '../index';
 import { Layout } from './layout';
 
 export interface Configuration {
-  artboard?:Artboard;
+  frame?:Frame;
   right?:boolean;
 }
 
@@ -33,7 +33,7 @@ export class SideBarLayout extends Layout {
   */
   main:HTMLDivElement;
 
-  artboard: Artboard;
+  frame: Frame;
 
   /**
   * Default configuration for all templates.
@@ -47,14 +47,13 @@ export class SideBarLayout extends Layout {
   * user configuration is provided, the user configuration is prioritized over
   * the default configuration stored in the Template.config variable.
   */
-  constructor(idOrElement:string|HTMLElement, config:Configuration = {} )  {
+  constructor(parent:HTMLElement, config:Configuration = {} )  {
 
-    super(idOrElement);
+    super(document.createElement('div'));
 
     // combine the default configuration with the user's configuration
     config = { ...SideBarLayout.config, ...config };
 
-    this.root = document.createElement('div');
     this.root.classList.add((config.right ? 'right-side-bar' : 'left-side-bar'));
 
     this.sidebar = document.createElement('div');

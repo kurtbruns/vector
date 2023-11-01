@@ -1,6 +1,6 @@
-import {Element} from './element'
+import { BaseElement } from "./base-element";
 
-export class Use extends Element {
+export class Use extends BaseElement {
 
 	// make the type of root more specific
 	root: SVGUseElement;

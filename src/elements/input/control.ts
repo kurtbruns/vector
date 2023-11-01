@@ -1,4 +1,3 @@
-import {BaseElement} from '../base-element'
 import { Input } from './input'
 
 import { Path } from '../svg/path'
@@ -33,6 +32,11 @@ export class Control extends Input {
 
   // Keep track of whether global event listeners have been initialized
   private static initalized = false;
+
+  /**
+  * Allows for the events attatched to elements to be disabled.
+  */
+  static disable : boolean = false;
 
   // Svg elements that make up the control
   point: Circle;
@@ -163,7 +167,8 @@ export class Control extends Input {
   * handle.
   */
   static handleMouseOver( event:MouseEvent ) {
-    if( Control.active == null && !BaseElement.disable && (event.target as HTMLElement).tagName == 'circle' ){
+    let target = (event.target as HTMLElement);
+    if( Control.active == null && !Control.disable && target.tagName == 'circle' && target.classList.contains('handle') ){
       (event.target as HTMLElement).classList.add('highlight');
     }
   }
@@ -183,7 +188,7 @@ export class Control extends Input {
   * the user's click as well as stores which Control the user is clicking.
   */
   handleMouseDown( event:MouseEvent ) {
-    if( !BaseElement.disable ) {
+    if( !Control.disable ) {
       event.preventDefault();
       event.stopPropagation();
       Control.active = this;
@@ -209,7 +214,7 @@ export class Control extends Input {
   * the user's input as well as stores which Control the user is clicking.
   */
   handleTouchStart( event:TouchEvent ) {
-    if( !BaseElement.disable ) {
+    if( !Control.disable ) {
       Control.active = this;
       // Store the parent SVG coordinate system
       Control.closestSVG = Control.active.root.closest('svg');

@@ -1,57 +1,27 @@
-import { BaseElement } from "../elements/base-element";
 import { Input } from "../elements/input/input";
 import { Slider } from "../elements/input/slider";
-import { Artboard } from "../index";
+import { BaseElement, BaseNode, Frame } from "../index";
 
 interface Configuration {
-  artboard?:Artboard;
+  frame?:Frame;
 }
 
 /**
- * 
+ * A generic layout for arranging frame's in space
  */
-export class Layout extends BaseElement { 
+export class Layout { 
 
-  artboard:Artboard;
+  frame:Frame;
+
+  /**
+   * The parent of the layout
+   */
   container:HTMLElement;
 
   static inputCount : number = 0;
 
-  constructor(idOrElment:string|HTMLElement, config: Configuration = {}) {
-
-    super();
-
-    // If the user passes in a string identifier check to see if such an
-    // element exists in the current document.
-    this.container= null;
-    if (typeof idOrElment == "string") {
-        this.container = document.getElementById(idOrElment);
-        if( this.container === null || this.container === undefined ) {
-            throw new Error(`There is no HTML element with the id: ${idOrElment}`);
-        }
-    } else {
-        this.container = idOrElment;
-    }
-  }
-
-  /**
-   * Returns the HTML element associated with the id or element, throws error otherwise
-   * @param idOrElement 
-   */
-  static getContainer( idOrElement ) : HTMLElement {
-
-      // If the user passes in a string identifier check to see if such an
-      // element exists in the current document.
-      let container:HTMLElement= null;
-      if (typeof idOrElement == "string") {
-        container = document.getElementById(idOrElement);
-          if( container === null || container === undefined ) {
-              throw new Error(`There is no HTML element with the id: ${idOrElement}`);
-          }
-      } else {
-        container = idOrElement;
-      }
-      return container
+  constructor(element: HTMLElement, config: Configuration = {}) {
+    this.container = element;
   }
   
   addRegion() : HTMLDivElement {
@@ -60,33 +30,33 @@ export class Layout extends BaseElement {
     return this.container.appendChild(region);
   }
 
-  addCustomVariableDisplay( region, variable, valueFunction) {
-    let container = document.createElement('div');
-    container.classList.add('display-box');
-    region.appendChild(container);
+  // addCustomVariableDisplay( region, variable, valueFunction) {
+  //   let container = document.createElement('div');
+  //   container.classList.add('display-box');
+  //   region.appendChild(container);
 
-    let bbox = region.getBoundingClientRect();
-    let interactive = new Artboard(container, {
-      width: 200,
-      height: 50,
-      responsive: false
-    });
+  //   let bbox = region.getBoundingClientRect();
+  //   let interactive = new Frame(container, {
+  //     width: 200,
+  //     height: 50,
+  //     responsive: false
+  //   });
 
-    // interactive.root.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    // interactive.root.setAttribute('width', '100%');
+  //   // interactive.root.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  //   // interactive.root.setAttribute('width', '100%');
 
-    let text = interactive.text( 16, 25, '');
-    text.classList.add('katex-main');
-    text.style.dominantBaseline = 'middle';
-    text.tspan(variable).classList.add('katex-variable');
-    text.tspan(' = ');
-    let value = text.tspan( valueFunction() );
-    text.addDependency(this);
-    text.update = () => {
-      value.text = valueFunction();
-    };
-    return container;
-  }
+  //   let text = interactive.text( 16, 25, '');
+  //   text.classList.add('katex-main');
+  //   text.style.dominantBaseline = 'middle';
+  //   text.tspan(variable).classList.add('katex-variable');
+  //   text.tspan(' = ');
+  //   let value = text.tspan( valueFunction() );
+  //   text.addDependency(this);
+  //   text.update = () => {
+  //     value.text = valueFunction();
+  //   };
+  //   return container;
+  // }
 
   addContainer( region:HTMLDivElement ) : HTMLDivElement {
     let container = document.createElement('div');
@@ -195,7 +165,7 @@ export class Layout extends BaseElement {
     region.appendChild(container);
 
     let bbox = region.getBoundingClientRect();
-    let interactive = new Artboard(container, {
+    let interactive = new Frame(container, {
       width: 200,
       height: 50,
       responsive: false

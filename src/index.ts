@@ -1,13 +1,23 @@
-export { 
-  BaseElement
-} from './elements/base-element';
+export {
+  Animation,
+  AnimationFunction,
+  Scene,
+  SceneMode,
+} from './scene'
+
+
+export {
+  BaseNode,
+  Point,
+  Value,
+} from './model'
 
 export {
   Circle,
   ClipPath,
   Definitions,
   Description,
-  Element,
+  BaseElement,
   Ellipse,
   Group,
   Image,
@@ -43,11 +53,11 @@ export {
 } from './modules/plot';
 
 export {
-  Artboard,
-  GridArtboard,
-  OverflowArtboard,
-  ResponsiveArtboard
-} from './artboards';
+  Frame,
+  OverflowFrame,
+  ResponsiveFrame,
+  Grid,
+} from './elements';
 
 export {
   Layout,
@@ -68,7 +78,10 @@ export {
 } from './util/math';
 
 export { 
-  File,
-} from './util/file';
-
-export { version } from './version';
+  saveAs,
+  download,
+  embedMarkers,
+  flattenSVG,
+  bundle,
+  ExportTarget
+} from './util';
