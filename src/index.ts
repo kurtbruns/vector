@@ -3,21 +3,20 @@ export {
   AnimationFunction,
   Scene,
   SceneMode,
-} from './scene'
-
+} from './scene';
 
 export {
   BaseNode,
   Point,
   Value,
-} from './model'
+} from './model';
 
 export {
+  BaseElement,
   Circle,
   ClipPath,
   Definitions,
   Description,
-  BaseElement,
   Ellipse,
   Group,
   Image,
@@ -39,12 +38,27 @@ export {
   CheckBox,
   Control,
   ControlCircle,
+  DropdownControl,
   Input,
   RadioControl,
-  DropdownControl,
   Scrubber,
   Slider
 } from './elements/input';
+
+export {
+  Frame,
+  Grid,
+  OverflowFrame,
+  ResponsiveFrame,
+} from './elements';
+
+export {
+  HolyGrailLayout,
+  Layout,
+  PancakeLayout,
+  PlayerLayout,
+  SideBarLayout
+} from './layouts';
 
 export {
   Plot,
@@ -53,35 +67,21 @@ export {
 } from './modules/plot';
 
 export {
-  Frame,
-  OverflowFrame,
-  ResponsiveFrame,
-  Grid,
-} from './elements';
-
-export {
-  Layout,
-  PlayerLayout,
-  HolyGrailLayout,
-  PancakeLayout,
-  SideBarLayout
-} from './layouts';
-
-export {
   TAU,
   factorial,
-  nextPrime,
-  isPrime,
   floor,
+  isPrime,
+  nextPrime,
   pointWhereTwoLinesIntersect,
   trapezoidalWave
 } from './util/math';
 
 export { 
-  saveAs,
-  download,
-  embedMarkers,
-  flattenSVG,
   bundle,
-  ExportTarget
+  download,
+  downloadSceneZip,
+  embedMarkers,
+  ExportTarget,
+  flattenSVG,
+  saveAs
 } from './util';

@@ -1,12 +1,15 @@
+export {
+  downloadSceneZip
+} from './export';
 
 export {
-  download,
-  flattenSVG,
   bundle,
+  download,
   embedMarkers,
-  ExportTarget
-} from './svg'
+  ExportTarget,
+  flattenSVG
+} from './svg';
 
 export {
   saveAs
-} from './save-as'
+} from './save-as';
