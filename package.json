@@ -7,10 +7,7 @@
   "browser": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "scripts": {
-    "build": "yarn webpack --mode production && yarn tsc",
-    "clean": "rm -rf dist/",
-    "clean-install": "rm -rf node_modules/ && yarn clean && yarn",
-    "prepare": "yarn run build",
+    "build": "cross-env NODE_ENV=production webpack --config webpack.config.js && yarn tsc",
     "test": "jest",
     "test:update": "jest -u",
     "tsc": "tsc --declaration true --sourceMap false --skipLibCheck",

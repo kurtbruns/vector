@@ -8,16 +8,14 @@ Vector is a library for creating interactive math graphics on the web. Here are 
 
 ## Using the Library
 
-To install the dependencies.
+To use the library for a front-end project
 
 ```
-yarn install
+npm install @kurtbruns/vector
 ```
 
-To launch the sandbox.
+or
 
 ```
-yarn start
+yarn add @kurtbruns/vector
 ```
-
-## 
