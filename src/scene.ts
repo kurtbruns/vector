@@ -70,10 +70,14 @@ export class Scene {
      */
     public frame: Frame;
 
+
     /**
      * Constructs a new scene instance.
+     * @param width Optional width of the scene
+     * @param height Optional height of the scene
+     * @param background Optional flag to determine if a background should be drawn
      */
-    constructor() {
+    constructor(width?: number, height?: number, background:boolean = true) {
 
         this.animations = [];
         this.currentAnimation = 0;
@@ -81,16 +85,20 @@ export class Scene {
 
         let root = document.querySelector('#root') as HTMLDivElement;
 
-        let width = 960;
-        let height = 540;
+        // If width and height are not provided, default to these values
+        let effectiveWidth = width ?? 960;
+        let effectiveHeight = height ?? 540;
 
         this.frame = new ResponsiveFrame(root, {
-            width: width,
-            height: height,
+            width: effectiveWidth,
+            height: effectiveHeight,
         });
 
-        let background = this.frame.background.rectangle(0, 0, width, height);
-        background.style.fill = 'var(--background)'
+        if (background) {
+            let background = this.frame.background.rectangle(0, 0, effectiveWidth, effectiveHeight);
+            background.style.fill = 'var(--background)';
+        }
+
     }
 
     /**
