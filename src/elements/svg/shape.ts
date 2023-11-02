@@ -73,8 +73,21 @@ export abstract class Shape extends BaseElement {
         color = 'var(--font-color)';
       }
 
+      const generateUniqueID = () => {
+        const characters = '0123456789abcdefghijklmnopqrstuvwxyz';
+        const idLength = 7;
+        let uniqueID = '';
+      
+        for (let i = 0; i < idLength; i++) {
+          const randomIndex = Math.floor(Math.random() * characters.length);
+          uniqueID += characters.charAt(randomIndex);
+        }
+      
+        return uniqueID;
+      }
+
       // TODO: optimize and lookup and reuse for later 
-      const id = `arrow${defs.root.children.length+1}`;
+      const id = `arrow-${generateUniqueID()}`;
       defs.root.innerHTML += `<marker id="${id}" refX="10" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path d="M 0 0.5 L 10 5 L 0 9.5 L 2 5 z" fill="${color}" stroke="none"></path></marker>`;
     
       // Compute the length of the path.

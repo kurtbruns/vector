@@ -1,4 +1,5 @@
-import { Frame, ResponsiveFrame } from '.'
+import JSZip from 'jszip';
+import { Frame, ResponsiveFrame, bundle, saveAs } from '.'
 
 /**
  * Different types of rate functions
@@ -35,7 +36,7 @@ export enum SceneMode {
 }
 
 /**
- * Scene class to manage and control a series of animations.
+ * A class to manage and control a series of animations.
  * 
  * It has the capability to schedule, play and wait for animations 
  * while providing flexibility to adjust their duration and type.
@@ -65,14 +66,18 @@ export class Scene {
     private currentAnimationFrame: number;
 
     /**
-     * The front-end displaying the current frame in the browser.
+     * Front-end component that displays the current frame in the browser.
      */
     public frame: Frame;
 
+
     /**
-     * Constructs a new scene. 
+     * Constructs a new scene instance.
+     * @param width Optional width of the scene
+     * @param height Optional height of the scene
+     * @param background Optional flag to determine if a background should be drawn
      */
-    constructor() {
+    constructor(width?: number, height?: number, background:boolean = true) {
 
         this.animations = [];
         this.currentAnimation = 0;
@@ -80,41 +85,60 @@ export class Scene {
 
         let root = document.querySelector('#root') as HTMLDivElement;
 
-        let width = 960;
-        let height = 540;
+        // If width and height are not provided, default to these values
+        let effectiveWidth = width ?? 960;
+        let effectiveHeight = height ?? 540;
 
         this.frame = new ResponsiveFrame(root, {
-            width: width,
-            height: height,
+            width: effectiveWidth,
+            height: effectiveHeight,
         });
 
-        let background = this.frame.background.rectangle(0, 0, width, height);
-        background.style.fill = 'var(--background)'
+        if (background) {
+            let background = this.frame.background.rectangle(0, 0, effectiveWidth, effectiveHeight);
+            background.style.fill = 'var(--background)';
+        }
+
     }
 
     /**
-     * Set the scene mode
+     * Sets the mode for the scene.
      */
     setMode(mode: SceneMode): void {
         this.mode = mode;
     }
 
-    private requestFrame(callback: FrameRequestCallback, frameCallback?) {
+    /**
+     * Requests a new animation frame based on the current scene mode. 
+     * If the scene mode is live, it will use the browser's requestAnimationFrame.
+     * Otherwise, it will manually increment the current animation frame by a fixed time 
+     * and then execute the provided frameCallback.
+     * 
+     * @param {FrameRequestCallback} callback - The callback to be executed upon receiving a new animation frame.
+     * @param {() => void} [frameCallback] - Optional callback to be executed for manual frame updates in Export mode.
+     */
+    private requestFrame(callback: FrameRequestCallback, frameCallback?: () => void) {
         if (this.mode === SceneMode.Live) {
             requestAnimationFrame(callback);
         } else {
-            // setTimeout(() => {
-            //     let f = this.animations[this.currentAnimation].animation.toString();
-            //     frameCallback( f !== 'alpha => {}')
-            //     callback(this.currentAnimationFrame + 1000 / this.fps)
-            // }, 1000 / this.fps)
-            let f = this.animations[this.currentAnimation].animation.toString();
-            frameCallback( f !== 'alpha => {}')
+            frameCallback()
             callback(this.currentAnimationFrame + 1000 / this.fps)
         }
     }
 
-    private runAnimation(timestamp: number, previousTimestamp?: number, frameCallback?, doneCallback?) {
+
+    /**
+     * Executes the current animation in the scene's animation sequence.
+     * 
+     * It uses the defined easing function to modify the animation's progress and continues
+     * the animation loop until the current animation's duration has passed.
+     * 
+     * @param {number} timestamp - The current time of the animation in milliseconds.
+     * @param {number} [previousTimestamp] - The timestamp of the last animation frame.
+     * @param {() => void} [frameCallback] - Optional callback to be executed for manual frame updates in Export mode.
+     * @param {() => void} [doneCallback] - Optional callback to be executed once all animations in the sequence are completed.
+     */
+    private runAnimation(timestamp: number, previousTimestamp?: number, frameCallback?: () => void, doneCallback?: () => void) {
         const animation = this.animations[this.currentAnimation];
         const rateFunc = EASING_FUNCTIONS[animation.type || 'linear'];
 
@@ -148,10 +172,9 @@ export class Scene {
     }
 
     /**
-     * Exports the animation sequence.
-     * Returns a Promise that resolves when the entire animation sequence completes.
+     * Exports the animation sequence as a Promise that resolves upon the completion of the entire sequence.
      */
-    export(frameCallback: (boolean) => void): Promise<void> {
+    export(frameCallback: () => void): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
                 this.runAnimation(0, undefined, frameCallback, resolve);
@@ -161,15 +184,37 @@ export class Scene {
         });
     }
 
+    exportZip(filename: string = 'frames') {
+
+        this.setMode(SceneMode.Export);
+        const zip = new JSZip();
+        let count = 0;
+
+        const frameCallback = () => {
+            zip.file(`frame${count++}.svg`, bundle(this.frame.root));
+        };
+
+        this
+            .export(frameCallback)
+            .then(() => {
+                zip.generateAsync({ type: 'blob' }).then(function (content) {
+                    saveAs(content, `${filename}`, {});
+                });
+            })
+            .catch((error) => {
+                console.error('An error occurred:', error);
+            });
+    }
+
     /**
-     * Start playing all of the animations in the scene.
+     * Begins playing all animations in the scene.
      */
     start(): void {
         this.runAnimation(0);
     }
 
     /**
-     * Schedule a wait animation for the provided duraction in seconds before the next animation.
+     * Schedules a pause in the animation sequence for the specified duration (in seconds) before proceeding to the next animation. This is counted as an animation in the sequence of animations in the scene.
      */
     wait(duration: number): void {
         this.animations.push({
