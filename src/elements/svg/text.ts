@@ -1,4 +1,4 @@
-import { BaseElement, CoreAttributes } from './base-element'
+import { BaseElement, CoreAttributes, PresentationAttributes } from './base-element'
 import { TSpan } from './t-span'
 import { Typography } from './content-model'
 
@@ -6,6 +6,8 @@ import { Typography } from './content-model'
 * These attributes control the text position.
 */
 export type TextAttributes = 'baseline-shift' | 'dominant-baseline' | 'text-align' | 'alignment-baseline' | 'text-anchor'  ;
+
+type StylingAttributes = 'font-family' | 'font-size' | 'font-size-adjust' | 'font-stretch' | 'font-style' | 'font-variant' | 'font-weight';
 
 /**
 * Text is a basic element containing string contents
@@ -27,13 +29,13 @@ export class Text extends BaseElement implements Typography {
   }
 
   // comment inherited from base class
-  setAttribute(name: TextAttributes | CoreAttributes, value: string): Text {
+  setAttribute(name: TextAttributes | StylingAttributes | CoreAttributes | PresentationAttributes, value: string): Text {
     this.root.setAttribute(name,value);
     return this;
   }
 
   // comment inherited from base class
-  getAttribute(name: TextAttributes | CoreAttributes): string {
+  getAttribute(name: TextAttributes | StylingAttributes | CoreAttributes | PresentationAttributes): string {
     return this.root.getAttribute(name);
   }
 

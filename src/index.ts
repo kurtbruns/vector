@@ -50,6 +50,7 @@ export {
   Grid,
   OverflowFrame,
   ResponsiveFrame,
+  TeX,
 } from './elements';
 
 export {

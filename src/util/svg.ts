@@ -72,7 +72,9 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
 
     const processMarker = (el, markerPosition) => {
         const markerUrl = el.getAttribute(markerPosition);
-        if (!markerUrl) return;
+        if (!markerUrl){
+            return;
+        } 
     
         const markerId = markerUrl.replace(/^url\(#/, '').replace(/\)$/, '');
         const marker = svgElement.querySelector(`#${markerId}`);
@@ -119,6 +121,7 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
         }
         
         const clonedPath = marker.firstChild.cloneNode(true) as SVGPathElement;
+
         const markerWidth = parseFloat(marker.getAttribute('markerWidth'));
         const markerHeight = parseFloat(marker.getAttribute('markerHeight'));
         const refX = parseFloat(marker.getAttribute('refX'));
@@ -132,7 +135,8 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
         const adjustedY = y - (refX * scale) * Math.sin(angle) - (refY * scale) * Math.cos(angle);
         clonedPath.setAttribute('transform', `translate(${adjustedX},${adjustedY}) rotate(${angle * (180 / Math.PI)}) scale(${scale})`);
     
-        svgElement.appendChild(clonedPath);
+        // svgElement.appendChild(clonedPath);
+        el.insertAdjacentElement('beforebegin', clonedPath)
         el.removeAttribute(markerPosition);
     }
     
@@ -145,7 +149,7 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
 /**
  * Flattens the SVG by replacing <use> references with actual content from <defs>.
  */
-export function flattenSVG(svgElement: SVGSVGElement): void {
+export function flattenSVG(svgElement: SVGSVGElement): SVGSVGElement {
     const useElements = Array.from(svgElement.querySelectorAll('use'));
 
     useElements.forEach(useElement => {
@@ -167,11 +171,19 @@ export function flattenSVG(svgElement: SVGSVGElement): void {
         useElement.parentNode?.replaceChild(clonedElement, useElement);
     });
 
+    // Remove elements tagged with the class 'ignore-on-export`
+    const ignoreElements = svgElement.querySelectorAll('.ignore-on-export');
+    for(let i = 0; i < ignoreElements.length; i++) {
+        ignoreElements[i].remove();
+    }
+
     // Remove defs
     const defsElement = svgElement.querySelector('defs');
     if (defsElement) {
         defsElement.remove();
     }
+
+    return svgElement;
 }
 
 /**
@@ -192,7 +204,7 @@ function createInlineStyledSvg(originalSvg: SVGElement, target: ExportTarget): S
             'fill', 'fill-opacity', 'opacity', 
             'font', 'font-family', 'font-size',
             'stroke', 'stroke-width', 'stroke-opacity', 
-            'vector-effect'
+            'vector-effect', 'transform'
         ];
 
         styleAttributes.forEach((styleAttr) => {
@@ -257,12 +269,10 @@ export function bundle(root: SVGElement, target: ExportTarget = ExportTarget.BRO
  */
 export function download(root: SVGElement, filename: string, target: ExportTarget = ExportTarget.BROWSER): void {
 
-
     const inlineSvg = createInlineStyledSvg(root, target);
 
     embedMarkers(inlineSvg)
     flattenSVG(inlineSvg);
-
     saveSVG(filename, inlineSvg.outerHTML);
 }
 

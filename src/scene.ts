@@ -94,6 +94,8 @@ export class Scene {
             height: effectiveHeight,
         });
 
+        this.frame.setAttribute('id', this.constructor.name);
+
         if (background) {
             let background = this.frame.background.rectangle(0, 0, effectiveWidth, effectiveHeight);
             background.style.fill = 'var(--background)';
@@ -184,6 +186,14 @@ export class Scene {
         });
     }
 
+    /**
+     * Exports the scene to a ZIP of SVG files that can be combined to make a movie using 
+     * ffmpeg using this command:
+     * 
+     * ffmpeg -width 3840 -height 2160 -framerate 60 -i frame%d.svg -vf format=yuv420p output.mp4
+     * 
+     * @param filename The name of the export
+     */
     exportZip(filename: string = 'frames') {
 
         this.setMode(SceneMode.Export);
@@ -210,13 +220,17 @@ export class Scene {
      * Begins playing all animations in the scene.
      */
     start(): void {
-        this.runAnimation(0);
+        if (this.animations.length === 0) {
+            console.log("No animations to play.");
+        } else {
+            this.runAnimation(0);
+        }
     }
 
     /**
      * Schedules a pause in the animation sequence for the specified duration (in seconds) before proceeding to the next animation. This is counted as an animation in the sequence of animations in the scene.
      */
-    wait(duration: number): void {
+    wait(duration: number = 1): void {
         this.animations.push({
             duration: duration * 1000,
             animation: (alpha: number) => { },
@@ -226,7 +240,7 @@ export class Scene {
     /**
      * Schedule a play animation for the provided duration in seconds.
      */
-    play(animations: AnimationFunction[], duration: number, type: EasingType = 'easeInOut'): void {
+    play(animations: AnimationFunction[], duration: number = 1, type: EasingType = 'easeInOut'): void {
         this.animations.push({
             duration: duration * 1000,
             animation: (alpha: number) => {

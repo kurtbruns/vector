@@ -12,10 +12,29 @@ export class Value extends BaseNode {
         this.v = v;
     }
 
-    // animate(animation: Animation, easing: RateFunction = 'linear'): Animation {
-    //     // TODO:
-    //     return;
-    // }
+    get animate() {
+        // The context for `this` is stored to be used in the returned function below
+        const context = this;
+
+        // Return an object with the `setValue` method
+        return {
+            setValue: function(end: number) {
+                let hasStarted = false;
+                let start;
+
+                return (alpha: number) => {
+                    if (!hasStarted) {
+                        start = context.v;
+                        hasStarted = true;
+                    }
+
+                    const diff = end - start;
+                    context.v = start + diff * alpha;
+                    context.updateDependents();
+                };
+            }
+        };
+    }
 
     public setValue(target:number) : (number) => void {
         return (alpha:number) => {
