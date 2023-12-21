@@ -248,11 +248,10 @@ export class Frame extends SVG {
         return this.appendChild(new Control(x, y));
     }
 
-    gridPoint(plot: PlotGridBased, p: Point, color:string = 'var(--font-color)'): Circle {
+    gridPoint(plot: PlotGridBased, p: Point, color: string = 'var(--font-color)', radius: number = 3.5): Circle {
 
         let vbox = this.viewBox.split(/[\s,]+/).map(Number)
-
-        let c = this.circle(0,0, 3.5);
+        let c = this.circle(0, 0, radius);
         c.setAttribute('fill', color);
         c.addDependency(p)
         c.update = () => {
@@ -287,7 +286,7 @@ export class Frame extends SVG {
         }
         c.update();
 
-        if(invisible) {
+        if (invisible) {
             (c.root.firstChild as SVGElement).style.fill = 'none';
         }
 
@@ -295,7 +294,7 @@ export class Frame extends SVG {
 
     }
 
-    gridBrace(plot: PlotGridBased, p1: Point, p2: Point, spacing:number = 0) {
+    gridBrace(plot: PlotGridBased, p1: Point, p2: Point, spacing: number = 0) {
 
         // Braces with a height of 16 and the specified length 60, 90, 180 or 240
         const sizes: Map<number, string> = new Map();
@@ -318,19 +317,19 @@ export class Frame extends SVG {
             let y1 = fp1.y;
             let x2 = fp2.x;
             let y2 = fp2.y;
-    
+
             const length = Math.hypot(x2 - x1, y2 - y1);
             const angle = Math.atan2(y2 - y1, x2 - x1);
 
             // Adjust x1, y1, x2, y2 to add spacing at the beginning and end of the path
-            x1 += spacing * Math.cos(angle + TAU/4);
-            y1 += spacing * Math.sin(angle + TAU/4);
-            x2 -= spacing * Math.cos(angle + TAU/4);
-            y2 -= spacing * Math.sin(angle + TAU/4);
+            x1 += spacing * Math.cos(angle + TAU / 4);
+            y1 += spacing * Math.sin(angle + TAU / 4);
+            x2 -= spacing * Math.cos(angle + TAU / 4);
+            y2 -= spacing * Math.sin(angle + TAU / 4);
 
             const sizesArray = Array.from(sizes.keys()).sort((a, b) => a - b);
             const smallerOrEqual = sizesArray.reverse().find(size => size <= length);
-            const closest = (smallerOrEqual !== undefined) ? smallerOrEqual : sizesArray[sizesArray.length - 1];    
+            const closest = (smallerOrEqual !== undefined) ? smallerOrEqual : sizesArray[sizesArray.length - 1];
 
             group.setAttribute('transform', `translate(${x1}, ${y1}) rotate(${angle / Math.PI * 180}) scale(${length / closest}, 1)`);
             path.d = sizes.get(closest);
@@ -350,7 +349,7 @@ export class Frame extends SVG {
     gridTex(plot: PlotGridBased, s: string, x: number = 0, y: number = 0, background: boolean = true): TeX {
         let p = plot.SVGToRelative(x, -y);
         let tex = this.appendChild(new TeX(s, p.x, p.y))
-        .alignCenter();
+            .alignCenter();
         if (background) {
             tex.drawBackground()
         }

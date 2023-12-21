@@ -258,11 +258,11 @@ export class GridPoint extends Input {
             },
         };
     }
-    
+
     /**
      * Shifts this point one way or the other.
      */
-    shift(other: Point) : Point {
+    shift(other: Point): Point {
         this.x += other.x;
         this.y += other.y;
         this.updateDependents();
@@ -278,6 +278,13 @@ export class GridPoint extends Input {
     }
 
     /**
+     * Cross product of this point with another point
+     */
+    cross(other: Point): number {
+        return this.x * other.y - this.y * other.x;
+    }
+
+    /**
      * Multiplies this point by a scalar
      */
     multiply(scalar: number): Point {
@@ -287,15 +294,15 @@ export class GridPoint extends Input {
     /**
      * Moves the point to the provided coordinates as a point
      */
-    moveTo(p:{x:number, y:number}): Point;
+    moveTo(p: { x: number, y: number }): Point;
 
     /**
      * Moves the point to the provided x and y coordinates
      */
-    moveTo(x:number, y:number): Point;
+    moveTo(x: number, y: number): Point;
 
     // moveTo method implementation
-    moveTo(xOrP:number | {x:number, y:number}, y?:number): Point {
+    moveTo(xOrP: number | { x: number, y: number }, y?: number): Point {
         let tempX;
         let tempY;
         if (typeof xOrP === 'object') {

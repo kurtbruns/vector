@@ -35,6 +35,15 @@ export enum SceneMode {
     Export
 }
 
+export interface SceneConfig {
+    root?:HTMLElement;
+    width?:number;
+    height?:number;
+    background?:boolean;
+    responsive?:boolean;
+    suffix?:string;
+}
+
 /**
  * A class to manage and control a series of animations.
  * 
@@ -66,10 +75,19 @@ export class Scene {
     private currentAnimationFrame: number;
 
     /**
+     * Function to be called when the scene is done
+     */
+    private onDoneCallback?: () => void; 
+
+    /**
+     * Function to call to reset the scene
+     */
+    private _reset: () => void;
+
+    /**
      * Front-end component that displays the current frame in the browser.
      */
     public frame: Frame;
-
 
     /**
      * Constructs a new scene instance.
@@ -77,26 +95,36 @@ export class Scene {
      * @param height Optional height of the scene
      * @param background Optional flag to determine if a background should be drawn
      */
-    constructor(width?: number, height?: number, background:boolean = true) {
+    constructor(config:SceneConfig = {}) {
+
+        let defaultConfig: SceneConfig = {
+            root: document.querySelector('#root') as HTMLDivElement,
+            width: 960,
+            height: 540,
+            responsive: true,
+            background: true,
+            suffix: null,
+        };
+
+        config = { ...defaultConfig, ...config };
 
         this.animations = [];
         this.currentAnimation = 0;
         this.currentAnimationFrame = 0;
 
-        let root = document.querySelector('#root') as HTMLDivElement;
-
         // If width and height are not provided, default to these values
-        let effectiveWidth = width ?? 960;
-        let effectiveHeight = height ?? 540;
+        let effectiveWidth = config.width;
+        let effectiveHeight = config.height;
 
-        this.frame = new ResponsiveFrame(root, {
+        this.frame = new ResponsiveFrame(config.root, {
             width: effectiveWidth,
             height: effectiveHeight,
+            responsive: config.responsive
         });
 
-        this.frame.setAttribute('id', this.constructor.name);
+        this.frame.setAttribute('id', this.constructor.name + (config.suffix ? config.suffix : '' ));
 
-        if (background) {
+        if (config.background) {
             let background = this.frame.background.rectangle(0, 0, effectiveWidth, effectiveHeight);
             background.style.fill = 'var(--background)';
         }
@@ -108,6 +136,27 @@ export class Scene {
      */
     setMode(mode: SceneMode): void {
         this.mode = mode;
+    }
+
+    /**
+     * Sets the reset function
+     */
+    set reset(fn : () => void ) {
+        this._reset = fn;
+    }
+
+    /**
+     * Resets the scene
+     */
+    get reset() : () => void {
+        return this._reset;
+    }
+
+    /**
+     * Sets the onDone callback function.
+     */
+    setOnDone(callback: () => void): void {
+        this.onDoneCallback = callback;
     }
 
     /**
@@ -123,11 +172,10 @@ export class Scene {
         if (this.mode === SceneMode.Live) {
             requestAnimationFrame(callback);
         } else {
-            frameCallback()
-            callback(this.currentAnimationFrame + 1000 / this.fps)
+            frameCallback();
+            callback(this.currentAnimationFrame + 1000 / this.fps);
         }
     }
-
 
     /**
      * Executes the current animation in the scene's animation sequence.
@@ -179,6 +227,7 @@ export class Scene {
     export(frameCallback: () => void): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
+                this.currentAnimation = 0;
                 this.runAnimation(0, undefined, frameCallback, resolve);
             } catch (error) {
                 reject(error);
@@ -223,7 +272,9 @@ export class Scene {
         if (this.animations.length === 0) {
             console.log("No animations to play.");
         } else {
-            this.runAnimation(0);
+            // this.runAnimation(0);
+            this.currentAnimation = 0;
+            this.runAnimation(0, undefined, undefined, this.onDoneCallback);
         }
     }
 

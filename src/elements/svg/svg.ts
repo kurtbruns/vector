@@ -183,6 +183,32 @@ export class SVG extends BaseElement implements Descriptive, Shape, Structural, 
         return this.root.getAttribute(name);
     }
 
+    /**
+     * Get the animation methods
+     */
+    get animate() : any {
+        const context : SVG = this;
+
+        return {
+            setOpacity: function (value:number) {
+                let hasStarted = false;
+                let startValue;
+    
+                return (alpha) => {
+                    if (!hasStarted) {
+                        startValue = parseFloat(context.getAttribute('opacity'));
+                        if(isNaN(startValue)) {
+                            startValue = 1;
+                        }
+                        hasStarted = true;
+                    }
+                    const opacity = startValue + (value - startValue)*alpha;
+                    context.setAttribute('opacity', opacity.toString()) 
+                };
+            },
+        };
+    }
+
     // descriptive elements
 
     description(): Description {

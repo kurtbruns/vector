@@ -1,6 +1,5 @@
 import { saveAs } from './save-as';
 
-
 export enum ExportTarget {
     BROWSER = 'browser',
     ILLUSTRATOR = 'illustrator',
@@ -35,8 +34,8 @@ function computeTransformedStrokeWidth(element: SVGElement): string {
 
 export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
 
-    const elementsWithMarkersEnd = Array.from(svgElement.querySelectorAll('line[marker-end], path[marker-end]'));
-    const elementsWithMarkersStart = Array.from(svgElement.querySelectorAll('line[marker-start], path[marker-start]'));
+    const elementsWithMarkersEnd = Array.from(svgElement.querySelectorAll('line[marker-end], path[marker-end]')) as SVGGeometryElement[];
+    const elementsWithMarkersStart = Array.from(svgElement.querySelectorAll('line[marker-start], path[marker-start]')) as SVGGeometryElement[];
     
     const trimPath = (el: SVGPathElement, isEnd: boolean) => {
         const totalLength = el.getTotalLength();
@@ -70,7 +69,7 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
         }
     };
 
-    const processMarker = (el, markerPosition) => {
+    const processMarker = (el : SVGGeometryElement, markerPosition : string ) => {
         const markerUrl = el.getAttribute(markerPosition);
         if (!markerUrl){
             return;
@@ -78,7 +77,11 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
     
         const markerId = markerUrl.replace(/^url\(#/, '').replace(/\)$/, '');
         const marker = svgElement.querySelector(`#${markerId}`);
-    
+        const markerWidth = parseFloat(marker.getAttribute('markerWidth'));
+        const markerHeight = parseFloat(marker.getAttribute('markerHeight'));
+        const refX = parseFloat(marker.getAttribute('refX'));
+        const refY = parseFloat(marker.getAttribute('refY'));
+
         let x, y, angle, strokeWidth;
     
         switch (el.tagName.toLowerCase()) {
@@ -99,16 +102,30 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
                 trimLine(el as SVGLineElement, markerPosition === 'marker-end');
                 break;
     
-            case 'path':
-                // TODO: Use a more robust method to get the start/end point and angle for paths
+             case 'path':
                 const d = el.getAttribute('d') || "";
-                const coords = markerPosition === 'marker-end' ? d.split(/[ ,MLCZz]/).filter(Boolean).slice(-2) : d.split(/[ ,MLCZz]/).filter(Boolean).slice(0, 2);
-                if (coords.length === 2) {
+                const pathLength = el.getTotalLength();
+                let coords, p1, p2;
+                
+                if (markerPosition === 'marker-end') {
+                    coords = d.split(/[ ,MLCZz]/).filter(Boolean).slice(-2);
                     x = parseFloat(coords[0]);
                     y = parseFloat(coords[1]);
+
+                    p1 = el.getPointAtLength(pathLength - markerWidth);
+                    p2 = el.getPointAtLength(pathLength);
+
+                } else {
+                    const newStartPoint = el.getPointAtLength(trimPixels);
+                    x = newStartPoint.x;
+                    y = newStartPoint.y;
+
+                    p2 = el.getPointAtLength(markerWidth);
+                    p1 = el.getPointAtLength(0);
+
                 }
-                angle = 0; 
-                // TODO: untested
+
+                angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
                 trimPath(el as SVGPathElement, markerPosition === 'marker-end');
                 break;
     
@@ -122,11 +139,6 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
         
         const clonedPath = marker.firstChild.cloneNode(true) as SVGPathElement;
 
-        const markerWidth = parseFloat(marker.getAttribute('markerWidth'));
-        const markerHeight = parseFloat(marker.getAttribute('markerHeight'));
-        const refX = parseFloat(marker.getAttribute('refX'));
-        const refY = parseFloat(marker.getAttribute('refY'));
-        
         const scale = 1.5;
         if (markerPosition === 'marker-start') {
             angle += Math.PI
@@ -134,7 +146,9 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
         const adjustedX = x - (refX * scale) * Math.cos(angle) + (refY * scale) * Math.sin(angle);
         const adjustedY = y - (refX * scale) * Math.sin(angle) - (refY * scale) * Math.cos(angle);
         clonedPath.setAttribute('transform', `translate(${adjustedX},${adjustedY}) rotate(${angle * (180 / Math.PI)}) scale(${scale})`);
-    
+        if(el.getAttribute('opacity')) {
+            clonedPath.setAttribute('opacity', el.getAttribute('opacity'))
+        }
         // svgElement.appendChild(clonedPath);
         el.insertAdjacentElement('beforebegin', clonedPath)
         el.removeAttribute(markerPosition);

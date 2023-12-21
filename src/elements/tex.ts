@@ -141,6 +141,25 @@ export class TeX extends Group {
         return this;
     }
 
+    setColor(tex: string, color: string, index: number = 0): TeX {
+        const matches = this.getMatchesByTex(tex);
+    
+        if( matches.length === 0 ) {
+            throw new Error(`Found no match for: ${tex}`);
+        }
+
+        if (index < 0 || index >= matches.length) {
+            throw new Error('Index is out of range');
+        }
+    
+        matches[index].forEach(node => {
+            (node as SVGSVGElement).style.fill = color;
+        });
+    
+        return this;
+    }
+    
+
     // TODO: maybe get next match
 
     // TODO: ability to chain calls to getMatches

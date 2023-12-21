@@ -268,6 +268,13 @@ export class Control extends Input {
     }
 
     /**
+     * Cross product of this point with another point
+     */ 
+    cross(other: Point): number {
+        return this.x * other.y - this.y * other.x;
+    }
+
+    /**
      * Multiplies this point by a scalar
      */
     multiply(scalar: number): Point {
