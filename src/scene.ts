@@ -36,12 +36,12 @@ export enum SceneMode {
 }
 
 export interface SceneConfig {
-    root?:HTMLElement;
-    width?:number;
-    height?:number;
-    background?:boolean;
-    responsive?:boolean;
-    suffix?:string;
+    root?: HTMLElement;
+    width?: number;
+    height?: number;
+    background?: boolean;
+    responsive?: boolean;
+    suffix?: string;
 }
 
 /**
@@ -77,12 +77,17 @@ export class Scene {
     /**
      * Function to be called when the scene is done
      */
-    private onDoneCallback?: () => void; 
+    private onDoneCallback?: () => void;
 
     /**
      * Function to call to reset the scene
      */
     private _reset: () => void;
+
+    /**
+     * True if there currently is an animation sequence playing.
+     */
+    private active: boolean;
 
     /**
      * Front-end component that displays the current frame in the browser.
@@ -95,7 +100,7 @@ export class Scene {
      * @param height Optional height of the scene
      * @param background Optional flag to determine if a background should be drawn
      */
-    constructor(config:SceneConfig = {}) {
+    constructor(config: SceneConfig = {}) {
 
         let defaultConfig: SceneConfig = {
             root: document.querySelector('#root') as HTMLDivElement,
@@ -109,6 +114,7 @@ export class Scene {
         config = { ...defaultConfig, ...config };
 
         this.animations = [];
+        this.active = false;
         this.currentAnimation = 0;
         this.currentAnimationFrame = 0;
 
@@ -122,7 +128,7 @@ export class Scene {
             responsive: config.responsive
         });
 
-        this.frame.setAttribute('id', this.constructor.name + (config.suffix ? config.suffix : '' ));
+        this.frame.setAttribute('id', this.constructor.name + (config.suffix ? config.suffix : ''));
 
         if (config.background) {
             let background = this.frame.background.rectangle(0, 0, effectiveWidth, effectiveHeight);
@@ -141,14 +147,14 @@ export class Scene {
     /**
      * Sets the reset function
      */
-    set reset(fn : () => void ) {
+    set reset(fn: () => void) {
         this._reset = fn;
     }
 
     /**
      * Resets the scene
      */
-    get reset() : () => void {
+    get reset(): () => void {
         return this._reset;
     }
 
@@ -271,10 +277,16 @@ export class Scene {
     start(): void {
         if (this.animations.length === 0) {
             console.log("No animations to play.");
+        } else if (this.active) {
+            console.log("Animation already in progress.");
         } else {
-            // this.runAnimation(0);
+            // this.runAnimation(0); d
+            this.active = true;
             this.currentAnimation = 0;
-            this.runAnimation(0, undefined, undefined, this.onDoneCallback);
+            this.runAnimation(0, undefined, undefined, () => {
+                this.onDoneCallback();
+                this.active = false;
+            });
         }
     }
 

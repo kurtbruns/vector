@@ -7,7 +7,7 @@ export class Value extends BaseNode {
 
     private v:number;
 
-    constructor(v: number) {
+    constructor(v: number = 0) {
         super();
         this.v = v;
     }
