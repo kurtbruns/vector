@@ -1,4 +1,8 @@
 export {
+  CoordinateSystem
+} from './CoordinateSystem';
+
+export {
   Animation,
   AnimationFunction,
   Scene,
