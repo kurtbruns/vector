@@ -1,9 +1,9 @@
 
 
 /* default dark theme */
-:root {
+:root svg {
   
-  --background: #202020;
+  --background: #181818;
   --background-darker: #181818;
   --background-lighter: #303030;
   --font-color: #f0f0f0;
@@ -12,9 +12,9 @@
   --main: #f0f0f0;
   --primary: hsl(44, 97%, 84%);
 
-  --grid-primary: #606060;
-  --grid-secondary: #505050;
-  --grid-tertiary: #404040;
+  --grid-primary: #505050;
+  --grid-secondary: #404040;
+  --grid-tertiary: #303030;
 
   --grid-quaternary: #303030;
   --grid-quinary: #282828;
@@ -25,7 +25,7 @@
 }
 
 /* toggle light theme */
-:root.light-theme {
+:root.light-theme svg {
 
   --background: #ffffff;
   --background-darker: #f8f8f8;

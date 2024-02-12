@@ -5,6 +5,7 @@ type PointTuple = [number, number]; // Define a tuple type for a point
 
 export interface CoordinateSystemConfig {
 
+    root?: HTMLElement;
     axes?: boolean;
     axesColor?: string;
     axesArrows?: boolean;
@@ -17,6 +18,8 @@ export interface CoordinateSystemConfig {
     big?: boolean;
     small?: boolean;
     suffix?: string;
+    controls?: boolean;
+
 
 }
 
@@ -54,15 +57,22 @@ export class CoordinateSystem extends Scene {
 
         config = { ...defaultConfig, ...config };
 
-        let root = document.createElement('div');
+        if (config.controls) {
+            config.root = document.createElement('div');
+        } else if (config.root === null) {
+            config.root = document.querySelector('#root') as HTMLElement
+        }
+
         super({
-            root: root,
+            root: config.root,
             width: config.width,
             height: config.height,
             suffix: config.suffix
         });
 
-        CoordinateSystem.createContainer(root, this)
+        if (config.controls) {
+            CoordinateSystem.createContainer(config.root, this);
+        }
 
         let frame = this.frame;
         this.defs = this.frame.defs();
@@ -126,7 +136,6 @@ export class CoordinateSystem extends Scene {
 
             if (config.axesLabels) {
                 let b = this.plot.relativeToSVG(this.plot.SVGToRelative(new Point(0, 0)).x + 30, 0).x;
-                console.log(b)
                 let yLabel = frame.tex("y")
                     .alignCenter()
                     .moveTo(plot.SVGToRelative(0, this.internalHeight / 2 - b))
