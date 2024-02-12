@@ -35,13 +35,6 @@ export class Value extends BaseNode {
             }
         };
     }
-
-    public setValue(target:number) : (number) => void {
-        return (alpha:number) => {
-            this.value = alpha*target;
-            this.updateDependents()
-        }
-    }
     
     public get value() : number {
         return this.v; 
