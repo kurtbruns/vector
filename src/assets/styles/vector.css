@@ -1,7 +1,7 @@
 
 
 /* default dark theme */
-:root svg {
+:root {
   
   --background: #181818;
   --background-darker: #181818;
@@ -25,7 +25,7 @@
 }
 
 /* toggle light theme */
-:root.light-theme svg {
+:root.light-theme {
 
   --background: #ffffff;
   --background-darker: #f8f8f8;
