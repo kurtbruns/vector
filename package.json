@@ -15,6 +15,7 @@
     "watch": "tsc -w",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "prettify": "prettier --write 'src/**/*.{js,ts}'",
+    "preversion": "npm test",
     "prepublishOnly": "npm run clean && npm run build && npm test"
   },
   "repository": {

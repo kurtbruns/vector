@@ -9,8 +9,12 @@
     - `npm version minor` - This will increment the MINOR version (e.g., from 1.0.0 to 1.1.0). Use this when you add functionality in a backward-compatible manner.
     - `npm version major` - This will increment the MAJOR version (e.g., from 1.0.0 to 2.0.0). Use this when you make incompatible API changes.
 
+I've added a preversion script to run the tests to prevent code that fails the unit tests from being pushed.
+
 3. Publish the library to the npm registry: This should be the last step. After committing your changes and updating your version number, you're now ready to publish those changes to the npm registry.
 
 ```
 npm publish
 ```
+
+4. In the case of a failing test, which shouldn't happen, start over and increment the version number again before publishing.
