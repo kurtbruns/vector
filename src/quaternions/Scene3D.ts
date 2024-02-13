@@ -1305,15 +1305,17 @@ export class Scene3D {
 
     }
 
-    drawPoint(p: Vector3, options: { color?: string, opacity?: number, radius?:number } = {}) {
+    drawPoint(p: Vector3, options: { color?: string, opacity?: number, radius?:number, scale?:boolean, s?:number } = {}) {
 
-        let defaultOPtions = {
+        let defaultOptions = {
             color: 'var(--font-color)',
             opacity: 1,
             radius: 3,
+            scale: false,
+            s: 150,
         };
 
-        options = { ...defaultOPtions, ...options };
+        options = { ...defaultOptions, ...options };
 
         let q = this.camera.projectPoint(p);
         q.addDependency(p, this.camera);
@@ -1330,8 +1332,12 @@ export class Scene3D {
             let relativePoint = this.viewPort.plot.SVGToRelative(q.x, q.y);
             c.cx = relativePoint.x + vbox[0];
             c.cy = relativePoint.y + vbox[1];
-            c.r = options.radius;
-            // c.r = 150 / (q.z * q.z);
+            if(options.scale) {
+                c.r = options.s / (q.z * q.z);
+            } else {
+                c.r = options.radius;
+            }
+            
         }
         c.update();
 
