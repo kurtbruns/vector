@@ -17,6 +17,17 @@ export class Vector2 {
     }
 
     /**
+     * Scales this vector by the scalar
+     * 
+     * @param s The scalar value
+     */
+    scale(s: number): Vector2 {
+        this.x *= s;
+        this.y *= s;
+        return this;
+    }
+
+    /**
      * Calculates the length of this vector.
      * 
      * @returns The length of the vector.
