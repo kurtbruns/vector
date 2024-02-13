@@ -35,7 +35,7 @@ type SVGAttributes = 'viewBox' | 'preserveAspectRatio' | 'transform' | 'width' |
 export class SVG extends BaseElement implements Descriptive, Shape, Structural, Typography {
 
     // make the type of the root more specific
-    root: SVGSVGElement;
+    declare root: SVGSVGElement;
 
     /**
     * Constructs a SVG element with the display dimensions specified by the width and height.For the 
@@ -186,24 +186,24 @@ export class SVG extends BaseElement implements Descriptive, Shape, Structural, 
     /**
      * Get the animation methods
      */
-    get animate() : any {
-        const context : SVG = this;
+    get animate(): any {
+        const context: SVG = this;
 
         return {
-            setOpacity: function (value:number) {
+            setOpacity: function (value: number) {
                 let hasStarted = false;
                 let startValue;
-    
+
                 return (alpha) => {
                     if (!hasStarted) {
                         startValue = parseFloat(context.getAttribute('opacity'));
-                        if(isNaN(startValue)) {
+                        if (isNaN(startValue)) {
                             startValue = 1;
                         }
                         hasStarted = true;
                     }
-                    const opacity = startValue + (value - startValue)*alpha;
-                    context.setAttribute('opacity', opacity.toString()) 
+                    const opacity = startValue + (value - startValue) * alpha;
+                    context.setAttribute('opacity', opacity.toString())
                 };
             },
         };

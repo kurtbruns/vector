@@ -13,7 +13,7 @@ export type ShapeAttributes = 'marker-start' | 'marker-mid' | 'marker-end' | 'tr
 export abstract class Shape extends BaseElement {
 
     // make the type of the root more specific
-    root: SVGGeometryElement;
+    declare root: SVGGeometryElement;
 
     /**
     * Constructs a shape element with the provided root.

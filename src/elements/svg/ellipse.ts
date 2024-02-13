@@ -12,7 +12,7 @@ import { Shape } from './shape'
 export class Ellipse extends Shape {
 
   // make the type of the root to be more specific
-  root: SVGEllipseElement;
+  declare root: SVGEllipseElement;
 
   /**
   * Constructs a ellipse element at the position (cx,cy) with a rx and ry radius.

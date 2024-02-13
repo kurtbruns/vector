@@ -33,8 +33,6 @@ export class SideBarLayout extends Layout {
   */
   main:HTMLDivElement;
 
-  frame: Frame;
-
   /**
   * Default configuration for all templates.
   */

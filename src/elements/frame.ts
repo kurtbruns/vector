@@ -24,11 +24,6 @@ import {
     Slider, SliderOptions,
 } from './input/'
 
-// graph elements
-// import Node from '../elements/graph/node'
-// import Edge from '../elements/graph/edge'
-// import Graph, {GraphOptions} from '../elements/graph/graph'
-
 // math elements
 import { Label } from './visual/label'
 import { TeX } from './tex';
@@ -36,7 +31,7 @@ import { PlotGridBased, Point, TAU } from '..';
 
 export type alignment = 'left' | 'center' | 'right';
 
-export interface Configuration {
+export interface FrameConfig {
 
     x?: number,
     y?: number,
@@ -90,16 +85,12 @@ export class Frame extends SVG {
     private _definitions: Definitions;
 
     /**
-    * Constructs a new interactive object and appends it into the DOM. If the
-    * provided argument is an HTMLElement appends the interactive within that
-    * element. If the provided a value is a string, appends the interactive within
-    * the HTML element with the corresponding ID. If no element is found throws an
-    * error.
+    * Constructs a new frame.
     */
-    constructor(container: Element, config: Configuration = {}) {
+    constructor(container: Element, config: FrameConfig = {}) {
 
         // default configuration
-        let defaultConfig: Configuration = {
+        let defaultConfig: FrameConfig = {
             width: (2 * 144),
             height: (2 * 144) / 16 * 9,
             align: 'left',

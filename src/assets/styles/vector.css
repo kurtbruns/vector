@@ -1,376 +1,186 @@
-
-
 /* default dark theme */
-:root {
-  
-  --background: #181818;
-  --background-darker: #181818;
-  --background-lighter: #303030;
-  --font-color: #f0f0f0;
-  --border-color: #606060;
+svg.frame {
+    --background: #181818;
+    --background-darker: #181818;
+    --background-lighter: #303030;
+    --font-color: #f0f0f0;
+    --font-color-light: #a0a0a0;
 
-  --main: #f0f0f0;
-  --primary: hsl(44, 97%, 84%);
+    --border-color: #606060;
 
-  --grid-primary: #505050;
-  --grid-secondary: #404040;
-  --grid-tertiary: #303030;
+    --main: #f0f0f0;
+    --primary: #fee9af;
 
-  --grid-quaternary: #303030;
-  --grid-quinary: #282828;
+    --grid-primary: #505050;
+    --grid-secondary: #404040;
+    --grid-tertiary: #303030;
 
-  --red: #F2777A;
-  --green: #92D192;
-  --blue: #6AB0F3;
+    --grid-quaternary: #303030;
+    --grid-quinary: #282828;
+
+    --red: #f2777a;
+    --green: #92d192;
+    --blue: #6ab0f3;
+    --yellow: #fff888;
+
 }
 
 /* toggle light theme */
-:root.light-theme {
+.light-theme svg.frame {
+    --background: #ffffff;
+    --background-darker: #f8f8f8;
+    --background-lighter: #f0f0f0;
 
-  --background: #ffffff;
-  --background-darker: #f8f8f8;
-  --background-lighter: #f0f0f0;
+    --font-color: #404040;
+    --border-color: #d0d0d0;
 
-  --font-color: #404040;
-  --border-color: #d0d0d0;
+    --grid-primary: #c0c0c0;
+    --grid-secondary: #d0d0d0;
+    --grid-tertiary: #f0f0f0;
 
-  --grid-primary: #c0c0c0;
-  --grid-secondary: #d0d0d0;
-  --grid-tertiary: #f0f0f0;
+    --grid-quaternary: #f4f4f4;
+    --grid-quinary: #f8f8f8;
 
-  --grid-quaternary: #f4f4f4;
-  --grid-quinary: #f8f8f8;
+    --main: #404040;
 
-  --main: #404040;
+    --primary: #485bfc;
+    --secondary: #4bb77e;
+    --tertiary: #c74440;
 
-  --primary: #485bfc;
-  --secondary: #4bb77e;
-  --tertiary: #c74440;
- 
-  --red: #c74440;
-  --green: #40a839;
-  --blue: #485bfc;
-  
-  /* --coral: hsl(23, 83%, 82%);
-  --coral--b: hsl(23, 99%, 75%);
-  --pink: hsl(335, 10%, 45%);
-  --pink--b: hsl(335, 82%, 86%);
-  --yellow: hsl(42, 97%, 85%);
-  --yellow--b: hsl(42, 100%, 73%);
-  --green: hsl(100, 64%, 86%);
-  --green--b: hsl(100, 41%, 76%);
-  --blue: hsl(187, 61%, 79%);
-  --blue--b: hsl(187, 54%, 68%);
-  --light-gray-blue: hsl(182, 29%, 96%); */
+    --red: #c74440;
+    --green: #40a839;
+    --blue: #485bfc;
 }
 
 .function-group path {
-  vector-effect: non-scaling-stroke;
-  stroke: var(--primary);
-  stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+    stroke: var(--primary);
+    stroke-width: 1.5px;
 }
 
 .grid-lines line {
-  vector-effect: non-scaling-stroke;
+    vector-effect: non-scaling-stroke;
 }
 
 .grid-lines .primary line {
-  stroke: var(--grid-primary)
+    stroke: var(--grid-primary);
 }
+
 .grid-lines .secondary line {
-  stroke: var(--grid-secondary)
+    stroke: var(--grid-secondary);
 }
+
 .grid-lines .tertiary line {
-  stroke: var(--grid-tertiary)
+    stroke: var(--grid-tertiary);
 }
+
 .grid-lines .quaternary line {
-  stroke: var(--grid-quaternary)
+    stroke: var(--grid-quaternary);
 }
+
 .grid-lines .quinary line {
-  stroke: var(--grid-quinary)
+    stroke: var(--grid-quinary);
 }
 
 .non-scaling-stroke {
-  vector-effect: non-scaling-stroke;
-  stroke-width: 1px;
-}
-
-.interactive {
-  font-weight: normal;
-  font-size: 1rem;
-  box-sizing: content-box;
-  -webkit-font-smoothing: antialiased;
-  user-select: none;
-}
-
-.interactive text.default,
-.interactive span.default {
-  fill:var(--main);
-  stroke: none;
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1px;
 }
 
 svg.interactive {
-  display: block;
+    display: block;
 }
 
 svg.responsive {
-  width: 100%;
-  height: auto;
-  display: block;
+    width: 100%;
+    height: auto;
+    display: block;
 }
 
 .overflow-container {
-  overflow: hidden;
+    overflow: hidden;
 }
 
 .outline {
-  fill: none;
-  stroke: var(--main);
-  stroke-width: 1px;
+    fill: none;
+    stroke: var(--main);
+    stroke-width: 1px;
 }
 
 .monospace {
-  font-family: 'Inconsolata', monospace;
-  font-size: 1rem;
+    font-family: 'Inconsolata', monospace;
+    font-size: 1rem;
 }
 
 /*TODO: fix this */
 text,
 tspan {
-  fill: var(--main);
+    fill: var(--main);
 }
 
 .no-select {
-  user-select: none;
+    user-select: none;
 }
 
 div.display-box {
-	display: grid;
-	align-items: center;
-	background:var(--background);
-	border: 1px solid var(--border-color);
-	border-radius: 5px;
-	margin: 0 0 0.5rem 0;
+    display: grid;
+    align-items: center;
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    margin: 0 0 0.5rem 0;
 }
 
 .text-middle {
-	dominant-baseline: middle;
-	alignment-baseline: middle;
-	text-anchor: middle;
-}
-
-.katex-main {
-	font-family:'KaTeX_Main', 'KaTeX_Main-Regular';
-	fill:var(--main);
-	font-size:20px;
-}
-
-.katex-variable {
-  font-family:'KaTeX_Math', 'KaTeX_Main-Italic';
-  font-style:italic;
-	font-size:20px;
-}
-
-.window {
-  display: block;
-  margin: 0 auto 1.5em auto;
-  box-shadow: 0 5px 9px 0 rgba(0,0,0,0.15), 0 3px 10px 0 rgba(0,0,0,0.19);
-  overflow: hidden;
-  border-radius: 5px;
-}
-
-.animation-main {
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-}
-
-.animation-root {
-	display:block;
-	margin:auto;
-	min-width: 288px;
-}
-
-.animation-canvas {
-	display:grid;
-	place-items:center;
-}
-
-.animation-button  {
-	height:2rem;
-	width:2rem;
-	background: #808080;
-}
-
-.animation-button:hover {
-	fill: var(--main);
-}
-
-.animation-controls {
-	display:flex;
-	flex-direction:row;
-	justify-content:space-around;
-	border-top: 1px solid var(--border-color);
-}
-
-.animation-slider {
-	display: block;
-	width:100%;
-	margin: 0 .5rem;
-}
-
-.border {
-  border: 1px solid var(--border-color);
-  border-radius: 5px;
+    dominant-baseline: middle;
+    alignment-baseline: middle;
+    text-anchor: middle;
 }
 
 .hard-border {
-  border: 1px solid #aaaaaa;
+    border: 1px solid #aaaaaa;
 }
 
 .input-container {
-  width: 100%;
-  height: 2rem;
-  margin-bottom: 1rem;
+    width: 100%;
+    height: 2rem;
+    margin-bottom: 1rem;
 }
 
 input.input {
-  width: 100%;
-  height: 2rem;
-  padding-left: 8px;
-  webkitAppearance: textfield;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.default * {
-  stroke: var(--main);
-  /* stroke-width:1px; */
-  fill:none;
-}
-
-circle.default,
-ellipse.default,
-line.default,
-path.default,
-polygon.default,
-rect.default {
-  stroke:var(--main);
-  stroke-width:1px;
-  fill:none;
-}
-
-.default text,
-.default tspan {
-  fill:var(--main);
-  stroke: none;
+    width: 100%;
+    height: 2rem;
+    padding-left: 8px;
+    webkitappearance: textfield;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
 }
 
 .grid {
-  display: block;
-}
-
-.plot .grid line {
-  /* stroke:var(--light1); */
+    display: block;
 }
 
 .plot path,
 .plot line,
 .plot rect {
-  /* stroke:var(--main); */
-  /* stroke-width:1px; */
-  fill:none;
+    /* stroke:var(--main); */
+    /* stroke-width:1px; */
+    fill: none;
 }
 
 .control .point {
-  fill:var(--primary);
-  stroke:none;
+    fill: var(--primary);
+    stroke: none;
 }
 
 .control .handle {
-  fill:transparent;
-  stroke: var(--primary);
-  stroke-width:2px;
-  opacity:0;
+    fill: transparent;
+    stroke: var(--primary);
+    stroke-width: 2px;
+    opacity: 0;
 }
 
 .control .highlight {
-  opacity:1;
-}
-
-.checkbox rect {
-  fill:#f2f2f2;
-  stroke:#333333;
-  stroke-width:1px;
-}
-
-.slider line {
-  stroke:#333333;
-  stroke-width:1px;
-}
-
-.icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-.button text {
-  font-weight: 400;
-}
-
-.button rect {
-  fill: #555555;
-}
-
-.button:hover rect {
-  fill: #333333;
-}
-
-.button text {
-  fill: #ffffff;
-}
-
-.feature path {
-  vector-effect: non-scaling-stroke;
-}
-
-.node circle{
-  stroke: #333333;
-}
-
-.node ellipse{
-  stroke: #333333;
-}
-
-.dropdown-control-button rect {
-  fill: #DAD9DC;
-  stroke-width:1;
-  stroke: black;
-}
-
-.dropdown-control-button:hover rect,
-.dropdown-control-button:hover path {
-  fill: #C7C1C1;
-}
-
-.dropdown-control-curr-selection-box rect {
-  fill: white;
-  stroke-width:1;
-  stroke: black;
-}
-
-.dropdown-control-curr-selection-box:hover rect,
-.dropdown-control-button:hover text {
-  fill: #C7C1C1;
-}
-
-.dropdown-control-menu-option rect {
-  fill: white;
-  stroke-width:1;
-  stroke: black;
-}
-
-.dropdown-control-menu-option:hover rect,
-.dropdown-control-button:hover text {
-  fill: #C7C1C1;
+    opacity: 1;
 }

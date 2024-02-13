@@ -84,9 +84,17 @@ export {
 export { 
   bundle,
   download,
-  downloadSceneZip,
   embedMarkers,
   ExportTarget,
   flattenSVG,
   saveAs
 } from './util';
+
+export {
+  Theme
+} from './Theme';
+
+export {
+  interpolateColor,
+  hexToRGB
+} from './Color';

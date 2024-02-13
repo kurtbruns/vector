@@ -5,7 +5,7 @@ import { Shape } from './shape'
 */
 export class Polygon extends Shape {
 
-  root: SVGPolygonElement
+  declare root: SVGPolygonElement
 
   constructor( points:string ) {
     let polygon = document.createElementNS( 'http://www.w3.org/2000/svg', 'polygon');

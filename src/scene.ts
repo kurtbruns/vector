@@ -1,4 +1,3 @@
-import JSZip from 'jszip';
 import { Frame, ResponsiveFrame, bundle, saveAs } from '.'
 
 /**
@@ -135,6 +134,10 @@ export class Scene {
             background.style.fill = 'var(--background)';
         }
 
+        this.onDoneCallback = () => {
+
+        };
+
     }
 
     /**
@@ -239,36 +242,6 @@ export class Scene {
                 reject(error);
             }
         });
-    }
-
-    /**
-     * Exports the scene to a ZIP of SVG files that can be combined to make a movie using 
-     * ffmpeg using this command:
-     * 
-     * ffmpeg -width 3840 -height 2160 -framerate 60 -i frame%d.svg -vf format=yuv420p output.mp4
-     * 
-     * @param filename The name of the export
-     */
-    exportZip(filename: string = 'frames') {
-
-        this.setMode(SceneMode.Export);
-        const zip = new JSZip();
-        let count = 0;
-
-        const frameCallback = () => {
-            zip.file(`frame${count++}.svg`, bundle(this.frame.root));
-        };
-
-        this
-            .export(frameCallback)
-            .then(() => {
-                zip.generateAsync({ type: 'blob' }).then(function (content) {
-                    saveAs(content, `${filename}`, {});
-                });
-            })
-            .catch((error) => {
-                console.error('An error occurred:', error);
-            });
     }
 
     /**

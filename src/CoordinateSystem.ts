@@ -1,26 +1,47 @@
-import { Definitions, ExportTarget, Group, Line, PlotGridBased, Point, TAU, TeX, download } from "./index";
-import { Scene, SceneMode } from "./scene";
+import { Definitions, ExportTarget, Group, Line, Path, PlotGridBased, Point, TAU, TeX, download } from "./index";
+import { Scene, SceneConfig, SceneMode } from "./scene";
 
 type PointTuple = [number, number]; // Define a tuple type for a point
 
-export interface CoordinateSystemConfig {
+export type Color = [number, number, number];
 
-    root?: HTMLElement;
-    axes?: boolean;
+export function hexToRGB(hex: string): Color {
+    const rgb = parseInt(hex.replace(/^#/, ''), 16);
+    return [(rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff];
+}
+
+export function interpolateColor(color1: string, color2: string, factor: number = 0.5): string {
+
+    const rgb1 = hexToRGB(color1);
+    const rgb2 = hexToRGB(color2);
+
+    // Calculate the interpolated color
+    const interpolate = (start: number, end: number) => {
+        return Math.round(start + factor * (end - start));
+    };
+
+    const result = rgb1.map((component, index) => {
+        return interpolate(component, rgb2[index]);
+    });
+
+    // Convert interpolated rgb back to hex
+    return `#${result.map(x => x.toString(16).padStart(2, '0')).join('')}`;
+}
+
+export interface CoordinateSystemConfig extends SceneConfig {
+    suffix?: string;
+    width?: number;
+    height?: number;
     axesColor?: string;
     axesArrows?: boolean;
     axesLabels?: boolean;
-    width?: number;
-    height?: number;
     gridWidth?: number;
     gridHeight?: number;
     drawGrid?: boolean;
+    drawAxes?: boolean;
     big?: boolean;
-    small?: boolean;
-    suffix?: string;
-    controls?: boolean;
-
-
+    half?: boolean;
+    root?: HTMLElement;
 }
 
 export class CoordinateSystem extends Scene {
@@ -38,41 +59,32 @@ export class CoordinateSystem extends Scene {
     defs: Definitions;
     plot: PlotGridBased;
 
-
     constructor(config: CoordinateSystemConfig = {}) {
 
         let defaultConfig: CoordinateSystemConfig = {
-            axes: true,
+            root: config.root === undefined ? document.querySelector('#root') : config.root,
+            width: 640,
+            height: 360,
             axesColor: 'var(--font-color-subtle)',
             axesArrows: true,
             axesLabels: true,
-            width: 960,
-            height: 540,
-            gridWidth: 16,
-            gridHeight: 9,
+            gridWidth: 12.8,
+            gridHeight: 7.2,
             drawGrid: true,
             big: false,
-            suffix: ''
+            half: true,
         };
 
         config = { ...defaultConfig, ...config };
-
-        if (config.controls) {
-            config.root = document.createElement('div');
-        } else if (config.root === null) {
-            config.root = document.querySelector('#root') as HTMLElement
-        }
 
         super({
             root: config.root,
             width: config.width,
             height: config.height,
-            suffix: config.suffix
+            responsive: false,
+            background: true,
+            suffix: config.suffix,
         });
-
-        if (config.controls) {
-            CoordinateSystem.createContainer(config.root, this);
-        }
 
         let frame = this.frame;
         this.defs = this.frame.defs();
@@ -99,10 +111,17 @@ export class CoordinateSystem extends Scene {
         this.plot = plot;
 
         if (config.drawGrid) {
-            if (config.big) {
+            if (config.big && !config.half) {
                 plot.drawGridLines2();
-            } else if (config.small) {
-                plot.drawGridLines2(['small'], ['small'],
+            } else if (config.big && config.half) {
+                plot.drawGridLines2(['half', 'big'], ['half', 'big'],
+                    {
+                        'big': 'primary',
+                        'half': 'secondary',
+                    });
+            }
+            else if (!config.half) {
+                plot.drawGridLines2(['small-half', 'small'], ['small-half', 'small'],
                     {
                         'small': 'primary',
                     });
@@ -115,8 +134,8 @@ export class CoordinateSystem extends Scene {
             }
         }
 
-        let origin = this.plot.SVGToRelative(new Point(0, 0));
-        if (config.axes) {
+        if (config.drawAxes) {
+            let origin = this.plot.SVGToRelative(new Point(0, 0));
             this.axes = frame.group();
             let xAxis = this.axes.line(origin.x - this.width / 2, origin.y, origin.x + this.width / 2, origin.y);
             xAxis.setAttribute('stroke-width', '1.5');
@@ -135,7 +154,7 @@ export class CoordinateSystem extends Scene {
             }
 
             if (config.axesLabels) {
-                let b = this.plot.relativeToSVG(this.plot.SVGToRelative(new Point(0, 0)).x + 30, 0).x;
+                let b = this.internalWidth / 20;
                 let yLabel = frame.tex("y")
                     .alignCenter()
                     .moveTo(plot.SVGToRelative(0, this.internalHeight / 2 - b))
@@ -151,103 +170,18 @@ export class CoordinateSystem extends Scene {
             }
         }
 
-
-
-
-
     }
 
-    static createContainer(root: HTMLElement, scene: CoordinateSystem) {
-
-        let container = document.createElement('div');
-        container.classList.add('player');
-
-        document.querySelector('#root').append(container)
-
-        let controls = document.createElement('div');
-        controls.classList.add('controls')
-
-        container.append(root, controls);
-
-        let left = document.createElement('div');
-        left.classList.add('left');
-        let middle = document.createElement('div');
-        middle.classList.add('middle');
-        let right = document.createElement('div');
-        right.classList.add('right')
-
-        controls.append(left, middle, right);
-
-        let playButton = document.createElement('button');
-        playButton.title = 'Play';
-        playButton.ariaLabel = 'Play';
-        playButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path fill="var(--font-color-subtle)" d="M320-200v-560l440 280-440 280Zm80-280Zm0 134 210-134-210-134v268Z"/></svg>`;
-
-        let skipButtonPlaceHolder = document.createElement('button');
-
-        let captureButton = document.createElement('button');
-        captureButton.title = 'Capture';
-        captureButton.ariaLabel = 'Capture';
-        captureButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path fill="var(--font-color-subtle)" d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm80-80h480v-320H240v320Zm-80 80v-480 480Z"/></svg>`;
-        // captureButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path fill="var(--font-color-subtle)" d="M480-400q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0 80q66 0 113-47t47-113q0-66-47-113t-113-47q-66 0-113 47t-47 113q0 66 47 113t113 47ZM160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>`
-
-        let downloadButton = document.createElement('button');
-        downloadButton.title = 'Download';
-        downloadButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path  fill="var(--font-color-subtle)" d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>';
-
-        left.append(playButton, skipButtonPlaceHolder);
-        left.append
-        // middle.classList.add('no-select')
-        middle.style.color = `var(--medium)`;
-        middle.innerHTML = scene.frame.root.id;
-        right.append(captureButton, downloadButton);
-
-        scene.setOnDone(() => {
-            // playButton.innerHTML = 'reset';
-        })
-
-        playButton.onclick = () => {
-            if (scene.reset) {
-                scene.reset();
-            }
-            scene.setMode(SceneMode.Live);
-            scene.start();
-            // TODO: change to pause button
-            // TODO: disable double start when pressed twice
-            // TODO: on finish change button to reset
-        }
-
-        captureButton.onclick = () => {
-            download(scene.frame.root, scene.frame.root.id, ExportTarget.FIGMA);
-        }
-
-        downloadButton.onclick = () => {
-            scene.exportZip(scene.frame.getAttribute('id'));
-        }
-
-    }
-
-    alignTexBy(s: string, ...args: TeX[]) {
-
-        for (let i = 1; i < args.length; i++) {
-            args[i].shift(args[0].getPartsByTex('=')[0].getBoundingClientRect().x - args[i].getPartsByTex('=')[0].getBoundingClientRect().x, 0);
-        }
-
+    projection(w: Point, v: Point): Point {
+        let scalarProjection = w.dot(v) / v.dot(v);
+        return v.scale(scalarProjection);
     }
 
     texVector(...args: any[]): string {
-
-        return `\\begin{bmatrix} \\: ${args.join(`\\: \\\\ \\:`)} \\: \\end{bmatrix}`;
-
-        // return `\\left[\\begin{array}{c} \\: ${args.join(`\\: \\\\ \\:`)} \\: \\end{array}\\right]`;
+        return `\\left[\\begin{array}{c} \\: ${args.join(`\\: \\\\ \\:`)} \\: \\end{array}\\right]`;
     }
 
-    texVectorLabel(l:string): string {
-
-        return `\\vec{\\mathbf{${l}}}`;
-    }
-
-    vectorTipLabel(point: Point, tex: string, color?: string, offset: number = 0, radius: number = 32): TeX {
+    vectorTipLabel(point: Point, tex: string, color?: string, offset: number = 0, r = 24): TeX {
 
         let t = this.frame.tex(tex);
 
@@ -259,7 +193,6 @@ export class CoordinateSystem extends Scene {
 
             // Rest of your original method implementation
             let angle = Math.atan2(y, x) + offset;
-            let r = radius;
 
             t.moveTo(this.plot.SVGToRelative(new Point(x, y)))
                 .alignCenter()
@@ -274,9 +207,46 @@ export class CoordinateSystem extends Scene {
         return t;
     }
 
-    projection(w: Point, v: Point): Point {
-        let scalarProjection = w.dot(v) / v.dot(v);
-        return v.scale(scalarProjection);
+    vectorVariables(point: Point, color?: string, offset: number = 0, vars: [string, string] = ['x', 'y']): TeX {
+
+        let x = point.x;
+        let y = point.y;
+
+        // Rest of your original method implementation
+        let angle = Math.atan2(y, x) + offset;
+        let r = 24;
+
+        let tex = this.frame.tex(`\\begin{bmatrix} \\: ${vars[0]} \\: \\\\ \\: ${vars[1]} \\: \\end{bmatrix}`)
+            .moveTo(this.plot.SVGToRelative(new Point(x, y)))
+            .alignCenter()
+            .shift(r * Math.cos(angle), -r * Math.sin(angle));
+
+        if (color) {
+            tex.setAttribute('color', color);
+        }
+
+        return tex;
+    }
+
+    vectorCoordinatesTex(point: Point, color?: string, offset: number = 0, radius: number = 40, prefix: string = ''): TeX {
+
+        let x = point.x;
+        let y = point.y;
+
+        // Rest of your original method implementation
+        let angle = Math.atan2(y, x) + offset;
+        let r = radius;
+
+        let tex = this.frame.tex(`${prefix}\\begin{bmatrix} \\: ${x.toString()} \\: \\\\ \\: ${y.toString()} \\: \\end{bmatrix}`)
+            .moveTo(this.plot.SVGToRelative(new Point(x, y)))
+            .alignCenter()
+            .shift(r * Math.cos(angle), -r * Math.sin(angle));
+
+        if (color) {
+            tex.setAttribute('color', color);
+        }
+
+        return tex;
     }
 
     labelAxes() {
@@ -298,11 +268,30 @@ export class CoordinateSystem extends Scene {
     }
 
     vector(p1: Point, p2: Point, color: string = 'var(--primary)'): Line {
+        let v = this.frame.line(0, 0, 0, 0);
+        v.setAttribute('stroke-width', '1.5');
+        v.setAttribute('stroke', color);
+        let m = v.attatchArrow(this.defs, false, color);
+        v.update = () => {
+
+            let fp1 = this.plot.SVGToRelative(p1.x, p1.y);
+            let fp2 = this.plot.SVGToRelative(p2.x, p2.y);
+
+            v.x1 = fp1.x;
+            v.y1 = fp1.y;
+            v.x2 = fp2.x;
+            v.y2 = fp2.y;
+        };
+        v.addDependency(p1, p2);
+        v.update();
+        return v;
+    }
+
+    line(p1: Point, p2: Point, color: string = 'var(--primary)'): Line {
 
         let v = this.frame.line(0, 0, 0, 0);
         v.setAttribute('stroke-width', '1.5');
         v.setAttribute('stroke', color);
-        v.attatchArrow(this.defs, false, color);
         v.update = () => {
 
             let fp1 = this.plot.SVGToRelative(p1.x, p1.y);
@@ -319,7 +308,143 @@ export class CoordinateSystem extends Scene {
         return v;
     }
 
-    addlabel(line: Line, label: string, color: string = 'var(--font-color-subtle)') {
+    controlPath(): Path {
+        let c0 = this.frame.control(this.frame.width / 2, this.frame.height / 2);
+        let c1 = this.frame.control(this.frame.width / 2 + 100, this.frame.height / 2);
+        let c2 = this.frame.control(this.frame.width / 2 + 100, this.frame.height / 2 + 100);
+        (c2.root.firstChild as SVGElement).style.fill = 'none';
+        (c2.root.children[1] as SVGElement).setAttribute('stroke-opacity', '0.5');
+
+        let p = this.frame.path(``);
+        p.addDependency(c0, c1, c2);
+        p.update = () => {
+            p.d = `M ${c0.x} ${c0.y} Q ${c1.x} ${c1.y} ${c2.x} ${c2.y}`;
+        };
+        p.update();
+
+        p.setAttribute('stroke', 'var(--main)')
+        p.setAttribute('stroke-width', '1.5')
+        this.pathArrow(p)
+        return p;
+    }
+
+    controlLine(): Path {
+        let c0 = this.frame.control(this.frame.width / 2, this.frame.height / 2);
+        let c1 = this.frame.control(this.frame.width / 2 + 100, this.frame.height / 2);
+        (c1.root.firstChild as SVGElement).style.fill = 'none';
+        (c1.root.children[1] as SVGElement).setAttribute('stroke-opacity', '0.5');
+
+        let p = this.frame.path(``);
+        p.addDependency(c0, c1);
+        p.update = () => {
+            p.d = `M ${c0.x} ${c0.y} L ${c1.x} ${c1.y}`;
+        };
+        p.update();
+
+        p.setAttribute('stroke', 'var(--main)')
+        p.setAttribute('stroke-width', '1.5')
+        this.pathArrow(p)
+        return p;
+    }
+
+    pathArrow(path: Path, color: string = 'var(--font-color)'): Group {
+
+        const refX = 6;
+        const refY = 5;
+        const scale = path.getAttribute('stroke-width') ? Number(path.getAttribute('stroke-width')) : 1.5;
+
+        let g = this.frame.group();
+        g.appendChild(path);
+        let a = g.path(``);
+        a.setAttribute('stroke', color);
+        a.setAttribute('stroke-linecap', 'round');
+
+        a.addDependency(path);
+        a.update = () => {
+            const length = path.getTotalLength();
+            const p1 = path.getPointAtLength(length - refX)
+            const p2 = path.getPointAtLength(length)
+
+            const x = p2.x;
+            const y = p2.y;
+            const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+
+
+            const adjustedX = x - (refX * scale) * Math.cos(angle) + (refY * scale) * Math.sin(angle);
+            const adjustedY = y - (refX * scale) * Math.sin(angle) - (refY * scale) * Math.cos(angle);
+
+            a.d = `M 0 0.5 L 6 5 L 0 9.5 `;
+            a.setAttribute('transform', `translate(${adjustedX},${adjustedY}) rotate(${angle * (180 / Math.PI)}) scale(${scale})`);
+        };
+        a.update();
+
+
+
+        return g;
+
+    }
+
+    arrow(start: Point, end: Point, color: string = 'var(--font-color)'): Line {
+
+        const p1 = this.plot.SVGToRelative(start);
+        const p2 = this.plot.SVGToRelative(end);
+
+        let g = this.frame.group();
+        let v = g.line(0, 0, 0, 0);
+        v.setAttribute('stroke-width', '1.5');
+        v.setAttribute('stroke', color);
+        v.setAttribute('stroke-linecap', 'round')
+
+        const refX = 6;
+        const refY = 5;
+        const scale = 1.25;
+        const x = p2.x;
+        const y = p2.y;
+        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+
+        const adjustedX = x - (refX * scale) * Math.cos(angle) + (refY * scale) * Math.sin(angle);
+        const adjustedY = y - (refX * scale) * Math.sin(angle) - (refY * scale) * Math.cos(angle);
+
+        let a = g.path(`M 0 0.5 L 6 5 L 0 9.5 `)
+            .setAttribute('stroke', color)
+            .setAttribute('stroke-linecap', 'round')
+            .setAttribute('transform', `translate(${adjustedX},${adjustedY}) rotate(${angle * (180 / Math.PI)}) scale(${scale})`);
+
+        v.update = () => {
+
+            let fp1 = this.plot.SVGToRelative(start.x, start.y);
+            let fp2 = this.plot.SVGToRelative(end.x, end.y);
+
+            v.x1 = fp1.x;
+            v.y1 = fp1.y;
+            v.x2 = fp2.x;
+            v.y2 = fp2.y;
+        };
+        v.addDependency(start, end);
+        v.update();
+        return v;
+    }
+
+    label(point: Point, label: string, color: string = 'var(--font-color)', offset = 0): TeX {
+
+        let x = point.x;
+        let y = point.y;
+
+        // Rest of your original method implementation
+        let angle = Math.atan2(y, x) + offset;
+        let r = 24;
+
+        let tex = this.frame.tex(label)
+            .moveTo(this.plot.SVGToRelative(new Point(x, y)))
+            .alignCenter()
+            .shift(r * Math.cos(angle), -r * Math.sin(angle));
+
+        tex.setAttribute('color', color);
+
+        return tex;
+    }
+
+    addlabel(line: Line, label: string, color: string = 'var(--font-color)') {
         let l = this.frame.tex(label, 0, 0)
             .alignCenter()
             .setAttribute('color', color) as TeX;
@@ -332,7 +457,7 @@ export class CoordinateSystem extends Scene {
         return l;
     }
 
-    lineBetweenPoints(p1: Point, p2: Point, color: string = 'var(--font-color-subtle)'): Line {
+    lineBetweenPoints(p1: Point, p2: Point, color: string = 'var(--font-color)'): Line {
 
         let line = this.frame.line(0, 0, 0, 0);
         line.setAttribute('stroke-width', '1.5');
@@ -352,7 +477,7 @@ export class CoordinateSystem extends Scene {
         return line;
     }
 
-    brace(p1: Point, p2: Point, label?: string, reverse: boolean = false, color: string = 'var(--primary)', space: number = 4) {
+    brace(p1: Point, p2: Point, label?: string, reverse: boolean = false, color: string = 'var(--primary)', space: number = 4): TeX {
 
         if (reverse) {
             this.frame.gridBrace(this.plot, p2, p1, space);
@@ -361,8 +486,8 @@ export class CoordinateSystem extends Scene {
         }
 
         if (label) {
-            let l = this.frame.tex(label, 0, 0)
-                .alignCenter();
+            let l = this.frame.tex(label, 0, 0);
+            l.alignCenter();
 
             l.addDependency(p1, p2);
             l.update = () => {
@@ -375,11 +500,83 @@ export class CoordinateSystem extends Scene {
                 l.moveTo({ x: p.x - buff * Math.cos(a), y: p.y + buff * Math.sin(a) });
             };
             l.update();
+            return l;
+        } else {
+            return null;
         }
 
     }
 
-    vectorLine(v: Point, color: string = 'var(--font-color-subtle)'): Line {
+    braceLabel2(p1: Point, p2: Point, label: string, opts = {}): TeX {
+
+        let options: { reverse?: Boolean, space?: number, color?: string, buff?: number, group?: Group } = {
+            reverse: false,
+            color: 'var(--primary)',
+            space: 4,
+            buff: 42
+        }
+
+        options = { ...options, ...opts };
+
+        let g = options.group ? options.group : this.frame.group();
+        if (options.reverse) {
+            g.appendChild(this.frame.gridBrace(this.plot, p2, p1, options.space));
+        } else {
+            g.appendChild(this.frame.gridBrace(this.plot, p1, p2, options.space));
+        }
+
+        let l = this.frame.tex(label, 0, 0)
+            .alignCenter();
+
+        g.appendChild(l);
+
+        l.addDependency(p1, p2);
+        l.update = () => {
+            let mx = p1.x + (p2.x - p1.x) / 2;
+            let my = p1.y + (p2.y - p1.y) / 2;
+
+            const p = this.plot.SVGToRelative(mx, my);
+            const a = Math.atan2(p2.y - p1.y, p2.x - p1.x) + TAU / 4 + (options.reverse ? TAU / 2 : 0);
+            l.moveTo({ x: p.x - options.buff * Math.cos(a), y: p.y + options.buff * Math.sin(a) });
+        };
+        l.update();
+
+        return l;
+
+    }
+
+    // TODO: remove and update all to use the behavior of braceLabel2
+    braceLabel(p1: Point, p2: Point, label: string, reverse: boolean = false, color: string = 'var(--primary)', space: number = 4, buff: number = 42): TeX {
+
+        let g = this.frame.group();
+        if (reverse) {
+            g.appendChild(this.frame.gridBrace(this.plot, p2, p1, space));
+        } else {
+            g.appendChild(this.frame.gridBrace(this.plot, p1, p2, space));
+        }
+
+        let l = this.frame.tex(label, 0, 0)
+            .alignCenter();
+
+        g.appendChild(l);
+
+        l.addDependency(p1, p2);
+        l.update = () => {
+            let mx = p1.x + (p2.x - p1.x) / 2;
+            let my = p1.y + (p2.y - p1.y) / 2;
+
+            const p = this.plot.SVGToRelative(mx, my);
+            const a = Math.atan2(p2.y - p1.y, p2.x - p1.x) + TAU / 4 + (reverse ? TAU / 2 : 0);
+            l.moveTo({ x: p.x - buff * Math.cos(a), y: p.y + buff * Math.sin(a) });
+        };
+        l.update();
+
+        return l;
+
+    }
+
+
+    vectorLine(v: Point): Line {
         let line = this.frame.line(0, 0, 0, 0);
         line.addDependency(v);
         line.update = () => {
@@ -392,10 +589,8 @@ export class CoordinateSystem extends Scene {
             line.y2 = p2.y;
         }
         line.update();
-        line.setAttribute('stroke', color);
-        line.setAttribute('stroke-width', '1.5');
+        line.setAttribute('stroke', 'var(--font-color)')
         return line;
-
     }
 
     findLineEndpoints(v: Point, minX: number, minY: number, width: number, height: number): PointTuple[] {

@@ -13,7 +13,7 @@ import { Shape } from './shape'
 export class Line extends Shape {
 
   // make the type of the root to be more specific
-  root: SVGLineElement;
+  declare root: SVGLineElement;
 
   /**
   * Constructs a line between the points (x1, y1) and (x2, y2)

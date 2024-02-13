@@ -4,7 +4,7 @@ import { Layout } from './layout';
 import { Frame } from '../index';
 
 export interface Configuration {
-  frame?:Frame
+    frame?: Frame
 }
 
 /**
@@ -14,74 +14,69 @@ export interface Configuration {
 */
 export class PancakeLayout extends Layout {
 
-  /**
-  * The HTMLElement which the template is rendered within.
-  */
-  parent:HTMLElement;
+    /**
+    * The HTMLElement which the template is rendered within.
+    */
+    parent: HTMLElement;
 
-  /**
-  * The root of the template
-  */
-  root:HTMLDivElement;
+    /**
+    * The root of the template
+    */
+    root: HTMLDivElement;
 
-  /**
-  * The header region of the template
-  */
-  header:HTMLDivElement;
+    /**
+    * The header region of the template
+    */
+    header: HTMLDivElement;
 
-  /**
-  * The main region of the template
-  */
-  main:HTMLDivElement;
+    /**
+    * The main region of the template
+    */
+    main: HTMLDivElement;
 
-  /*
-  * The footer region of the template
-  */
-  footer:HTMLDivElement;
+    /*
+    * The footer region of the template
+    */
+    footer: HTMLDivElement;
 
-  /**
-  * The interactive element
-  */
-  frame:Frame;
+    /**
+    * Default configuration for all templates.
+    */
+    static config = {
 
-  /**
-  * Default configuration for all templates.
-  */
-  static config = {
+    }
 
-  }
+    /**
+    * Constructs a template within the DOM element corresponding to the id. If
+    * user configuration is provided, the user configuration is prioritized over
+    * the default configuration stored in the Template.config variable.
+    */
+    constructor(element: HTMLElement, options: Configuration = {}) {
 
-  /**
-  * Constructs a template within the DOM element corresponding to the id. If
-  * user configuration is provided, the user configuration is prioritized over
-  * the default configuration stored in the Template.config variable.
-  */
-  constructor(element:HTMLElement, options:Configuration = {} )  {
+        super(element);
 
-    super(element);
+        let defaultConfig = {};
 
-    let defaultConfig = {};
+        // combine the default configuration with the user's configuration
+        let config = { ...defaultConfig, ...options };
 
-    // combine the default configuration with the user's configuration
-    let config = { ...defaultConfig, ...options };
+        this.root = document.createElement('div');
+        this.root.classList.add('pancake');
 
-    this.root = document.createElement('div');
-    this.root.classList.add('pancake');
+        this.header = document.createElement('div');
+        this.main = document.createElement('div');
+        this.footer = document.createElement('div');
 
-    this.header = document.createElement('div');
-    this.main = document.createElement('div');
-    this.footer = document.createElement('div');
+        this.header.classList.add('header-region');
+        this.main.classList.add('main-region');
+        this.footer.classList.add('footer-region');
 
-    this.header.classList.add('header-region');
-    this.main.classList.add('main-region');
-    this.footer.classList.add('footer-region');
+        this.footer.style.display = 'flex';
+        this.footer.style.flexDirection = 'column';
 
-    this.footer.style.display = 'flex';
-    this.footer.style.flexDirection = 'column';
+        this.container.append(this.root);
+        this.root.append(this.header, this.main, this.footer);
 
-    this.container.append(this.root);
-    this.root.append(this.header, this.main, this.footer);
-
-  }
+    }
 
 }

@@ -1,5 +1,5 @@
 import { Group } from "../elements/svg/group";
-import { Frame, Configuration } from "./frame";
+import { Frame, FrameConfig } from "./frame";
 
 /**
  * A responsive SVG document that is optimized to prevent cumulative layout shift in the browser 
@@ -23,7 +23,7 @@ export class OverflowFrame extends Frame {
 	 * optionally specifies the maximum display width of the SVG, otherwise the default is to fill 
 	 * the availablespace.
 	 */
-	constructor( container:HTMLElement, config:Configuration ) {
+	constructor( container:HTMLElement, config:FrameConfig ) {
 
 		let defaultConfig = {
 			origin: 'default'

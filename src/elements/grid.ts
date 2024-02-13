@@ -286,9 +286,9 @@ export class Grid extends ResponsiveFrame {
         let group2 = this.gridGroup.group();
         let group1 = this.gridGroup.group();
 
-        group1.setAttribute('class', 'primary')
-        group2.setAttribute('class', 'secondary')
-        group3.setAttribute('class', 'tertiary')
+        group1.setAttribute('class', 'primary');
+        group2.setAttribute('class', 'secondary');
+        group3.setAttribute('class', 'tertiary');
 
         // group3.style.opacity = '0.08'
         // group2.style.opacity = '0.16'
@@ -534,8 +534,9 @@ export class Grid extends ResponsiveFrame {
 
         let viewBox = this.internalViewBox.baseVal;
 
-        this.gridGroup.setAttribute('class', 'grid-lines')
-
+        this.gridGroup.classList.add('grid-lines');
+        this.gridGroup.setAttribute('stroke-width', '1.5px');
+        
         let x1 = viewBox.x;
         let y1 = viewBox.y;
         let x2 = viewBox.x + viewBox.width;
@@ -600,7 +601,8 @@ export class Grid extends ResponsiveFrame {
 
         let viewBox = this.internalViewBox.baseVal;
 
-        this.gridGroup.setAttribute('class', 'grid-lines')
+        this.gridGroup.classList.add('grid-lines');
+        this.gridGroup.setAttribute('stroke-width', '1.5px');
 
         let x1 = viewBox.x;
         let y1 = viewBox.y;

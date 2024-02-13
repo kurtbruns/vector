@@ -1,8 +1,4 @@
 export {
-  downloadSceneZip
-} from './export';
-
-export {
   bundle,
   download,
   embedMarkers,

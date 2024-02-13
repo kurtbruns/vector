@@ -32,7 +32,8 @@ export class TeX extends Group {
 
         flattenSVG(this.rendered);
 
-        this.rendered.classList.add('tex', 'mathjax');
+        // this.rendered.classList.add('tex', 'mathjax');
+        this.setAttribute('color', 'var(--font-color)');
 
         this.inner = this.group();
         this.inner.root.appendChild(this.rendered);

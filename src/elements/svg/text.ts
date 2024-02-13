@@ -15,7 +15,7 @@ type StylingAttributes = 'font-family' | 'font-size' | 'font-size-adjust' | 'fon
 export class Text extends BaseElement implements Typography {
 
   // make the type of the root to be more specific
-  root: SVGTextElement;
+  declare root: SVGTextElement;
 
   /**
   * Constructs text at the position (x,y) with the provided string

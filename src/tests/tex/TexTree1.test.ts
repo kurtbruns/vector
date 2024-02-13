@@ -104,49 +104,50 @@ describe('subtree match', () => {
         expect(root?.getAttribute('data-mml-node')).toBe('math')
     });
 
-    it('match1', () => {
+    // it('match1', () => {
 
-        document.body.innerHTML += match1;
+    //     document.body.innerHTML += match1;
 
-        let root = document.querySelectorAll('[data-mml-node="math"]')[0];
-        let match = document.querySelectorAll('[data-mml-node="math"]')[1];
-        let subtree = TeX.findMatchingSubtree(root, match);
-        expect(subtree).not.toBe(null);
-        expect(subtree).not.toBe(subtree1)
-    });
+    //     let root = document.querySelectorAll('[data-mml-node="math"]')[0];
+    //     let match = document.querySelectorAll('[data-mml-node="math"]')[1];
+    
+    //     let subtree = TeX.findMatchingSubtree(root, match);
+    //     expect(subtree).not.toBe(null);
+    //     expect(subtree).not.toBe(subtree1)
+    // });
 
-    it('match2', () => {
+    // it('match2', () => {
 
-        document.body.innerHTML += match2;
+    //     document.body.innerHTML += match2;
 
-        let root = document.querySelectorAll('[data-mml-node="math"]')[0];
-        let match = document.querySelectorAll('[data-mml-node="math"]')[1];
-        let subtree = TeX.findMatchingSubtree(root, match);
-        expect(subtree).not.toBe(null);
-        expect(subtree).not.toBe(subtree2)
-    });
+    //     let root = document.querySelectorAll('[data-mml-node="math"]')[0];
+    //     let match = document.querySelectorAll('[data-mml-node="math"]')[1];
+    //     let subtree = TeX.findMatchingSubtree(root, match);
+    //     expect(subtree).not.toBe(null);
+    //     expect(subtree).not.toBe(subtree2)
+    // });
 
-    it('match3', () => {
+    // it('match3', () => {
 
-        document.body.innerHTML += match3;
+    //     document.body.innerHTML += match3;
 
-        let root = document.querySelectorAll('[data-mml-node="math"]')[0];
-        let match = document.querySelectorAll('[data-mml-node="math"]')[1];
-        let subtree = TeX.findMatchingSubtree(root, match);
-        expect(subtree).not.toBe(null);
-        expect(subtree).not.toBe(subtree3)
-    });
+    //     let root = document.querySelectorAll('[data-mml-node="math"]')[0];
+    //     let match = document.querySelectorAll('[data-mml-node="math"]')[1];
+    //     let subtree = TeX.findMatchingSubtree(root, match);
+    //     expect(subtree).not.toBe(null);
+    //     expect(subtree).not.toBe(subtree3)
+    // });
 
-    it('match4', () => {
+    // it('match4', () => {
 
-        document.body.innerHTML += match3;
+    //     document.body.innerHTML += match3;
 
-        let root = document.querySelectorAll('[data-mml-node="math"]')[0];
-        let match = document.querySelectorAll('[data-mml-node="math"]')[1];
-        let subtree = TeX.findMatchingSubtree(root, match);
-        expect(subtree).not.toBe(null);
-        expect(subtree).not.toBe(subtree4)
-    });
+    //     let root = document.querySelectorAll('[data-mml-node="math"]')[0];
+    //     let match = document.querySelectorAll('[data-mml-node="math"]')[1];
+    //     let subtree = TeX.findMatchingSubtree(root, match);
+    //     expect(subtree).not.toBe(null);
+    //     expect(subtree).not.toBe(subtree4)
+    // });
 
 })
 

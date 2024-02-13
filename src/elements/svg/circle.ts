@@ -12,7 +12,7 @@ import { Path } from './path'
 export class Circle extends Shape {
 
   // make the type of the root to be more specific
-  root: SVGCircleElement;
+  declare root: SVGCircleElement;
 
   /**
   * Constructs a rectangle element at the position (x,y)
