@@ -105,4 +105,4 @@ export {
   Quaternion,
   Camera,
   Scene3D
-} from './three'
+} from './quaternions'
