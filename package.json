@@ -7,6 +7,7 @@
   "browser": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "scripts": {
+    "clean": "rm -rf dist",
     "build": "cross-env NODE_ENV=production webpack --config webpack.config.js && yarn tsc",
     "test": "jest",
     "test:update": "jest -u",
@@ -14,7 +15,7 @@
     "watch": "tsc -w",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "prettify": "prettier --write 'src/**/*.{js,ts}'",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run clean && npm run build && npm test"
   },
   "repository": {
     "type": "git",
