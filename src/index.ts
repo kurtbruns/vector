@@ -98,3 +98,11 @@ export {
   interpolateColor,
   hexToRGB
 } from './Color';
+
+export {
+  Vector2,
+  Vector3,
+  Quaternion,
+  Camera,
+  Scene3D
+} from './three'
