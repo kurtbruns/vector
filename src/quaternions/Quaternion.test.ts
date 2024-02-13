@@ -4,6 +4,10 @@ import { Vector3 } from './Vector3';
 
 describe('Quaternion.fromDirection', () => {
 
+    test('Test fail', () => {
+        expect(false).toBe(true);
+    });
+
     test('Standard direction (positive Z direction)', () => {
         let q1 = Quaternion.fromDirection(new Vector3(0, 0, 1));
         let q2 = new Quaternion(1, 0, 0, 0);
