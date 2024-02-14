@@ -62,7 +62,6 @@ export class CoordinateSystem extends Scene {
     constructor(config: CoordinateSystemConfig = {}) {
 
         let defaultConfig: CoordinateSystemConfig = {
-            root: config.root === undefined ? document.querySelector('#root') : config.root,
             width: 640,
             height: 360,
             axesColor: 'var(--font-color-subtle)',
@@ -76,6 +75,8 @@ export class CoordinateSystem extends Scene {
         };
 
         config = { ...defaultConfig, ...config };
+
+        config.root = config.root === undefined ? document.querySelector('#root') : config.root,
 
         super({
             root: config.root,

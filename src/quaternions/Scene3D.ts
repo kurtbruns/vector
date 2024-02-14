@@ -26,6 +26,7 @@ export interface Scene3DConfig {
     size?: number;
     distance?: number;
     controls?: boolean;
+    root?: HTMLElement;
     suffix?: string;
 }
 
@@ -48,7 +49,6 @@ export class Scene3D {
     constructor(config: Scene3DConfig = {}) {
 
         let defaultConfig = {
-
 
             cameraOrientation: new Quaternion(0.424, 0.227, -0.414, 0.773),
             cameraPosition: new Vector3(12.644, -8.047, 9.969),
@@ -87,6 +87,8 @@ export class Scene3D {
         config = { ...defaultConfig, ...config };
 
         this.viewPort = new CoordinateSystem({
+
+            root: config.root,
 
             // width: 640,
             // height: 640,
