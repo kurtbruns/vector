@@ -1,19 +1,22 @@
 {
   "name": "@kurtbruns/vector",
   "version": "0.6.0",
-  "description": "A library for creating vector graphics in the browser.",
+  "description": "A library for creating vector graphics for the browser.",
   "author": "Kurt Bruns",
   "main": "dist/lib/index.js",
   "browser": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "scripts": {
+    "clean": "rm -rf dist",
     "build": "cross-env NODE_ENV=production webpack --config webpack.config.js && yarn tsc",
     "test": "jest",
     "test:update": "jest -u",
     "tsc": "tsc --declaration true --sourceMap false --skipLibCheck",
     "watch": "tsc -w",
     "lint": "eslint 'src/**/*.{js,ts}'",
-    "prettify": "prettier --write 'src/**/*.{js,ts}'"
+    "prettify": "prettier --write 'src/**/*.{js,ts}'",
+    "preversion": "npm test",
+    "prepublishOnly": "npm run clean && npm run build && npm test"
   },
   "repository": {
     "type": "git",
