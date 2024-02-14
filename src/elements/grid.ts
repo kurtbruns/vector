@@ -115,7 +115,11 @@ export class Grid extends ResponsiveFrame {
 
         // Inject style for gridlines
         let styleElement = document.createElement('style');
-        styleElement.textContent = '.non-scaling-stroke line, path { vector-effect: non-scaling-stroke; }';
+        styleElement.textContent = `
+.non-scaling-stroke line, 
+.non-scaling-stroke path { 
+    vector-effect: non-scaling-stroke; 
+}`;
         this.definitions.root.appendChild(styleElement);
 
         // Create an internal SVG to do the heavy lifting
