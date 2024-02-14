@@ -1,5 +1,5 @@
 import { Definitions, ExportTarget, Group, Line, Path, PlotGridBased, Point, TAU, TeX, download } from "./index";
-import { Scene, SceneConfig, SceneMode } from "./scene";
+import { Scene, SceneConfig, SceneMode } from "./Scene";
 
 type PointTuple = [number, number]; // Define a tuple type for a point
 
@@ -112,24 +112,30 @@ export class CoordinateSystem extends Scene {
 
         if (config.drawGrid) {
             if (config.big && !config.half) {
-                plot.drawGridLines2();
+                plot.drawGridLines();
             } else if (config.big && config.half) {
-                plot.drawGridLines2(['half', 'big'], ['half', 'big'],
+                plot.drawGridLines(
+                    ['half', 'big'], 
+                    ['half', 'big'],
                     {
-                        'big': 'primary',
-                        'half': 'secondary',
+                        'big': {'stroke': 'var(--grid-primary)'},
+                        'second': {'stroke': 'var(--grid-secondary)'},
                     });
             }
             else if (!config.half) {
-                plot.drawGridLines2(['small-half', 'small'], ['small-half', 'small'],
+                plot.drawGridLines(
+                    ['small'],
+                    ['small'],
                     {
-                        'small': 'primary',
+                        'small': {'stroke': 'var(--grid-primary)'},
                     });
             } else {
-                plot.drawGridLines2(['small-half', 'small'], ['small-half', 'small'],
+                plot.drawGridLines(
+                    ['small-half', 'small'],
+                    ['small-half', 'small'],
                     {
-                        'small': 'primary',
-                        'small-half': 'tertiary',
+                        'small': {'stroke': 'var(--grid-primary)'},
+                        'small-half': {'stroke': 'var(--grid-tertiary)'},
                     });
             }
         }

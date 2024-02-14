@@ -1,5 +1,5 @@
 import { TAU } from "../../util/math";
-import { Plot } from "./plot";
+import { Plot } from "./Plot";
 
 /**
  * An extension of the plot object that specializes in drawing a tau scaled coordinate system

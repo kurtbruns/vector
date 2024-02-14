@@ -1,10 +1,10 @@
-import { Input } from './input'
+import { Input } from './Input'
 
 import { Path } from '../svg/path'
 import { Circle } from '../svg/circle'
 import { Rectangle } from '../svg/rectangle'
 import { TAU } from '../../util/math'
-import { Point } from '../../model/point'
+import { Point } from '../../model/Point'
 
 /**
 * A control point is a draggable two dimensional point.
@@ -59,8 +59,16 @@ export class Control extends Input {
         // create the svg components
         this.point = this.circle(0, 0, Control.pointRadius);
         this.handle = this.circle(0, 0, Control.handleRadius);
-        this.point.classList.add('point');
+
+        this.point.setAttribute('fill', 'var(--primary)');
+        this.point.setAttribute('stroke', 'none');
+
         this.handle.classList.add('handle');
+        this.handle.setAttribute('fill', 'transparent');
+        this.handle.setAttribute('stroke', 'var(--primary)');
+        this.handle.setAttribute('stroke-width', '2px');
+        this.handle.style.opacity = '0';
+
         this.root.classList.add('control');
 
         // initialize instance variables
@@ -136,7 +144,7 @@ export class Control extends Input {
         if (Control.active != null) {
 
             // remove highlighting from the active control and set to null
-            Control.active.handle.root.classList.remove('highlight');
+            Control.active.handle.style.opacity = '0';
             Control.active = null;
 
             // fire a mouseover event to highlight either: an interactive control,
@@ -161,7 +169,7 @@ export class Control extends Input {
     static handleMouseOver(event: MouseEvent) {
         let target = (event.target as HTMLElement);
         if (Control.active == null && !Control.disable && target.tagName == 'circle' && target.classList.contains('handle')) {
-            (event.target as HTMLElement).classList.add('highlight');
+            (event.target as HTMLElement).style.opacity = '1';
         }
     }
 
@@ -171,7 +179,7 @@ export class Control extends Input {
     */
     handleMouseOut(event: MouseEvent) {
         if (Control.active == null) {
-            (event.target as HTMLElement).classList.remove('highlight');
+            (event.target as HTMLElement).style.opacity = '0';
         }
     }
 

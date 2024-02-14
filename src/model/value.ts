@@ -1,4 +1,4 @@
-import { BaseNode } from './node';
+import { BaseNode } from './Node';
 
 /**
 * A value

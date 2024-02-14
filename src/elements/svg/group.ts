@@ -17,7 +17,7 @@ import { Title } from './title'
 import { Use } from './use'
 import { Description } from './description'
 import { MetaData } from './meta-data'
-import { Label } from '../visual/label'
+import { Label } from '../visual/Label'
 
 type GroupAttributes = 'clip-path' | 'transform';
 

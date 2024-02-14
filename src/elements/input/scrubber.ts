@@ -1,5 +1,5 @@
-import { Slider } from './slider'
-import { SliderOptions } from './slider'
+import { Slider } from './Slider'
+import { SliderOptions } from './Slider'
 import { Group } from '../svg/group'
 
 export interface ScrubberOptions extends SliderOptions {

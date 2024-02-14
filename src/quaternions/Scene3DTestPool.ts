@@ -1,16 +1,16 @@
 import { Camera } from "./Camera";
-import { Quaternion } from "./Quaternion";
-import { Vector3 } from "./Vector3";
+import { Vector3Pooling } from "./Vector3Pooling";
 import { Vector2 } from "./Vector2";
 import { AnimationFunction, BaseNode, CoordinateSystem, Group, Point, TeX } from "..";
+import { QuaternionPooling } from "./QuaternionPooling";
 
 export interface Scene3DConfig {
     width?: number;
     height?: number;
     gridWidth?: number;
     gridHeight?: number;
-    cameraPosition?: Vector3;
-    cameraOrientation?: Quaternion;
+    cameraPosition?: Vector3Pooling;
+    cameraOrientation?: QuaternionPooling;
     groundGrid?: boolean;
     drawCube?: boolean;
     // pitch?: number;
@@ -31,13 +31,13 @@ export interface Scene3DConfig {
 
 export class Scene3D {
 
-    origin: Vector3;
-    positiveX: Vector3;
-    positiveY: Vector3;
-    positiveZ: Vector3;
-    negativeX: Vector3;
-    negativeY: Vector3;
-    negativeZ: Vector3;
+    origin: Vector3Pooling;
+    positiveX: Vector3Pooling;
+    positiveY: Vector3Pooling;
+    positiveZ: Vector3Pooling;
+    negativeX: Vector3Pooling;
+    negativeY: Vector3Pooling;
+    negativeZ: Vector3Pooling;
 
     viewPort: CoordinateSystem;
     cameraDistance: number;
@@ -50,8 +50,8 @@ export class Scene3D {
         let defaultConfig = {
 
 
-            cameraOrientation: new Quaternion(0.424, 0.227, -0.414, 0.773),
-            cameraPosition: new Vector3(12.644, -8.047, 9.969),
+            cameraOrientation: new QuaternionPooling(0.424, 0.227, -0.414, 0.773),
+            cameraPosition: new Vector3Pooling(12.644, -8.047, 9.969),
 
             // // 16x9
             // gridWidth: 0.096,
@@ -114,13 +114,13 @@ export class Scene3D {
         // TODO: does not actually draw in the foreground?
         this.foreground = this.viewPort.frame.group();
 
-        this.origin = new Vector3(0, 0, 0);
-        this.positiveX = new Vector3(1, 0, 0);
-        this.positiveY = new Vector3(0, 1, 0);
-        this.positiveZ = new Vector3(0, 0, 1);
-        this.negativeX = new Vector3(-1, 0, 0);
-        this.negativeY = new Vector3(0, -1, 0);
-        this.negativeZ = new Vector3(0, 0, -1);
+        this.origin = new Vector3Pooling(0, 0, 0);
+        this.positiveX = new Vector3Pooling(1, 0, 0);
+        this.positiveY = new Vector3Pooling(0, 1, 0);
+        this.positiveZ = new Vector3Pooling(0, 0, 1);
+        this.negativeX = new Vector3Pooling(-1, 0, 0);
+        this.negativeY = new Vector3Pooling(0, -1, 0);
+        this.negativeZ = new Vector3Pooling(0, 0, -1);
 
         this.cameraDistance = config.distance;
 
@@ -130,16 +130,16 @@ export class Scene3D {
         let farPlane = 1000;
         let distance = config.distance;
 
-        let position = new Vector3(0, -0.0001, this.cameraDistance);
+        let position = new Vector3Pooling(0, -0.0001, this.cameraDistance);
 
         if (config.cameraPosition) {
             position = config.cameraPosition;
         }
 
-        let orientation = Quaternion.orientationBetween(position, this.origin);
+        let orientation = QuaternionPooling.orientationBetween(position, this.origin);
 
         this.camera = new Camera(position, orientation, fov, aspectRatio, nearPlane, farPlane);
-        this.camera.lookAt(this.origin, new Vector3(0, 0, -1));
+        this.camera.lookAt(this.origin, new Vector3Pooling(0, 0, -1));
         if (config.cameraOrientation) {
             this.camera.orientation = config.cameraOrientation;
         }
@@ -220,15 +220,13 @@ export class Scene3D {
                 z = (r * r / 2) / Math.sqrt(distance);
             }
 
-            return new Vector3(x, y, z).normalize();
+            return new Vector3Pooling(x, y, z).normalize();
         }
 
         // Mouse down handler
         const handleMouseDown = (event: MouseEvent) => {
             if (this.viewPort.frame.root.contains(event.target as HTMLElement)) {
                 isDragging = true;
-                this.viewPort.plot.setCTM();
-                this.viewPort.plot.setBoundingRect();
                 prevX = event.clientX;
                 prevY = event.clientY;
             }
@@ -243,38 +241,57 @@ export class Scene3D {
                 const v1 = projectOnTrackball(prevX, prevY);
                 const v2 = projectOnTrackball(event.clientX, event.clientY);
 
-                const q1 = Quaternion.fromVector(v1);
-                const q2 = Quaternion.fromVector(v2);
+                const q1 = QuaternionPooling.fromVector(v1);
+                const q2 = QuaternionPooling.fromVector(v2);
 
-                let r = q2.multiply(q1.conjugate());
+                let t1 = q1.conjugate();
+                let r = q2.multiply(t1);
 
                 // Convert the global rotation to a local rotation
-                let localRotation = this.camera.orientation.conjugate().multiply(r).multiply(this.camera.orientation).normalize();
+                let t2 = this.camera.orientation.conjugate();
+                let t3 = t2.multiply(r);
+                let t4 = t3.multiply(this.camera.orientation)
+                let localRotation = t4.normalize();
 
                 // Apply the local rotation to the camera's orientation
                 this.camera.position.applyQuaternion(localRotation);
 
-                this.camera.orientation = this.camera.orientation.multiply(localRotation.inverse());
+                let t5 = localRotation.inverse();
+                let t6 = this.camera.orientation.multiply(t5);
+                this.camera.orientation.set(t6);
+                this.camera.updateDependents();
 
+                Vector3Pooling.pool.release(v1);
+                Vector3Pooling.pool.release(v2);
+                QuaternionPooling.pool.release(q1);
+                QuaternionPooling.pool.release(q2);
+                QuaternionPooling.pool.release(t1);
+                QuaternionPooling.pool.release(t2);
+                QuaternionPooling.pool.release(t3);
+                QuaternionPooling.pool.release(t4);
+                QuaternionPooling.pool.release(localRotation);
+                QuaternionPooling.pool.release(t5);
+                QuaternionPooling.pool.release(t6);
+                
 
             } else if (isDragging && (event.clientX !== prevX || event.clientY !== prevY)) {
 
                 let up_vec;
-                let right_vec: Vector3;
+                let right_vec: Vector3Pooling;
 
                 if (upAxis === 'x') {
 
-                    up_vec = new Vector3(0, 0, 1);
-                    right_vec = new Vector3(0, 1, 0);
+                    up_vec = new Vector3Pooling(0, 0, 1);
+                    right_vec = new Vector3Pooling(0, 1, 0);
 
                     let q = this.camera.orientation.conjugate();
                     let c = q.conjugate();
-                    let up = q.multiply(Quaternion.fromVector(up_vec)).multiply(c);
-                    let forward = q.multiply(Quaternion.fromVector(right_vec)).multiply(c);
+                    let up = q.multiply(QuaternionPooling.fromVector(up_vec)).multiply(c);
+                    let forward = q.multiply(QuaternionPooling.fromVector(right_vec)).multiply(c);
 
                     let scalar = 200;
-                    let r = Quaternion.fromAxisAngle(new Vector3(1, 0, 0), -(event.clientX - prevX) / scalar);
-                    let s = Quaternion.fromAxisAngle(up.toVector3().cross(forward.toVector3()).normalize(), -(event.clientY - prevY) / scalar);
+                    let r = QuaternionPooling.fromAxisAngle(new Vector3Pooling(1, 0, 0), -(event.clientX - prevX) / scalar);
+                    let s = QuaternionPooling.fromAxisAngle(up.toVector3().cross(forward.toVector3()).normalize(), -(event.clientY - prevY) / scalar);
 
                     let u = r.multiply(s).normalize();
 
@@ -284,25 +301,25 @@ export class Scene3D {
                 } else {
                     switch (upAxis) {
                         case 'y':
-                            up_vec = new Vector3(0, 1, 0);
-                            right_vec = new Vector3(0, 0, -1);
+                            up_vec = new Vector3Pooling(0, 1, 0);
+                            right_vec = new Vector3Pooling(0, 0, -1);
                             break;
                         default:
-                            up_vec = new Vector3(0, 0, 1);
-                            right_vec = new Vector3(0, 1, 0);
+                            up_vec = new Vector3Pooling(0, 0, 1);
+                            right_vec = new Vector3Pooling(0, 1, 0);
                             break;
                     }
 
 
                     let q = this.camera.orientation.conjugate();
                     let c = q.conjugate();
-                    let up = q.multiply(Quaternion.fromVector(up_vec)).multiply(c);
-                    let forward = q.multiply(Quaternion.fromVector(right_vec)).multiply(c);
+                    let up = q.multiply(QuaternionPooling.fromVector(up_vec)).multiply(c);
+                    let forward = q.multiply(QuaternionPooling.fromVector(right_vec)).multiply(c);
 
                     let scalar = 200;
-                    let r = Quaternion.fromAxisAngle(up.toVector3().cross(forward.toVector3()).normalize(), -(event.clientY - prevY) / scalar);
+                    let r = QuaternionPooling.fromAxisAngle(up.toVector3().cross(forward.toVector3()).normalize(), -(event.clientY - prevY) / scalar);
                     // let r = Quaternion.fromAxisAngle(forward.toVector3().cross(up.toVector3()).normalize(), (event.clientY - prevY)/scalar);
-                    let s = Quaternion.fromAxisAngle(up_vec, -(event.clientX - prevX) / scalar);
+                    let s = QuaternionPooling.fromAxisAngle(up_vec, -(event.clientX - prevX) / scalar);
 
                     let u = s.multiply(r).normalize();
 
@@ -319,19 +336,17 @@ export class Scene3D {
         // Mouse up handler
         const handleMouseUp = () => {
             isDragging = false;
-            this.viewPort.plot.releaseBoundingRect();
-            this.viewPort.plot.releaseCTM();
         };
 
         // Keydown handler
         const handleKeyDown = (event: KeyboardEvent) => {
             switch (event.key) {
                 case 'ArrowUp':
-                    this.camera.lookAt(this.origin, new Vector3(0, 0, -1));
+                    this.camera.lookAt(this.origin, new Vector3Pooling(0, 0, -1));
                     break;
                 case 'ArrowDown':
                     // Handle arrow down key
-                    this.camera.lookAt(this.origin, new Vector3(0, 0, 1));
+                    this.camera.lookAt(this.origin, new Vector3Pooling(0, 0, 1));
                     break;
                 case 'ArrowLeft':
                     // Handle arrow left key
@@ -352,17 +367,17 @@ export class Scene3D {
                     break;
                 case 'x':
                     upAxis = 'x';
-                    this.camera.lookAt(this.origin, new Vector3(-1, 0, 0));
+                    this.camera.lookAt(this.origin, new Vector3Pooling(-1, 0, 0));
                     event.preventDefault();
                     break;
                 case 'y':
                     upAxis = 'y';
-                    this.camera.lookAt(this.origin, new Vector3(0, -1, 0));
+                    this.camera.lookAt(this.origin, new Vector3Pooling(0, -1, 0));
                     event.preventDefault();
                     break;
                 case 'z':
                     upAxis = 'z';
-                    this.camera.lookAt(this.origin, new Vector3(0, 0, -1));
+                    this.camera.lookAt(this.origin, new Vector3Pooling(0, 0, -1));
                     event.preventDefault();
                     break;
                 case ' ':
@@ -423,20 +438,20 @@ export class Scene3D {
         window.addEventListener('keyup', handleKeyUp);
     }
 
-    drawComponents(v: Vector3) {
-        let i = new Vector3();
+    drawComponents(v: Vector3Pooling) {
+        let i = new Vector3Pooling();
         i.addDependency(v);
         i.update = () => {
             i.x = v.x;
         };
 
-        let j = new Vector3();
+        let j = new Vector3Pooling();
         j.addDependency(v);
         j.update = () => {
             j.y = v.y;
         };
 
-        let k = new Vector3();
+        let k = new Vector3Pooling();
         k.addDependency(v);
         k.update = () => {
             k.z = v.z;
@@ -446,7 +461,7 @@ export class Scene3D {
         // this.vector(this.origin, j, 'var(--green)');
         // this.vector(this.origin, k, 'var(--blue)');
 
-        let vi = new Vector3();
+        let vi = new Vector3Pooling();
         vi.addDependency(v, i);
         vi.update = () => {
             let temp = v.subtract(i);
@@ -456,7 +471,7 @@ export class Scene3D {
         };
         this.line(vi, v, 'var(--green)');
 
-        let vj = new Vector3();
+        let vj = new Vector3Pooling();
         vj.addDependency(v, j);
         vj.update = () => {
             let temp = v.subtract(j);
@@ -466,7 +481,7 @@ export class Scene3D {
         };
         this.line(vj, v, 'var(--red)');
 
-        let vz = new Vector3();
+        let vz = new Vector3Pooling();
         vz.addDependency(v, k);
         vz.update = () => {
             let temp = v.subtract(k);
@@ -477,21 +492,21 @@ export class Scene3D {
         this.line(vz, v, 'var(--blue)');
     }
 
-    static convertSphericalToCartesian(latitude: number, longitude: number): Vector3 {
+    static convertSphericalToCartesian(latitude: number, longitude: number): Vector3Pooling {
         // Assuming radius is 1
         let x = Math.cos(latitude) * Math.cos(longitude);
         let y = Math.cos(latitude) * Math.sin(longitude);
         let z = Math.sin(latitude);
 
-        return new Vector3(x, y, z)
+        return new Vector3Pooling(x, y, z)
     }
 
-    static generateSphereLongitudeSlices(lats: number, longs: number): Vector3[][] {
-        let points: Vector3[][] = [];
+    static generateSphereLongitudeSlices(lats: number, longs: number): Vector3Pooling[][] {
+        let points: Vector3Pooling[][] = [];
 
         for (let longIndex = 0; longIndex < longs; longIndex++) {
 
-            let slice: Vector3[] = [];
+            let slice: Vector3Pooling[] = [];
 
             let long = (2 * Math.PI * longIndex / longs);
 
@@ -508,11 +523,11 @@ export class Scene3D {
         return points;
     }
 
-    static generateSphereLatitudeSlices(lats: number, longs: number): Vector3[][] {
-        let points: Vector3[][] = [];
+    static generateSphereLatitudeSlices(lats: number, longs: number): Vector3Pooling[][] {
+        let points: Vector3Pooling[][] = [];
 
         for (let latIndex = 0; latIndex <= lats; latIndex++) {
-            let slice: Vector3[] = [];
+            let slice: Vector3Pooling[] = [];
 
             // Compute the latitude angle, ranging from -90 to 90 degrees
             let lat = (Math.PI / 2) - (Math.PI * latIndex / lats);
@@ -534,8 +549,8 @@ export class Scene3D {
     }
 
 
-    static generateSpherePoints(lats: number, longs: number): Vector3[] {
-        let points: Vector3[] = [];
+    static generateSpherePoints(lats: number, longs: number): Vector3Pooling[] {
+        let points: Vector3Pooling[] = [];
 
         // for (let i = n - 1; i >= 0; i--) {
         for (let i = 0; i <= longs; i++) {
@@ -558,9 +573,9 @@ export class Scene3D {
         return points;
     }
 
-    static generateSpherePointsEuler(radius: number, count: number, center: Vector3 = new Vector3()) {
+    static generateSpherePointsEuler(radius: number, count: number, center: Vector3Pooling = new Vector3Pooling()) {
 
-        const points: Vector3[] = [];
+        const points: Vector3Pooling[] = [];
         const offset = 2 / count;
         const increment = Math.PI * (3 - Math.sqrt(5));
 
@@ -571,15 +586,15 @@ export class Scene3D {
             const x = Math.cos(phi) * r;
             const z = Math.sin(phi) * r;
 
-            points.push(new Vector3(x, y, z).normalize().scale(radius).add(center));
+            points.push(new Vector3Pooling(x, y, z).normalize().scale(radius).add(center));
         }
 
         return points;
     }
 
-    drawSphere(radius: number, count: number, center: Vector3 = new Vector3()) {
+    drawSphere(radius: number, count: number, center: Vector3Pooling = new Vector3Pooling()) {
 
-        const points: Vector3[] = [];
+        const points: Vector3Pooling[] = [];
         const offset = 2 / count;
         const increment = Math.PI * (3 - Math.sqrt(5));
 
@@ -590,7 +605,7 @@ export class Scene3D {
             const x = Math.cos(phi) * r;
             const z = Math.sin(phi) * r;
 
-            points.push(new Vector3(x, y, z).normalize().scale(radius).add(center));
+            points.push(new Vector3Pooling(x, y, z).normalize().scale(radius).add(center));
         }
 
         for (let i = 0; i < points.length; i++) {
@@ -616,7 +631,7 @@ export class Scene3D {
         for (let i = -x; i <= x; i++) {
             for (let j = -x; j <= x; j++) {
                 for (let k = -x; k <= x; k++) {
-                    this.drawPoint(new Vector3(i, j, k), { color: 'var(--muted-primary)' });
+                    this.drawPoint(new Vector3Pooling(i, j, k), { color: 'var(--muted-primary)' });
                 }
             }
         }
@@ -625,11 +640,11 @@ export class Scene3D {
     drawGroundGrid(c: number = 5, color: string = 'var(--font-color)', opacity: number = 0.2) {
 
         for (let j = -c; j <= c; j++) {
-            this.line(new Vector3(-c, j, 0), new Vector3(c, j, 0), color, opacity);
+            this.line(new Vector3Pooling(-c, j, 0), new Vector3Pooling(c, j, 0), color, opacity);
         }
 
         for (let i = -c; i <= c; i++) {
-            this.line(new Vector3(i, -c, 0), new Vector3(i, c, 0), color, opacity);
+            this.line(new Vector3Pooling(i, -c, 0), new Vector3Pooling(i, c, 0), color, opacity);
         }
     }
 
@@ -665,28 +680,28 @@ export class Scene3D {
         for (let d = 1; d <= c; d++) {
 
             // Positive z Direction
-            this.line(new Vector3(a, 0, d), new Vector3(-a, 0, d), 'var(--blue)', opacity);
-            this.line(new Vector3(0, a, d), new Vector3(0, -a, d), 'var(--blue)', opacity);
+            this.line(new Vector3Pooling(a, 0, d), new Vector3Pooling(-a, 0, d), 'var(--blue)', opacity);
+            this.line(new Vector3Pooling(0, a, d), new Vector3Pooling(0, -a, d), 'var(--blue)', opacity);
 
             // Negative z Direction
-            this.line(new Vector3(a, 0, -d), new Vector3(-a, 0, -d), `var(--blue)`, opacity);
-            this.line(new Vector3(0, a, -d), new Vector3(0, -a, -d), 'var(--blue)', opacity);
+            this.line(new Vector3Pooling(a, 0, -d), new Vector3Pooling(-a, 0, -d), `var(--blue)`, opacity);
+            this.line(new Vector3Pooling(0, a, -d), new Vector3Pooling(0, -a, -d), 'var(--blue)', opacity);
 
             // Positive x Direction
-            this.line(new Vector3(d, a, 0), new Vector3(d, -a, 0), 'var(--green)', opacity);
-            this.line(new Vector3(d, 0, a), new Vector3(d, 0, -a), 'var(--green)', opacity);
+            this.line(new Vector3Pooling(d, a, 0), new Vector3Pooling(d, -a, 0), 'var(--green)', opacity);
+            this.line(new Vector3Pooling(d, 0, a), new Vector3Pooling(d, 0, -a), 'var(--green)', opacity);
 
             // Negative x Direction
-            this.line(new Vector3(-d, a, 0), new Vector3(-d, -a, 0), 'var(--green)', opacity);
-            this.line(new Vector3(-d, 0, a), new Vector3(-d, 0, -a), 'var(--green)', opacity);
+            this.line(new Vector3Pooling(-d, a, 0), new Vector3Pooling(-d, -a, 0), 'var(--green)', opacity);
+            this.line(new Vector3Pooling(-d, 0, a), new Vector3Pooling(-d, 0, -a), 'var(--green)', opacity);
 
             // Positive y Direction
-            this.line(new Vector3(a, d, 0), new Vector3(-a, d, 0), 'var(--red)', opacity);
-            this.line(new Vector3(0, d, a), new Vector3(0, d, -a), 'var(--red)', opacity);
+            this.line(new Vector3Pooling(a, d, 0), new Vector3Pooling(-a, d, 0), 'var(--red)', opacity);
+            this.line(new Vector3Pooling(0, d, a), new Vector3Pooling(0, d, -a), 'var(--red)', opacity);
 
             // Negative y Direction
-            this.line(new Vector3(a, -d, 0), new Vector3(-a, -d, 0), 'var(--red)', opacity);
-            this.line(new Vector3(0, -d, a), new Vector3(0, -d, -a), 'var(--red)', opacity);
+            this.line(new Vector3Pooling(a, -d, 0), new Vector3Pooling(-a, -d, 0), 'var(--red)', opacity);
+            this.line(new Vector3Pooling(0, -d, a), new Vector3Pooling(0, -d, -a), 'var(--red)', opacity);
         }
     }
 
@@ -695,28 +710,28 @@ export class Scene3D {
         for (let d = 1; d <= c; d++) {
 
             // Positive z Direction
-            this.line(new Vector3(a, 0, d), new Vector3(-a, 0, d), 'var(--font-color)', opacity);
-            this.line(new Vector3(0, a, d), new Vector3(0, -a, d), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(a, 0, d), new Vector3Pooling(-a, 0, d), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(0, a, d), new Vector3Pooling(0, -a, d), 'var(--font-color)', opacity);
 
             // Negative z Direction
-            this.line(new Vector3(a, 0, -d), new Vector3(-a, 0, -d), `var(--font-color)`, opacity);
-            this.line(new Vector3(0, a, -d), new Vector3(0, -a, -d), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(a, 0, -d), new Vector3Pooling(-a, 0, -d), `var(--font-color)`, opacity);
+            this.line(new Vector3Pooling(0, a, -d), new Vector3Pooling(0, -a, -d), 'var(--font-color)', opacity);
 
             // Positive x Direction
-            this.line(new Vector3(d, a, 0), new Vector3(d, -a, 0), 'var(--font-color)', opacity);
-            this.line(new Vector3(d, 0, a), new Vector3(d, 0, -a), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(d, a, 0), new Vector3Pooling(d, -a, 0), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(d, 0, a), new Vector3Pooling(d, 0, -a), 'var(--font-color)', opacity);
 
             // Negative x Direction
-            this.line(new Vector3(-d, a, 0), new Vector3(-d, -a, 0), 'var(--font-color)', opacity);
-            this.line(new Vector3(-d, 0, a), new Vector3(-d, 0, -a), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(-d, a, 0), new Vector3Pooling(-d, -a, 0), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(-d, 0, a), new Vector3Pooling(-d, 0, -a), 'var(--font-color)', opacity);
 
             // Positive y Direction
-            this.line(new Vector3(a, d, 0), new Vector3(-a, d, 0), 'var(--font-color)', opacity);
-            this.line(new Vector3(0, d, a), new Vector3(0, d, -a), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(a, d, 0), new Vector3Pooling(-a, d, 0), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(0, d, a), new Vector3Pooling(0, d, -a), 'var(--font-color)', opacity);
 
             // Negative y Direction
-            this.line(new Vector3(a, -d, 0), new Vector3(-a, -d, 0), 'var(--font-color)', opacity);
-            this.line(new Vector3(0, -d, a), new Vector3(0, -d, -a), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(a, -d, 0), new Vector3Pooling(-a, -d, 0), 'var(--font-color)', opacity);
+            this.line(new Vector3Pooling(0, -d, a), new Vector3Pooling(0, -d, -a), 'var(--font-color)', opacity);
         }
     }
 
@@ -725,28 +740,28 @@ export class Scene3D {
         for (let d = 1; d <= c; d++) {
 
             // Positive z Direction
-            this.line(new Vector3(a, 0, d), new Vector3(-a, 0, d), 'var(--blue)', opacity);
-            this.line(new Vector3(0, a, d), new Vector3(0, -a, d), 'var(--blue)', opacity);
+            this.line(new Vector3Pooling(a, 0, d), new Vector3Pooling(-a, 0, d), 'var(--blue)', opacity);
+            this.line(new Vector3Pooling(0, a, d), new Vector3Pooling(0, -a, d), 'var(--blue)', opacity);
 
             // Negative z Direction
-            this.line(new Vector3(a, 0, -d), new Vector3(-a, 0, -d), 'var(--orange)', opacity);
-            this.line(new Vector3(0, a, -d), new Vector3(0, -a, -d), 'var(--orange)', opacity);
+            this.line(new Vector3Pooling(a, 0, -d), new Vector3Pooling(-a, 0, -d), 'var(--orange)', opacity);
+            this.line(new Vector3Pooling(0, a, -d), new Vector3Pooling(0, -a, -d), 'var(--orange)', opacity);
 
             // Positive x Direction
-            this.line(new Vector3(d, a, 0), new Vector3(d, -a, 0), 'var(--green)', opacity);
-            this.line(new Vector3(d, 0, a), new Vector3(d, 0, -a), 'var(--green)', opacity);
+            this.line(new Vector3Pooling(d, a, 0), new Vector3Pooling(d, -a, 0), 'var(--green)', opacity);
+            this.line(new Vector3Pooling(d, 0, a), new Vector3Pooling(d, 0, -a), 'var(--green)', opacity);
 
             // Negative x Direction
-            this.line(new Vector3(-d, a, 0), new Vector3(-d, -a, 0), 'var(--purple)', opacity);
-            this.line(new Vector3(-d, 0, a), new Vector3(-d, 0, -a), 'var(--purple)', opacity);
+            this.line(new Vector3Pooling(-d, a, 0), new Vector3Pooling(-d, -a, 0), 'var(--purple)', opacity);
+            this.line(new Vector3Pooling(-d, 0, a), new Vector3Pooling(-d, 0, -a), 'var(--purple)', opacity);
 
             // Positive y Direction
-            this.line(new Vector3(a, d, 0), new Vector3(-a, d, 0), 'var(--red)', opacity);
-            this.line(new Vector3(0, d, a), new Vector3(0, d, -a), 'var(--red)', opacity);
+            this.line(new Vector3Pooling(a, d, 0), new Vector3Pooling(-a, d, 0), 'var(--red)', opacity);
+            this.line(new Vector3Pooling(0, d, a), new Vector3Pooling(0, d, -a), 'var(--red)', opacity);
 
             // Negative y Direction
-            this.line(new Vector3(a, -d, 0), new Vector3(-a, -d, 0), 'var(--cyan)', opacity);
-            this.line(new Vector3(0, -d, a), new Vector3(0, -d, -a), 'var(--cyan)', opacity);
+            this.line(new Vector3Pooling(a, -d, 0), new Vector3Pooling(-a, -d, 0), 'var(--cyan)', opacity);
+            this.line(new Vector3Pooling(0, -d, a), new Vector3Pooling(0, -d, -a), 'var(--cyan)', opacity);
         }
     }
 
@@ -756,48 +771,48 @@ export class Scene3D {
         let d = 3;
 
         // Positive Z Direction
-        this.drawPoint(new Vector3(a, 0, d), { color: 'var(--blue)' });
-        this.drawPoint(new Vector3(0, a, d), { color: 'var(--blue)' });
-        this.drawPoint(new Vector3(-a, 0, d), { color: 'var(--blue)' });
-        this.drawPoint(new Vector3(0, -a, d), { color: 'var(--blue)' });
+        this.drawPoint(new Vector3Pooling(a, 0, d), { color: 'var(--blue)' });
+        this.drawPoint(new Vector3Pooling(0, a, d), { color: 'var(--blue)' });
+        this.drawPoint(new Vector3Pooling(-a, 0, d), { color: 'var(--blue)' });
+        this.drawPoint(new Vector3Pooling(0, -a, d), { color: 'var(--blue)' });
 
         // Negative Z Direction
-        this.drawPoint(new Vector3(a, 0, -d), { color: 'var(--yellow)' });
-        this.drawPoint(new Vector3(0, a, -d), { color: 'var(--yellow)' });
-        this.drawPoint(new Vector3(-a, 0, -d), { color: 'var(--yellow)' });
-        this.drawPoint(new Vector3(0, -a, -d), { color: 'var(--yellow)' });
+        this.drawPoint(new Vector3Pooling(a, 0, -d), { color: 'var(--yellow)' });
+        this.drawPoint(new Vector3Pooling(0, a, -d), { color: 'var(--yellow)' });
+        this.drawPoint(new Vector3Pooling(-a, 0, -d), { color: 'var(--yellow)' });
+        this.drawPoint(new Vector3Pooling(0, -a, -d), { color: 'var(--yellow)' });
 
         // Positive X Direction
-        this.drawPoint(new Vector3(d, a, 0), { color: 'var(--green)' });
-        this.drawPoint(new Vector3(d, 0, a), { color: 'var(--green)' });
-        this.drawPoint(new Vector3(d, -a, 0), { color: 'var(--green)' });
-        this.drawPoint(new Vector3(d, 0, -a), { color: 'var(--green)' });
+        this.drawPoint(new Vector3Pooling(d, a, 0), { color: 'var(--green)' });
+        this.drawPoint(new Vector3Pooling(d, 0, a), { color: 'var(--green)' });
+        this.drawPoint(new Vector3Pooling(d, -a, 0), { color: 'var(--green)' });
+        this.drawPoint(new Vector3Pooling(d, 0, -a), { color: 'var(--green)' });
 
         // Negative X Direction
-        this.drawPoint(new Vector3(-d, a, 0), { color: 'var(--purple)' });
-        this.drawPoint(new Vector3(-d, 0, a), { color: 'var(--purple)' });
-        this.drawPoint(new Vector3(-d, -a, 0), { color: 'var(--purple)' });
-        this.drawPoint(new Vector3(-d, 0, -a), { color: 'var(--purple)' });
+        this.drawPoint(new Vector3Pooling(-d, a, 0), { color: 'var(--purple)' });
+        this.drawPoint(new Vector3Pooling(-d, 0, a), { color: 'var(--purple)' });
+        this.drawPoint(new Vector3Pooling(-d, -a, 0), { color: 'var(--purple)' });
+        this.drawPoint(new Vector3Pooling(-d, 0, -a), { color: 'var(--purple)' });
 
         // Positive Y Direction
-        this.drawPoint(new Vector3(a, d, 0), { color: 'var(--red)' });
-        this.drawPoint(new Vector3(0, d, a), { color: 'var(--red)' });
-        this.drawPoint(new Vector3(-a, d, 0), { color: 'var(--red)' });
-        this.drawPoint(new Vector3(0, d, -a), { color: 'var(--red)' });
+        this.drawPoint(new Vector3Pooling(a, d, 0), { color: 'var(--red)' });
+        this.drawPoint(new Vector3Pooling(0, d, a), { color: 'var(--red)' });
+        this.drawPoint(new Vector3Pooling(-a, d, 0), { color: 'var(--red)' });
+        this.drawPoint(new Vector3Pooling(0, d, -a), { color: 'var(--red)' });
 
         // Negative Y Direction
-        this.drawPoint(new Vector3(a, -d, 0), { color: 'var(--font-color)' });
-        this.drawPoint(new Vector3(0, -d, a), { color: 'var(--font-color)' });
-        this.drawPoint(new Vector3(-a, -d, 0), { color: 'var(--font-color)' });
-        this.drawPoint(new Vector3(0, -d, -a), { color: 'var(--font-color)' });
+        this.drawPoint(new Vector3Pooling(a, -d, 0), { color: 'var(--font-color)' });
+        this.drawPoint(new Vector3Pooling(0, -d, a), { color: 'var(--font-color)' });
+        this.drawPoint(new Vector3Pooling(-a, -d, 0), { color: 'var(--font-color)' });
+        this.drawPoint(new Vector3Pooling(0, -d, -a), { color: 'var(--font-color)' });
 
     }
 
     drawCube(c: number = 5, points: boolean = true) {
-        let t1 = new Vector3(-c, -c, c);
-        let t2 = new Vector3(c, -c, c);
-        let t3 = new Vector3(c, c, c);
-        let t4 = new Vector3(-c, c, c);
+        let t1 = new Vector3Pooling(-c, -c, c);
+        let t2 = new Vector3Pooling(c, -c, c);
+        let t3 = new Vector3Pooling(c, c, c);
+        let t4 = new Vector3Pooling(-c, c, c);
 
         if (points) {
             this.drawPoint(t1, { color: 'var(--muted-primary)' });
@@ -820,10 +835,10 @@ export class Scene3D {
 
         // bottom
 
-        let b1 = new Vector3(-c, -c, -c);
-        let b2 = new Vector3(c, -c, -c);
-        let b3 = new Vector3(c, c, -c);
-        let b4 = new Vector3(-c, c, -c);
+        let b1 = new Vector3Pooling(-c, -c, -c);
+        let b2 = new Vector3Pooling(c, -c, -c);
+        let b3 = new Vector3Pooling(c, c, -c);
+        let b4 = new Vector3Pooling(-c, c, -c);
 
         if (points) {
             this.drawPoint(b1, { color: 'var(--muted-primary)' });
@@ -843,9 +858,9 @@ export class Scene3D {
         this.line(t4, b4, 'var(--muted-primary)');
     }
 
-    project(u: Vector3, p: Vector3): Vector3 {
+    project(u: Vector3Pooling, p: Vector3Pooling): Vector3Pooling {
 
-        let q = new Vector3();
+        let q = new Vector3Pooling();
         q.addDependency(u, p);
         q.update = () => {
             q.set(p.copy().scale(u.dot(p) / p.dot(p)));
@@ -855,7 +870,7 @@ export class Scene3D {
         return q;
     }
 
-    tex(v: Vector3, s: string, replace?: () => string) {
+    tex(v: Vector3Pooling, s: string, replace?: () => string) {
 
         v.addDependency(this.camera);
         let t = this.viewPort.frame.tex(s)
@@ -877,7 +892,7 @@ export class Scene3D {
         return t;
     }
 
-    vectorLabel(v: Vector3, label: string, s: number = 0.6): TeX {
+    vectorLabel(v: Vector3Pooling, label: string, s: number = 0.6): TeX {
         let t = this.tex(v.add(v.copy().normalize().scale(s)), label);
         t.addDependency(v);
         t.update = () => {
@@ -889,7 +904,7 @@ export class Scene3D {
         return t;
     }
 
-    vectorCoordinatesPrefix(v: Vector3, prefix: string, s: number = 1.5): TeX {
+    vectorCoordinatesPrefix(v: Vector3Pooling, prefix: string, s: number = 1.5): TeX {
         let t = this.tex(v.add(v.copy().normalize().scale(s)), `${prefix} \\left[\\begin{array}{c} \\: ${v.x} \\: \\\\ \\: ${v.y} \\: \\\\ \\: ${v.z} \\: \\end{array}\\right]`)
         t.addDependency(v);
         t.update = () => {
@@ -901,7 +916,7 @@ export class Scene3D {
         return t;
     }
 
-    vectorCoordinates(v: Vector3, s: number = 1.5): TeX {
+    vectorCoordinates(v: Vector3Pooling, s: number = 1.5): TeX {
         let t = this.tex(v.add(v.copy().normalize().scale(s)), `\\left[\\begin{array}{c} \\: ${v.x} \\: \\\\ \\: ${v.y} \\: \\\\ \\: ${v.z} \\: \\end{array}\\right]`)
             .setColor(`${v.x}`, 'var(--green)')
             .setColor(`${v.y}`, 'var(--red)', Number(Math.abs(v.y) === Math.abs(v.x)))
@@ -909,7 +924,7 @@ export class Scene3D {
         return t;
     }
 
-    vectorCoordinates2(v: Vector3, s: number = 1.5, prefix: string = ''): TeX {
+    vectorCoordinates2(v: Vector3Pooling, s: number = 1.5, prefix: string = ''): TeX {
 
         let format = (n: number): string => {
             if (Number(n).toString().length > 2) {
@@ -936,7 +951,7 @@ export class Scene3D {
         return t;
     }
 
-    vector(v1: Vector3, v2: Vector3, color: string = 'var(--medium)', opacity = 1) {
+    vector(v1: Vector3Pooling, v2: Vector3Pooling, color: string = 'var(--medium)', opacity = 1) {
 
         v1.addDependency(this.camera);
         v2.addDependency(this.camera);
@@ -965,32 +980,32 @@ export class Scene3D {
         return l;
     }
 
-    vectorRectangle(v: Vector3, color: string = 'var(--font-color)', opacity: number = 0.4): Group {
+    vectorRectangle(v: Vector3Pooling, color: string = 'var(--font-color)', opacity: number = 0.4): Group {
 
         let g = this.viewPort.frame.group();
 
-        let vx = new Vector3();
+        let vx = new Vector3Pooling();
         vx.addDependency(v);
         vx.update = () => {
             vx.x = v.x;
         };
         vx.update();
 
-        let vy = new Vector3();
+        let vy = new Vector3Pooling();
         vy.addDependency(v);
         vy.update = () => {
             vy.y = v.y;
         };
         vy.update();
 
-        let vz = new Vector3();
+        let vz = new Vector3Pooling();
         vz.addDependency(v);
         vz.update = () => {
             vz.z = v.z;
         };
         vz.update();
 
-        let vxvy = new Vector3();
+        let vxvy = new Vector3Pooling();
         vxvy.addDependency(v);
         vxvy.update = () => {
             vxvy.x = v.x;
@@ -998,7 +1013,7 @@ export class Scene3D {
         };
         vxvy.update();
 
-        let vxvz = new Vector3();
+        let vxvz = new Vector3Pooling();
         vxvz.addDependency(v);
         vxvz.update = () => {
             vxvz.x = v.x;
@@ -1006,7 +1021,7 @@ export class Scene3D {
         };
         vxvz.update();
 
-        let vyvz = new Vector3();
+        let vyvz = new Vector3Pooling();
         vyvz.addDependency(v);
         vyvz.update = () => {
             vyvz.y = v.y;
@@ -1035,29 +1050,29 @@ export class Scene3D {
 
     }
 
-    rectangle(v: Vector3, w: Vector3, color: string = 'var(--font-color)', opacity: number = 0.4) {
+    rectangle(v: Vector3Pooling, w: Vector3Pooling, color: string = 'var(--font-color)', opacity: number = 0.4) {
 
         // Base
-        this.line(new Vector3(v.x, v.y, v.z), new Vector3(w.x, v.y, v.z), color, opacity);
-        this.line(new Vector3(v.x, v.y, v.z), new Vector3(v.x, w.y, v.z), color, opacity);
-        this.line(new Vector3(w.x, v.y, v.z), new Vector3(w.x, w.y, v.z), color, opacity);
-        this.line(new Vector3(v.x, w.y, v.z), new Vector3(w.x, w.y, v.z), color, opacity);
+        this.line(new Vector3Pooling(v.x, v.y, v.z), new Vector3Pooling(w.x, v.y, v.z), color, opacity);
+        this.line(new Vector3Pooling(v.x, v.y, v.z), new Vector3Pooling(v.x, w.y, v.z), color, opacity);
+        this.line(new Vector3Pooling(w.x, v.y, v.z), new Vector3Pooling(w.x, w.y, v.z), color, opacity);
+        this.line(new Vector3Pooling(v.x, w.y, v.z), new Vector3Pooling(w.x, w.y, v.z), color, opacity);
 
         // Verticals
-        this.line(new Vector3(v.x, v.y, v.z), new Vector3(v.x, v.y, w.z), color, opacity);
-        this.line(new Vector3(w.x, v.y, v.z), new Vector3(w.x, v.y, w.z), color, opacity);
-        this.line(new Vector3(v.x, w.y, v.z), new Vector3(v.x, w.y, w.z), color, opacity);
-        this.line(new Vector3(w.x, w.y, v.z), new Vector3(w.x, w.y, w.z), color, opacity);
+        this.line(new Vector3Pooling(v.x, v.y, v.z), new Vector3Pooling(v.x, v.y, w.z), color, opacity);
+        this.line(new Vector3Pooling(w.x, v.y, v.z), new Vector3Pooling(w.x, v.y, w.z), color, opacity);
+        this.line(new Vector3Pooling(v.x, w.y, v.z), new Vector3Pooling(v.x, w.y, w.z), color, opacity);
+        this.line(new Vector3Pooling(w.x, w.y, v.z), new Vector3Pooling(w.x, w.y, w.z), color, opacity);
 
         // Top
-        this.line(new Vector3(v.x, v.y, w.z), new Vector3(w.x, v.y, w.z), color, opacity);
-        this.line(new Vector3(v.x, v.y, w.z), new Vector3(v.x, w.y, w.z), color, opacity);
-        this.line(new Vector3(w.x, v.y, w.z), new Vector3(w.x, w.y, w.z), color, opacity);
-        this.line(new Vector3(v.x, w.y, w.z), new Vector3(w.x, w.y, w.z), color, opacity);
+        this.line(new Vector3Pooling(v.x, v.y, w.z), new Vector3Pooling(w.x, v.y, w.z), color, opacity);
+        this.line(new Vector3Pooling(v.x, v.y, w.z), new Vector3Pooling(v.x, w.y, w.z), color, opacity);
+        this.line(new Vector3Pooling(w.x, v.y, w.z), new Vector3Pooling(w.x, w.y, w.z), color, opacity);
+        this.line(new Vector3Pooling(v.x, w.y, w.z), new Vector3Pooling(w.x, w.y, w.z), color, opacity);
     }
 
 
-    line(v1: Vector3, v2: Vector3, color: string = 'var(--medium)', opacity = 0.75) {
+    line(v1: Vector3Pooling, v2: Vector3Pooling, color: string = 'var(--medium)', opacity = 0.75) {
 
         v1.addDependency(this.camera);
         v2.addDependency(this.camera);
@@ -1091,7 +1106,7 @@ export class Scene3D {
         return l;
     }
 
-    path(config: { 'stroke'?: string; 'stroke-width'?: string; 'opacity'?: string; } = {}, ...vectors: Vector3[]) {
+    path(config: { 'stroke'?: string; 'stroke-width'?: string; 'opacity'?: string; } = {}, ...vectors: Vector3Pooling[]) {
 
         let defaultConfig = { 'stroke': 'var(--main)', 'stroke-width': '1.5px', 'opacity': '1' };
 
@@ -1134,12 +1149,12 @@ export class Scene3D {
 
         options = { ...defaultOptions, ...options };
 
-        this.drawAxesHelper(new Vector3(d, 0, 0), new Vector3(-d, 0, 0), options);
-        this.drawAxesHelper(new Vector3(0, d, 0), new Vector3(0, -d, 0), options);
-        this.drawAxesHelper(new Vector3(0, 0, d), new Vector3(0, 0, -d), options);
+        this.drawAxesHelper(new Vector3Pooling(d, 0, 0), new Vector3Pooling(-d, 0, 0), options);
+        this.drawAxesHelper(new Vector3Pooling(0, d, 0), new Vector3Pooling(0, -d, 0), options);
+        this.drawAxesHelper(new Vector3Pooling(0, 0, d), new Vector3Pooling(0, 0, -d), options);
     }
 
-    drawAxesHelper(start: Vector3, end: Vector3, options: { color?: string, arrows?: boolean } = {}) {
+    drawAxesHelper(start: Vector3Pooling, end: Vector3Pooling, options: { color?: string, arrows?: boolean } = {}) {
 
         let defaultOptions = {
             color: 'var(--font-color-light)',
@@ -1183,10 +1198,10 @@ export class Scene3D {
 
     drawBasisVectors() {
 
-        let o = new Vector3(0, 0, 0);
-        let i = new Vector3(1, 0, 0);
-        let j = new Vector3(0, 1, 0);
-        let k = new Vector3(0, 0, 1);
+        let o = new Vector3Pooling(0, 0, 0);
+        let i = new Vector3Pooling(1, 0, 0);
+        let j = new Vector3Pooling(0, 1, 0);
+        let k = new Vector3Pooling(0, 0, 1);
 
         this.vector(o, i, 'var(--green)');
         this.vector(o, j, 'var(--red)');
@@ -1194,7 +1209,7 @@ export class Scene3D {
 
     }
 
-    drawPoint(p: Vector3, options: { color?: string, opacity?: number, radius?: number, scale?: boolean, s?: number } = {}) {
+    drawPoint(p: Vector3Pooling, options: { color?: string, opacity?: number, radius?: number, scale?: boolean, s?: number } = {}) {
 
         let defaultOptions = {
             color: 'var(--font-color)',

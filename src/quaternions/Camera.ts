@@ -46,11 +46,11 @@ export class Camera extends BaseNode {
         this.updateDependents();
     }
 
-    set up(v:Vector3) {
+    set up(v: Vector3) {
         this._up = v;
     }
 
-    get up() :Vector3 {
+    get up(): Vector3 {
         return this._up;
     }
 
@@ -76,15 +76,15 @@ export class Camera extends BaseNode {
 
         // Convert the Quaternion to a normal vector
         const normal = planeQuaternion.rotatePoint(Quaternion.standardForwardDirection()).normalize();
-            
+
         // If you're using the origin as a reference point for the plane
         const planePoint = new Vector3(0, 0, 0);
-    
+
         // Calculate the closest point on the plane
         const pointToPlane = point.subtract(planePoint);
         const distance = pointToPlane.dot(normal);
         const closestPoint = point.subtract(normal.scale(distance));
-    
+
         return closestPoint;
     }
 
@@ -102,7 +102,7 @@ export class Camera extends BaseNode {
         let relativePoint = point.subtract(this.position);
 
         // Apply quaternion rotation
-        let rotatedPoint = this.orientation.rotatePoint(relativePoint);
+        let rotatedPoint = relativePoint.applyQuaternion(this.orientation);
 
         // Perspective projection
         let scale = Math.tan(this.fov * 0.5 * Math.PI / 180) * this.nearPlane;
@@ -115,7 +115,7 @@ export class Camera extends BaseNode {
         // let depth = Math.abs(relativePoint.dot(forward));
 
         let depth = relativePoint.length()
-        
+
         // Return a new Vector3 with the projected x, y, and the distance
         return new Vector3(projectedX, projectedY, depth);
 
@@ -125,13 +125,13 @@ export class Camera extends BaseNode {
         const context: Camera = this;
 
         return {
-            rotate: function (axis:Vector3, angle:number) {
+            rotate: function (axis: Vector3, angle: number) {
 
                 let hasStarted = false;
                 let rotation = Quaternion.fromAxisAngle(axis, angle);
-                let position : Vector3 = context._position;
-                let orientation : Quaternion;
-    
+                let position: Vector3 = context._position;
+                let orientation: Quaternion;
+
                 return (alpha: number) => {
                     if (!hasStarted) {
                         hasStarted = true;
@@ -140,8 +140,25 @@ export class Camera extends BaseNode {
 
                     let r = Quaternion.slerp(orientation, orientation.multiply(rotation), alpha);
                     context._orientation = r;
-                    context._position = new Vector3(0,0,1).scale(position.length()).applyQuaternion(r.conjugate())
+                    context._position = new Vector3(0, 0, 1).scale(position.length()).applyQuaternion(r.conjugate())
 
+                    context.updateDependents();
+                };
+            },
+            spin: function (axis: Vector3, angle: number) {
+
+                let hasStarted = false;
+                let rotation = Quaternion.fromAxisAngle(axis, angle);
+                let position: Vector3 = context._position;
+                let orientation: Quaternion;
+                return (alpha: number) => {
+                    if (!hasStarted) {
+                        hasStarted = true;
+                        orientation = context._orientation.copy().inverse();
+                    }
+
+                    let r = Quaternion.slerp(orientation, orientation.multiply(rotation), alpha);
+                    context._orientation = r;
                     context.updateDependents();
                 };
             },

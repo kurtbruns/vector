@@ -1,4 +1,4 @@
-import { Control } from './control'
+import { Control } from './Control'
 
 // A first pass implementation of a control circle. In the future, it seems to
 // make sense for basic elements to be draggable. I think this would mean

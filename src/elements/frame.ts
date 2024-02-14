@@ -16,7 +16,6 @@ import {
     CheckBox,
     Control,
     ControlCircle,
-    DropdownControl,
     Input,
     HoverBox,
     RadioControl,
@@ -25,9 +24,10 @@ import {
 } from './input/'
 
 // math elements
-import { Label } from './visual/label'
-import { TeX } from './tex';
-import { PlotGridBased, Point, TAU } from '..';
+import { Label } from './visual/Label'
+import { Tex } from './Tex';
+
+import { PlotGridBased, Point, TAU, Theme } from '..';
 
 export type alignment = 'left' | 'center' | 'right';
 
@@ -54,6 +54,8 @@ export interface FrameConfig {
 * alwaysbe focusable, despite the order in which elements are created.
 */
 export class Frame extends SVG {
+
+    private static theme : Theme;
 
     /**
     * The container element for this interactive.
@@ -121,6 +123,9 @@ export class Frame extends SVG {
         this.root.appendChild(this.background.root);
         this.root.appendChild(this.input.root)
 
+        Theme.getInstance();
+
+
         // // prevent the default behavior of selecting text
         // this.container.addEventListener('mousedown', function( event:MouseEvent ) {
         //   event.preventDefault();
@@ -135,7 +140,8 @@ export class Frame extends SVG {
     */
     get definitions(): Definitions {
         if (this._definitions === undefined) {
-            return super.appendChild(new Definitions());
+            this._definitions = new Definitions();
+            return super.prependChild(this._definitions);
         } else {
             return this._definitions;
         }
@@ -168,8 +174,8 @@ export class Frame extends SVG {
     /**
      * 
      */
-    tex(s: string, x: number = 0, y: number = 0, background: boolean = true): TeX {
-        let tex = this.appendChild(new TeX(s, x, y));
+    tex(s: string, x: number = 0, y: number = 0, background: boolean = true): Tex {
+        let tex = this.appendChild(new Tex(s, x, y));
         tex.setAttribute('id', s);
         if (background) {
             tex.drawBackground()
@@ -223,13 +229,6 @@ export class Frame extends SVG {
     */
     radioControl(x: number, y: number, labels: string[], index: number = 0): RadioControl {
         return this.appendChild(new RadioControl(x, y, labels, index));
-    }
-
-    /**
-    * Creates a dropdown input at the position (x,y) within this interactive.
-    */
-    dropdownControl(x: number, y: number, optionLabels: string[], defaultIndex: number): DropdownControl {
-        return this.appendChild(new DropdownControl(x, y, optionLabels, defaultIndex));
     }
 
     /**
@@ -337,9 +336,9 @@ export class Frame extends SVG {
     /**
    * 
    */
-    gridTex(plot: PlotGridBased, s: string, x: number = 0, y: number = 0, background: boolean = true): TeX {
+    gridTex(plot: PlotGridBased, s: string, x: number = 0, y: number = 0, background: boolean = true): Tex {
         let p = plot.SVGToRelative(x, -y);
-        let tex = this.appendChild(new TeX(s, p.x, p.y))
+        let tex = this.appendChild(new Tex(s, p.x, p.y))
             .alignCenter();
         if (background) {
             tex.drawBackground()

@@ -1,5 +1,5 @@
-export { Frame } from './frame';
-export { Grid } from './grid';
-export { OverflowFrame } from './overflow';
-export { ResponsiveFrame } from './responsive';
-export { TeX } from './tex'
+export { Frame } from './Frame';
+export { Grid } from './Grid';
+export { OverflowFrame } from './OverflowFrame';
+export { ResponsiveFrame } from './ResponsiveFrame';
+export { Tex as TeX } from './Tex'

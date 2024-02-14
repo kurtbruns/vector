@@ -1,11 +1,11 @@
-import { ResponsiveFrame } from "./responsive";
-import { Group } from "../elements/svg/group";
-import { SVG } from "../elements/svg";
+import { ResponsiveFrame } from "./ResponsiveFrame";
+import { Group } from "./svg/group";
+import { SVG } from "./svg";
 
 /**
  * Configuration passed the the plot constructor
  */
-export interface GridConfiguration {
+export interface GridAltConfig {
 
   // These dimensions affect the visible area of the plot
   x?: number
@@ -29,7 +29,7 @@ export interface GridConfiguration {
 /**
  * A grid object allows a user to specify an internal coordinate system used for drawing. 
  */
-export class Grid extends ResponsiveFrame {
+export class GridAlt extends ResponsiveFrame {
 
   /**
    * Contains the grid lines
@@ -55,10 +55,10 @@ export class Grid extends ResponsiveFrame {
   /**
    * Contructs a SVG plot within the corresponding HTML Element and draws a plot of the function.
    */
-  constructor(element: HTMLElement, config: GridConfiguration) {
+  constructor(element: HTMLElement, config: GridAltConfig) {
 
     // Default values 
-    let defaultConfig: GridConfiguration = {
+    let defaultConfig: GridAltConfig = {
 
       // view port
       x: 0,

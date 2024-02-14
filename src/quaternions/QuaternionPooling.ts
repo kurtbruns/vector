@@ -1,7 +1,51 @@
 import { BaseNode } from "../model";
-import { Vector3 } from "./Vector3";
+import { Vector3Pooling } from "./Vector3Pooling";
 
-export class Quaternion extends BaseNode {
+
+class QuaternionPool {
+    pool: QuaternionPooling[];
+    size: number;
+    constructor(size = 56) {
+        this.pool = [];
+        this.size = size;
+        this.init();
+    }
+
+    private init() {
+        for (let i = 0; i < this.size; i++) {
+            this.pool.push(new QuaternionPooling());
+        }
+    }
+
+    get(a = 0, b = 0, c = 0, d = 0) {
+        if (this.pool.length > 0) {
+            const q = this.pool.pop();
+            q.a = a;
+            q.b = b;
+            q.c = c;
+            q.d = d;
+            return q;
+        } else {
+            console.warn('Exceeded pool size, creating a new instance.');
+            return new QuaternionPooling(a, b, c, d);
+        }
+    }
+
+    release(q: QuaternionPooling) {
+        if (this.pool.length < this.size) {
+            q.a = 0;
+            q.b = 0;
+            q.c = 0;
+            q.d = 0;
+            // q.reset();
+            this.pool.push(q);
+        }
+    }
+}
+
+export class QuaternionPooling extends BaseNode {
+
+    private static _pool :QuaternionPool;
 
     a: number;
     b: number;
@@ -14,40 +58,48 @@ export class Quaternion extends BaseNode {
         this.b = b;
         this.c = c;
         this.d = d;
+        
+    }
+
+    static get pool() : QuaternionPool {
+        if (!QuaternionPooling._pool) {
+            QuaternionPooling._pool = new QuaternionPool();
+        }
+        return QuaternionPooling._pool;
     }
 
     /**
     * Returns the identity quaternion (1, 0, 0, 0).
     */
-    static identity(): Quaternion {
-        return new Quaternion(1, 0, 0, 0);
+    static identity(): QuaternionPooling {
+        return QuaternionPooling.pool.get(1, 0, 0, 0);
     }
 
     /**
      * Returns the reference direction (Positve Z Axis)
      */
-    static standardForwardDirection(): Vector3 {
-        return new Vector3(0, 0, 1);
+    static standardForwardDirection(): Vector3Pooling {
+        return Vector3Pooling.pool.get(0, 0, 1);
     }
 
     /**
      * Returns a quaternion from a vector (vector part of the quaternion)
      */
-    static fromVector(vector: Vector3): Quaternion {
-        return new Quaternion(0, vector.x, vector.y, vector.z);
+    static fromVector(vector: Vector3Pooling): QuaternionPooling {
+        return QuaternionPooling.pool.get(0, vector.x, vector.y, vector.z);
     }
 
 
-    static orientationBetween(from: Vector3, to: Vector3): Quaternion {
+    static orientationBetween(from: Vector3Pooling, to: Vector3Pooling): QuaternionPooling {
 
         // Calculate the direction from the camera to the target
         let direction = to.subtract(from).normalize();
 
         // Calculate and return the desired orientation
-        return Quaternion.fromDirection(direction);
+        return QuaternionPooling.fromDirection(direction);
     }
 
-    static fromDirection(direction: Vector3): Quaternion {
+    static fromDirection(direction: Vector3Pooling): QuaternionPooling {
 
         // Reference direction (positive Z-axis)
         const reference = this.standardForwardDirection();
@@ -62,11 +114,11 @@ export class Quaternion extends BaseNode {
         if (rotationAxis.isZero()) {
             if (reference.equals(direction)) {
                 // Parallel: No rotation needed
-                return Quaternion.identity();
+                return QuaternionPooling.identity();
             } else {
                 // Anti-Parallel: 180-degree rotation around an arbitrary perpendicular axis
                 const perpendicularAxis = reference.findPerpendicular();
-                return Quaternion.fromAxisAngle(perpendicularAxis, Math.PI);
+                return QuaternionPooling.fromAxisAngle(perpendicularAxis, Math.PI);
             }
         } else {
             // Normalizing the rotation axis
@@ -76,15 +128,15 @@ export class Quaternion extends BaseNode {
             const angle = Math.acos(reference.dot(direction));
 
             // Return quaternion representing the rotation
-            return Quaternion.fromAxisAngle(rotationAxis, angle);
+            return QuaternionPooling.fromAxisAngle(rotationAxis, angle);
         }
 
     }
 
-    static fromAxisAngle(axis: Vector3, angle: number): Quaternion {
+    static fromAxisAngle(axis: Vector3Pooling, angle: number): QuaternionPooling {
         let halfAngle = angle / 2;
         let sinHalfAngle = Math.sin(halfAngle);
-        return new Quaternion(
+        return QuaternionPooling.pool.get(
             Math.cos(halfAngle),
             axis.x * sinHalfAngle,
             axis.y * sinHalfAngle,
@@ -93,7 +145,7 @@ export class Quaternion extends BaseNode {
     }
 
     // Instance method for spherical linear interpolation
-    static slerp(q1: Quaternion, q2: Quaternion, t: number): Quaternion {
+    static slerp(q1: QuaternionPooling, q2: QuaternionPooling, t: number): QuaternionPooling {
 
         if (t <= 0) {
             return q1;
@@ -106,7 +158,7 @@ export class Quaternion extends BaseNode {
         let cosHalfTheta = q1.d * q2.d + q1.a * q2.a + q1.b * q2.b + q1.c * q2.c;
 
         if (cosHalfTheta < 0) {
-            q2 = new Quaternion(-q2.a, -q2.b, -q2.c, -q2.d);
+            q2 = new QuaternionPooling(-q2.a, -q2.b, -q2.c, -q2.d);
             cosHalfTheta = -cosHalfTheta;
         }
 
@@ -118,7 +170,7 @@ export class Quaternion extends BaseNode {
         const sinHalfTheta = Math.sqrt(1.0 - cosHalfTheta * cosHalfTheta);
 
         if (Math.abs(sinHalfTheta) < 0.001) {
-            return new Quaternion(
+            return QuaternionPooling.pool.get(
                 (1 - t) * q1.a + t * q2.a,
                 (1 - t) * q1.b + t * q2.b,
                 (1 - t) * q1.c + t * q2.c,
@@ -129,7 +181,7 @@ export class Quaternion extends BaseNode {
         const ratioA = Math.sin((1 - t) * halfTheta) / sinHalfTheta;
         const ratioB = Math.sin(t * halfTheta) / sinHalfTheta;
 
-        return new Quaternion(
+        return QuaternionPooling.pool.get(
             ratioA * q1.a + ratioB * q2.a,
             ratioA * q1.b + ratioB * q2.b,
             ratioA * q1.c + ratioB * q2.c,
@@ -137,7 +189,7 @@ export class Quaternion extends BaseNode {
         ).normalize();
     }
 
-    static lookAt(source: Vector3, target: Vector3): Quaternion {
+    static lookAt(source: Vector3Pooling, target: Vector3Pooling): QuaternionPooling {
         source = source.normalize();
         target = target.normalize();
 
@@ -145,23 +197,23 @@ export class Quaternion extends BaseNode {
 
         if (dot < -0.999999) {
             // Vectors are opposite
-            let tempVec = new Vector3(1, 0, 0).cross(source);
+            let tempVec = new Vector3Pooling(1, 0, 0).cross(source);
             if (tempVec.length() < 0.001) {
-                tempVec = new Vector3(0, 1, 0).cross(source);
+                tempVec = new Vector3Pooling(0, 1, 0).cross(source);
             }
             tempVec.normalize();
-            return Quaternion.fromAxisAngle(tempVec, Math.PI);
+            return QuaternionPooling.fromAxisAngle(tempVec, Math.PI);
         } else if (dot > 0.999999) {
             // Vectors are the same
-            return new Quaternion(0, 0, 0, 1);
+            return new QuaternionPooling(0, 0, 0, 1);
         } else {
             const axis = source.cross(target);
             const angle = Math.acos(dot);
-            return Quaternion.fromAxisAngle(axis, -angle);
+            return QuaternionPooling.fromAxisAngle(axis, -angle);
         }
     }
 
-    static lookAtWithUp(source: Vector3, target: Vector3, up: Vector3 = Quaternion.standardForwardDirection()): Quaternion {
+    static lookAtWithUp(source: Vector3Pooling, target: Vector3Pooling, up: Vector3Pooling = QuaternionPooling.standardForwardDirection()): QuaternionPooling {
 
         // Normalize the input vectors
         source = source.normalize();
@@ -185,10 +237,10 @@ export class Quaternion extends BaseNode {
         ];
 
         // Convert the rotation matrix to a quaternion and return
-        return Quaternion.fromRotationMatrix(m);
+        return QuaternionPooling.fromRotationMatrix(m);
     }
 
-    static fromRotationMatrix(m: number[]): Quaternion {
+    static fromRotationMatrix(m: number[]): QuaternionPooling {
         // Ensure that the input is a flat array representing a 3x3 matrix
         if (m.length !== 9) {
             throw new Error("The input must be a flat array of length 9 representing a 3x3 matrix.");
@@ -225,7 +277,7 @@ export class Quaternion extends BaseNode {
             z = 0.25 * S;
         }
 
-        return new Quaternion(w, x, y, z);
+        return new QuaternionPooling(w, x, y, z);
     }
 
     // Converts the quaternion to a 3x3 rotation matrix represented as a flat array
@@ -260,7 +312,7 @@ export class Quaternion extends BaseNode {
         return matrix;
     }
 
-    set(q: Quaternion) {
+    set(q: QuaternionPooling) {
         this.a = q.a;
         this.b = q.b;
         this.c = q.c;
@@ -268,27 +320,27 @@ export class Quaternion extends BaseNode {
         this.updateDependents();
     }
 
-    getUpAxis(): Vector3 {
+    getUpAxis(): Vector3Pooling {
         const matrix = this.toRotationMatrix();
-        return new Vector3(matrix[1], matrix[4], matrix[7]); // Extracting the second column for the up axis
+        return new Vector3Pooling(matrix[1], matrix[4], matrix[7]); // Extracting the second column for the up axis
     }
 
     // Extracts the right axis (x-axis) from the quaternion
-    getRightAxis(): Vector3 {
+    getRightAxis(): Vector3Pooling {
         const matrix = this.toRotationMatrix();
-        return new Vector3(matrix[0], matrix[3], matrix[6]); // Extracting the first column for the right axis
+        return new Vector3Pooling(matrix[0], matrix[3], matrix[6]); // Extracting the first column for the right axis
     }
 
-    add(q: Quaternion): Quaternion {
-        return new Quaternion(this.a + q.a, this.b + q.b, this.c + q.c, this.d + q.d);
+    add(q: QuaternionPooling): QuaternionPooling {
+        return QuaternionPooling.pool.get(this.a + q.a, this.b + q.b, this.c + q.c, this.d + q.d);
     }
 
-    subtract(q: Quaternion): Quaternion {
-        return new Quaternion(this.a - q.a, this.b - q.b, this.c - q.c, this.d - q.d);
+    subtract(q: QuaternionPooling): QuaternionPooling {
+        return QuaternionPooling.pool.get(this.a - q.a, this.b - q.b, this.c - q.c, this.d - q.d);
     }
 
-    multiply(q: Quaternion): Quaternion {
-        return new Quaternion(
+    multiply(q: QuaternionPooling): QuaternionPooling {
+        return QuaternionPooling.pool.get(
             this.a * q.a - this.b * q.b - this.c * q.c - this.d * q.d,
             this.a * q.b + this.b * q.a + this.c * q.d - this.d * q.c,
             this.a * q.c - this.b * q.d + this.c * q.a + this.d * q.b,
@@ -300,51 +352,51 @@ export class Quaternion extends BaseNode {
         return Math.sqrt(this.a * this.a + this.b * this.b + this.c * this.c + this.d * this.d);
     }
 
-    conjugate(): Quaternion {
-        return new Quaternion(this.a, -this.b, -this.c, -this.d);
+    conjugate(): QuaternionPooling {
+        return QuaternionPooling.pool.get(this.a, -this.b, -this.c, -this.d);
     }
 
-    inverse(): Quaternion {
+    inverse(): QuaternionPooling {
         let normSquared = this.a * this.a + this.b * this.b + this.c * this.c + this.d * this.d;
-        return new Quaternion(this.a / normSquared, -this.b / normSquared, -this.c / normSquared, -this.d / normSquared);
+        return QuaternionPooling.pool.get(this.a / normSquared, -this.b / normSquared, -this.c / normSquared, -this.d / normSquared);
     }
 
-    rotatePoint(point: Vector3): Vector3 {
-        let pointQuaternion = new Quaternion(0, point.x, point.y, point.z);
+    rotatePoint(point: Vector3Pooling): Vector3Pooling {
+        let pointQuaternion = QuaternionPooling.pool.get(0, point.x, point.y, point.z);
         let rotatedQuaternion = this.multiply(pointQuaternion).multiply(this.inverse());
-        return new Vector3(rotatedQuaternion.b, rotatedQuaternion.c, rotatedQuaternion.d);
+        return Vector3Pooling.pool.get(rotatedQuaternion.b, rotatedQuaternion.c, rotatedQuaternion.d);
     }
 
-    normalize(): Quaternion {
+    normalize(): QuaternionPooling {
         let norm = this.norm();
         if (norm === 0) {
             throw new Error("Cannot normalize a quaternion with a norm of 0.");
         }
-        return new Quaternion(this.a / norm, this.b / norm, this.c / norm, this.d / norm);
+        return QuaternionPooling.pool.get(this.a / norm, this.b / norm, this.c / norm, this.d / norm);
     }
 
-    copy(): Quaternion {
-        return new Quaternion(this.a, this.b, this.c, this.d);
+    copy(): QuaternionPooling {
+        return QuaternionPooling.pool.get(this.a, this.b, this.c, this.d);
     }
 
     toString(): string {
         return `${this.a} + ${this.b}i + ${this.c}j + ${this.d}k`;
     }
 
-    toVector3(): Vector3 {
-        return new Vector3(this.b, this.c, this.d);
+    toVector3(): Vector3Pooling {
+        return new Vector3Pooling(this.b, this.c, this.d);
     }
 
     toConstructor(format: (number) => string = (n) => { return Number(n).toString() }): string {
         return `new Quaternion(${format(this.a)}, ${format(this.b)}, ${format(this.c)}, ${format(this.d)})`
     }
 
-    equals(other: Quaternion): boolean {
+    equals(other: QuaternionPooling): boolean {
         return this.a === other.a && this.b === other.b && this.c === other.c && this.d === other.d;
     }
 
     get animate() {
-        const context: Quaternion = this;
+        const context: QuaternionPooling = this;
 
         return {
             set: function (endPoint: { a: number, b: number, c: number, d: number }) {

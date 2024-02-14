@@ -1,4 +1,4 @@
-import { Point } from '../model/point'
+import { Point } from '../model/Point'
 
 /**
  * TAU represents the circle constant which is a full rotation in radians.

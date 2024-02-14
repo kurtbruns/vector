@@ -1,10 +1,48 @@
-import { Quaternion } from '.';
 import { BaseNode } from '../model';
+import { QuaternionPooling } from './QuaternionPooling';
+
+class Vector3Pool {
+    pool: Vector3Pooling[];
+    size: number;
+    constructor(size = 100) {
+        this.pool = [];
+        this.size = size;
+        this.init();
+    }
+
+    private init() {
+        for (let i = 0; i < this.size; i++) {
+            this.pool.push(new Vector3Pooling());
+        }
+    }
+
+    get(x = 0, y = 0, z = 0) {
+        if (this.pool.length > 0) {
+            const v = this.pool.pop();
+            v.x = x;
+            v.y = y;
+            v.z = z;
+            return v;
+        } else {
+            console.warn('Exceeded pool size, creating a new instance.');
+            return new Vector3Pooling(x, y, z);
+        }
+    }
+
+    release(v:Vector3Pooling) {
+        if (this.pool.length < this.size) {
+            // v.reset();
+            this.pool.push(v);
+        }
+    }
+}
 
 /**
  * Represents a three-dimensional vector.
  */
-export class Vector3 extends BaseNode {
+export class Vector3Pooling extends BaseNode {
+
+    private static _pool: Vector3Pool;
 
     x: number;
     y: number;
@@ -24,6 +62,13 @@ export class Vector3 extends BaseNode {
         this.z = z;
     }
 
+    static get pool() : Vector3Pool {
+        if (!Vector3Pooling._pool) {
+            Vector3Pooling._pool = new Vector3Pool();
+        }
+        return Vector3Pooling._pool;
+    }
+
     /**
      * Yields the components of the vector.
      */
@@ -38,23 +83,23 @@ export class Vector3 extends BaseNode {
         const y = Math.sin(pitch);
         const z = Math.sin(yaw) * Math.cos(pitch);
 
-        return new Vector3(x, y, z);
+        return Vector3Pooling.pool.get(x, y, z);
     }
 
-    static xAxis(): Vector3 {
-        return new Vector3(1, 0, 0);
+    static xAxis(): Vector3Pooling {
+        return Vector3Pooling.pool.get(1, 0, 0);
     }
 
-    static yAxis(): Vector3 {
-        return new Vector3(0, 1, 0);
+    static yAxis(): Vector3Pooling {
+        return Vector3Pooling.pool.get(0, 1, 0);
     }
 
-    static zAxis(): Vector3 {
-        return new Vector3(0, 0, 1);
+    static zAxis(): Vector3Pooling {
+        return Vector3Pooling.pool.get(0, 0, 1);
     }
 
     get animate() {
-        const context : Vector3 = this;
+        const context : Vector3Pooling = this;
     
         return {
             moveTo: function (endPoint:{x:number, y:number, z:number}) {
@@ -82,7 +127,7 @@ export class Vector3 extends BaseNode {
     /**
     * Sets this vector equal to the provided vector.
     */
-    set(v: Vector3) {
+    set(v: Vector3Pooling) {
         this.x = v.x;
         this.y = v.y;
         this.z = v.z;
@@ -93,7 +138,7 @@ export class Vector3 extends BaseNode {
      * 
      * @param s The scalar value
      */
-    scale(s: number): Vector3 {
+    scale(s: number): Vector3Pooling {
         this.x *= s;
         this.y *= s;
         this.z *= s;
@@ -106,8 +151,8 @@ export class Vector3 extends BaseNode {
      * @param v The vector to add.
      * @returns A new Vector3 representing the sum of the two vectors.
      */
-    add(v: Vector3): Vector3 {
-        return new Vector3(this.x + v.x, this.y + v.y, this.z + v.z);
+    add(v: Vector3Pooling): Vector3Pooling {
+        return Vector3Pooling.pool.get(this.x + v.x, this.y + v.y, this.z + v.z);
     }
 
     /**
@@ -116,8 +161,8 @@ export class Vector3 extends BaseNode {
      * @param v The vector to subtract.
      * @returns A new Vector3 representing the difference.
      */
-    subtract(v: Vector3): Vector3 {
-        return new Vector3(this.x - v.x, this.y - v.y, this.z - v.z);
+    subtract(v: Vector3Pooling): Vector3Pooling {
+        return Vector3Pooling.pool.get(this.x - v.x, this.y - v.y, this.z - v.z);
     }
 
     /**
@@ -126,7 +171,7 @@ export class Vector3 extends BaseNode {
      * @param v The other vector.
      * @returns The dot product as a number.
      */
-    dot(v: Vector3): number {
+    dot(v: Vector3Pooling): number {
         return this.x * v.x + this.y * v.y + this.z * v.z;
     }
 
@@ -144,9 +189,9 @@ export class Vector3 extends BaseNode {
      * 
      * @returns A new Vector3 representing the normalized vector.
      */
-    normalize(): Vector3 {
+    normalize(): Vector3Pooling {
         let length = this.length();
-        return new Vector3(this.x / length, this.y / length, this.z / length);
+        return Vector3Pooling.pool.get(this.x / length, this.y / length, this.z / length);
     }
 
     /**
@@ -155,8 +200,8 @@ export class Vector3 extends BaseNode {
      * @param v The other vector.
      * @returns A new Vector3 representing the cross product.
      */
-    cross(v: Vector3): Vector3 {
-        return new Vector3(
+    cross(v: Vector3Pooling): Vector3Pooling {
+        return Vector3Pooling.pool.get(
             this.y * v.z - this.z * v.y,
             this.z * v.x - this.x * v.z,
             this.x * v.y - this.y * v.x
@@ -178,7 +223,7 @@ export class Vector3 extends BaseNode {
      * @param v The vector to compare with.
      * @returns True if the vectors are equal, false otherwise.
      */
-    equals(v: Vector3): boolean {
+    equals(v: Vector3Pooling): boolean {
         return this.x === v.x && this.y === v.y && this.z === v.z;
     }
 
@@ -187,26 +232,34 @@ export class Vector3 extends BaseNode {
      * 
      * @returns A new Vector3 representing a perpendicular vector.
      */
-    findPerpendicular(): Vector3 {
+    findPerpendicular(): Vector3Pooling {
         // If the vector is not along the x-axis, we can cross it with the x-axis.
         // Otherwise, we use the y-axis.
         if (this.x !== 0 || this.z !== 0) {
-            return this.cross(new Vector3(0, 1, 0)); // Cross with y-axis
+            return this.cross(Vector3Pooling.yAxis()); // Cross with y-axis
         } else {
-            return this.cross(new Vector3(1, 0, 0)); // Cross with x-axis
+            return this.cross(Vector3Pooling.xAxis()); // Cross with x-axis
         }
     }
 
-    inverse() : Vector3 {
-        return new Vector3(-this.x, -this.y, -this.z);
+    inverse() : Vector3Pooling {
+        return Vector3Pooling.pool.get(
+            -this.x,
+            -this.y,
+            -this.z
+        );
     }
 
     /**
      * 
      * @returns A copy of this vector
      */
-    copy(): Vector3 {
-        return new Vector3(this.x, this.y, this.z);
+    copy(): Vector3Pooling {
+        return Vector3Pooling.pool.get(
+            this.x,
+            this.y,
+            this.z
+        );
     }
 
     /**
@@ -215,9 +268,10 @@ export class Vector3 extends BaseNode {
      * @param q The quaternion to apply.
      * @returns The rotated vector.
      */
-    applyQuaternion(q: Quaternion): this {
+    applyQuaternion(q: QuaternionPooling): this {
+
         // Convert the vector to a pure quaternion
-        let vectorQuaternion = new Quaternion(0, this.x, this.y, this.z);
+        let vectorQuaternion = QuaternionPooling.pool.get(0, this.x, this.y, this.z);
 
         // Perform the rotation: q * v * q^(-1)
         let rotatedQuaternion = q.multiply(vectorQuaternion).multiply(q.inverse());

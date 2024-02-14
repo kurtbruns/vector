@@ -1,6 +1,6 @@
 import { Rectangle } from '../svg/rectangle'
 import { Text } from '../svg/text'
-import { Input } from './input'
+import { Input } from './Input'
 
 /**
 * A checkbox with an label. The can be checked, unchecked, and related to other

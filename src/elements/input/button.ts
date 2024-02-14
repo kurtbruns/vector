@@ -1,6 +1,6 @@
 import { Rectangle } from '../svg/rectangle'
 import { Text } from '../svg/text'
-import { Input } from './input'
+import { Input } from './Input'
 
 /**
 * A button that when pressed fires an onclick event.

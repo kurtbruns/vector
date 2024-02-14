@@ -1,5 +1,5 @@
 import { Frame } from '../index';
-import { Layout } from './layout';
+import { Layout } from './Layout';
 
 export interface Configuration {
   frame?:Frame;

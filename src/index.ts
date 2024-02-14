@@ -7,7 +7,7 @@ export {
   AnimationFunction,
   Scene,
   SceneMode,
-} from './scene';
+} from './Scene';
 
 export {
   BaseNode,
@@ -42,7 +42,6 @@ export {
   CheckBox,
   Control,
   ControlCircle,
-  DropdownControl,
   Input,
   RadioControl,
   Scrubber,

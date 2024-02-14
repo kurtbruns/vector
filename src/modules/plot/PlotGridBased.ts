@@ -1,9 +1,9 @@
-import { Grid } from "../../elements/grid";
+import { Grid } from "../../elements/Grid";
 import { Group } from "../../elements/svg/group";
 import { Line } from "../../elements/svg/line";
 import { Path } from "../../elements/svg/path";
 import { Rectangle } from "../../elements/svg/rectangle";
-import { Point } from "../../model/point";
+import { Point } from "../../model/Point";
 
 type FunctionType = (x: number) => number;
 
@@ -69,13 +69,14 @@ export class PlotGridBased extends Grid {
         super(container, config);
 
         if (config.grid) {
-            // this.drawGridLines();
-            this.drawGridLines2();
+            this.drawGridLines();
         }
 
         this.classList.add('plot-grid-based')
         this.fnGroup = this.foreground.group();
-        this.fnGroup.classList.add('function-group')
+        this.fnGroup.classList.add('non-scaling-stroke')
+        this.fnGroup.setAttribute('stroke', 'var(--primary)');
+        this.fnGroup.setAttribute('stroke-width', '1.5px');
         this.functionPaths = [];
         this.functions = [];
 
@@ -161,7 +162,7 @@ export class PlotGridBased extends Grid {
         let x2 = Math.floor(viewBox.x + viewBox.width);
 
         let points = new Map();
-        this.generateValues2([x1, x2], magnitude).map((x) => {
+        this.generateValues([x1, x2], magnitude).map((x) => {
             points.set(x, new Point(x, 0))
         })
 
@@ -176,7 +177,7 @@ export class PlotGridBased extends Grid {
         let y1 = Math.floor(viewBox.y);
         let y2 = Math.floor(viewBox.y + viewBox.height);
         let points = new Map();
-        this.generateValues2([y1, y2], magnitude).map((y) => {
+        this.generateValues([y1, y2], magnitude).map((y) => {
             points.set(y, new Point(0, y))
         })
         return points;
@@ -191,7 +192,7 @@ export class PlotGridBased extends Grid {
         let x1 = Math.floor(viewBox.x);
         let x2 = Math.floor(viewBox.x + viewBox.width);
         let points = new Map();
-        this.generateValues2([x1, x2], magnitude).map((x) => {
+        this.generateValues([x1, x2], magnitude).map((x) => {
             points[x] = this.SVGToRelative(x, 0)
         })
         return points;
@@ -205,7 +206,7 @@ export class PlotGridBased extends Grid {
         let y1 = Math.floor(viewBox.y);
         let y2 = Math.floor(viewBox.y + viewBox.height);
         let points = new Map();
-        this.generateValues2([y1, y2], magnitude).map((y) => {
+        this.generateValues([y1, y2], magnitude).map((y) => {
             points[-y] = this.SVGToRelative(0, y)
         })
         return points;

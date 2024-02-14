@@ -1,8 +1,8 @@
 import { Point } from "../model";
-import { Quaternion } from "./Quaternion";
+import { QuaternionPooling } from "./QuaternionPooling";
 import { Scene3D } from "./Scene3D";
 import { Vector2 } from "./Vector2";
-import { Vector3 } from "./Vector3";
+import { Vector3Pooling } from "./Vector3Pooling";
 
 type Color = [number, number, number];
 
@@ -17,8 +17,8 @@ export class Cube extends Scene3D {
             // cameraOrientation: Quaternion.fromVector(new Vector3(0,0,1)),
             // cameraPosition: new Vector3(0,0,10),
 
-            cameraOrientation: Quaternion.fromVector(new Vector3(1,0,0)),
-            cameraPosition: new Vector3(0,0,10),
+            cameraOrientation: QuaternionPooling.fromVector(new Vector3Pooling(1,0,0)),
+            cameraPosition: new Vector3Pooling(0,0,10),
         });
 
         let c = 5;
@@ -27,7 +27,7 @@ export class Cube extends Scene3D {
 
         // this.testPoint(new Vector3(1, 0, 0), 'var(--green)');
         // this.testPoint(new Vector3(0, 1, 0), 'var(--red)');
-        this.testPoint(new Vector3(0, 0, 1), 'var(--blue)');
+        this.testPoint(new Vector3Pooling(0, 0, 1), 'var(--blue)');
 
 
         // let t1 = new Vector3(-c, -c, c);
@@ -81,7 +81,7 @@ export class Cube extends Scene3D {
 
     }
 
-    testPoint(p: Vector3, color: string) {
+    testPoint(p: Vector3Pooling, color: string) {
 
         let q = this.camera.projectPoint(p);
         q.addDependency(p, this.camera);

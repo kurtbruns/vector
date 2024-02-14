@@ -1,9 +1,9 @@
-import { alignment } from "./frame";
-import { ResponsiveFrame } from "./responsive";
+import { alignment } from "./Frame";
+import { ResponsiveFrame } from "./ResponsiveFrame";
 
-import { Rectangle } from "../elements/svg/rectangle";
-import { Group } from "../elements/svg/group";
-import { SVG } from "../elements/svg";
+import { Rectangle } from "./svg/rectangle";
+import { Group } from "./svg/group";
+import { SVG } from "./svg";
 import { Point } from "../model";
 
 /**
@@ -64,6 +64,9 @@ export class Grid extends ResponsiveFrame {
      */
     backgroundRectangle: Rectangle;
 
+    private ctm : DOMMatrix;
+    private bbox : DOMRect;
+
     /**
      * Nested SVG to fix firefox bug with viewbox
      */
@@ -100,13 +103,20 @@ export class Grid extends ResponsiveFrame {
         config = { ...defaultConfig, ...config };
 
         // if no max-width specified, default to specified width if responsive is set to false
-        if (!config.maxWidth && !config.responsive) { config.maxWidth = config.width };
+        if (!config.maxWidth && !config.responsive) {
+            config.maxWidth = config.width
+        };
 
         super(container, config);
 
         this.classList.add('grid');
         this.x = config.x;
         this.y = config.y;
+
+        // Inject style for gridlines
+        let styleElement = document.createElement('style');
+        styleElement.textContent = '.non-scaling-stroke line, path { vector-effect: non-scaling-stroke; }';
+        this.definitions.root.appendChild(styleElement);
 
         // Create an internal SVG to do the heavy lifting
         this.setViewBox(config.internalX, config.internalY, config.internalWidth, config.internalHeight);
@@ -130,8 +140,25 @@ export class Grid extends ResponsiveFrame {
         this.backgroundRectangle.stroke = 'none';
         this.root.prepend(this.backgroundRectangle.root)
 
+
         // TODO: draw axis
 
+    }
+
+    setBoundingRect() {
+        this.bbox = this.backgroundRectangle.root.getBoundingClientRect();
+    }
+
+    releaseBoundingRect() {
+        this.bbox = null;
+    }
+
+    setCTM() {
+        this.ctm = this.internalSVG.root.getScreenCTM();
+    }
+
+    releaseCTM() {
+        this.ctm = null;
     }
 
     getInternalSVG(): SVG {
@@ -236,12 +263,26 @@ export class Grid extends ResponsiveFrame {
 
         // This is so that if the user has drawn something really large, nothing weird happens
         // TODO: I think we should store the internal dimensions and use those instead?
-        let bbox = this.backgroundRectangle.root.getBoundingClientRect();
+        let bbox;
+        if( this.bbox ) {
+            bbox = this.bbox;
+        } else {
+            bbox = this.backgroundRectangle.root.getBoundingClientRect();
+        }
+
         let svg = this.internalSVG.root;
+
+        let ctm;
+        if (this.ctm) {
+            ctm = this.ctm;
+        } else {
+            ctm = svg.getScreenCTM();
+        }
+
         let p = svg.createSVGPoint();
-        p.x = pointToUse.x;
+        p.x = pointToUse.x; 
         p.y = -pointToUse.y;
-        let convertedPoint = p.matrixTransform(svg.getScreenCTM());
+        let convertedPoint = p.matrixTransform(ctm);
         convertedPoint.x -= bbox.left;
         convertedPoint.y -= bbox.top;
 
@@ -274,160 +315,8 @@ export class Grid extends ResponsiveFrame {
         return this.border;
     }
 
-    /**
-     * Draws grid lines
-     */
-    drawGridLines() {
-
-        let viewBox = this.internalViewBox.baseVal;
-
-        this.gridGroup.setAttribute('class', 'grid-lines')
-        let group3 = this.gridGroup.group();
-        let group2 = this.gridGroup.group();
-        let group1 = this.gridGroup.group();
-
-        group1.setAttribute('class', 'primary');
-        group2.setAttribute('class', 'secondary');
-        group3.setAttribute('class', 'tertiary');
-
-        // group3.style.opacity = '0.08'
-        // group2.style.opacity = '0.16'
-        // group1.style.opacity = '0.24'
-
-        // group3.style.opacity = '0.15'
-        // group2.style.opacity = '0.25'
-        // group1.style.opacity = '0.4'
-
-        // group1.style.stroke = 'var(--grid--primary)'
-        // group2.style.stroke = 'var(--grid--secondary)'
-        // group3.style.stroke = 'var(--grid--tertiary)'
-
-        let x1 = Math.floor(viewBox.x);
-        let y1 = Math.floor(viewBox.y);
-
-        let x2 = Math.ceil(viewBox.x + viewBox.width);
-        let y2 = Math.ceil(viewBox.y + viewBox.height);
-
-        for (let x = x1; x <= x2; x++) {
-            if (x % 10 === 0) {
-                group1.line(x, y1, x, y2);
-            } else if (x % 5 === 0) {
-                group2.line(x, y1, x, y2);
-            } else {
-                group3.line(x, y1, x, y2);
-            }
-        }
-
-        for (let y = y1; y <= y2; y++) {
-
-            if (y % 10 === 0) {
-                group1.line(x1, y, x2, y);
-            } else if (y % 5 === 0) {
-                group2.line(x1, y, x2, y);
-            } else {
-                group3.line(x1, y, x2, y);
-            }
-        }
-
-        // let startY = Math.ceil(p1.y*10);
-        // let endY = Math.ceil(p2.y*10);
-        // for( let i = startY; i < endY; i+= 10) {
-        // 	let y = i/10;
-        // 	if( i % 10 === 0 ) {
-        // 		group1.line(p1.x, y, p2.x, y);
-        // 	} else if( i % 5 === 0) {
-        // 		group2.line(p1.x, y, p2.x, y);
-        // 	} else {
-        // 		group3.line(p1.x, y, p2.x, y);
-        // 	}
-        // }
-    }
-
-    getStepSize(magnitude:string ) : number {
-        let viewBox = this.internalViewBox.baseVal;
-        let x1 = viewBox.x;
-        let y1 = viewBox.y;
-        let x2 = viewBox.x + viewBox.width;
-        let y2 = viewBox.y + viewBox.height;
-
-        const rangeSize = Math.max(y2 - y1, x2 - x1);
-
-        const [start, end] = [x1, x2];
-        let baseStep = Math.pow(10, Math.floor(Math.log10(rangeSize)));
-
-        // Adjust the base step if the range size is smaller than the base step
-        while (baseStep > rangeSize) {
-            baseStep /= 10;
-        }
-
-        let step;
-        switch (magnitude) {
-            case 'big':
-                step = baseStep;
-                break;
-            case 'half':
-                step = baseStep / 2;
-                break;
-            case 'small':
-                step = baseStep / 10;
-                break;
-            case 'small-half':
-                step = baseStep / 20;
-                break;
-            case 'tiny':
-                step = baseStep / 100;
-                break;
-            default:
-                throw new Error('Invalid magnitude');
-        }
-        return step;
-    }
-
     generateValues(range, magnitude: string = 'big'): number[] {
 
-        const [start, end] = range;
-        const rangeSize = end - start;
-        let baseStep = Math.pow(10, Math.floor(Math.log10(rangeSize)));
-
-        // Adjust the base step if the range size is smaller than the base step
-        while (baseStep > rangeSize) {
-            baseStep /= 10;
-        }
-
-        let step;
-        switch (magnitude) {
-            case 'big':
-                step = baseStep;
-                break;
-            case 'half':
-                step = baseStep / 2;
-                break;
-            case 'small':
-                step = baseStep / 10;
-                break;
-            case 'small-half':
-                step = baseStep / 20;
-                break;
-            case 'tiny':
-                step = baseStep / 100;
-                break;
-            default:
-                throw new Error('Invalid magnitude');
-        }
-
-        const values: number[] = [];
-        let currentValue = Math.ceil(start / step) * step;
-
-        while (currentValue <= end) {
-            values.push(Number(currentValue.toFixed(10)));
-            currentValue += step;
-        }
-
-        return values;
-    }
-
-    generateValues2(range, magnitude: string = 'big'): number[] {
-
         let viewBox = this.internalViewBox.baseVal;
         let x1 = viewBox.x;
         let y1 = viewBox.y;
@@ -460,56 +349,6 @@ export class Grid extends ResponsiveFrame {
                 break;
             case 'tiny':
                 step = baseStep / 100;
-                break;
-            default:
-                throw new Error('Invalid magnitude');
-        }
-
-        const values = [];
-        let currentValue = Math.ceil(start / step) * step;
-
-        while (currentValue <= end) {
-            values.push(Number(currentValue.toFixed(10)));
-            currentValue += step;
-        }
-
-        return values;
-    }
-
-    generateValues3(range, magnitude: string = 'big'): number[] {
-
-        let viewBox = this.internalViewBox.baseVal;
-        let x1 = viewBox.x;
-        let y1 = viewBox.y;
-        let x2 = viewBox.x + viewBox.width;
-        let y2 = viewBox.y + viewBox.height;
-
-        const rangeSize = Math.max(y2 - y1, x2 - x1);
-
-        const [start, end] = range;
-        let baseStep = Math.pow(10, Math.floor(Math.log10(rangeSize)));
-
-        // Adjust the base step if the range size is smaller than the base step
-        while (baseStep > rangeSize) {
-            baseStep /= 10;
-        }
-
-        let step;
-        switch (magnitude) {
-            case 'big':
-                step = baseStep;
-                break;
-            case 'half':
-                step = baseStep / 2;
-                break;
-            case 'small':
-                step = baseStep / 10;
-                break;
-            // case 'small-half':
-            //   step = baseStep / 20;
-            //   break;
-            case 'tiny':
-                step = baseStep / 50;
                 break;
             default:
                 throw new Error('Invalid magnitude');
@@ -528,13 +367,46 @@ export class Grid extends ResponsiveFrame {
 
     /**
     * Draws grid lines
-    * TODO: seems problematic that this method creates the gridline groups. What if the user wanted to redraw the grid lines?
     */
-    drawGridLines2(xBreaks = ['small', 'half', 'big'], yBreaks = ['small', 'half', 'big'], mapping: any = { 'big': 'primary', 'half': 'secondary', 'small': 'tertiary', 'small-half': 'quaternary', 'tiny': 'quinary', }) {
+    drawGridLines(xBreaks = ['small', 'half', 'big'], yBreaks = ['small', 'half', 'big'], mapping : any = {}) {
+
+        let defaultMapping = {
+            'big': {
+                'stroke': 'var(--grid-primary)'
+            },
+            'half': {
+                'stroke': 'var(--grid-secondary)'
+            },
+            'small': {
+                'stroke': 'var(--grid-tertiary)'
+            },
+            'small-half': {
+                'stroke': 'var(--grid-quaternary)'
+            },
+            'tiny': {
+                'stroke': 'var(--grid-quinary)'
+            },
+        };
+
+        mapping = {...defaultMapping, ...mapping};
+
+        // let blueMapping = {
+        //     'big': {
+        //         'stroke': 'var(--blue)'
+        //     },
+        //     'half': {
+        //         'stroke': 'var(--blue)',
+        //         'opacity': '0.8'
+        //     },
+        //     'small': {
+        //         'stroke': 'var(--blue)',
+        //         'opacity': '0.4'
+        //     },
+        // }
 
         let viewBox = this.internalViewBox.baseVal;
 
-        this.gridGroup.classList.add('grid-lines');
+        this.gridGroup.classList.add('non-scaling-stroke');        
         this.gridGroup.setAttribute('stroke-width', '1.5px');
         
         let x1 = viewBox.x;
@@ -543,7 +415,6 @@ export class Grid extends ResponsiveFrame {
         let y2 = viewBox.y + viewBox.height;
 
         // horizontal grid lines
-
         let horizontalLines: Set<number> = new Set()
         let drawHorizontal = (g: Group) => {
             return (x: number) => {
@@ -565,10 +436,6 @@ export class Grid extends ResponsiveFrame {
             }
         }
 
-        // TODO: since the new and improved generateValues2, it seems like the gridline logic is attached
-        // the the whole view port instead of each individual axis, so it makes sense to maybe have one
-        // set of breakpoints here?
-
         let xBreak: string;
         let yBreak: string;
         do {
@@ -577,87 +444,21 @@ export class Grid extends ResponsiveFrame {
 
             if (xBreak !== undefined) {
                 let group = new Group();
-                group.classList.add(mapping[xBreak]);
-                this.generateValues2([x1, x2], xBreak).map(drawHorizontal(group));
+                // group.classList.add(mapping[xBreak]);
+                group.setAttribute('stroke', mapping[xBreak]['stroke']);
+                this.generateValues([x1, x2], xBreak).map(drawHorizontal(group));
                 this.gridGroup.prependChild(group);
             }
 
             if (yBreak !== undefined) {
                 let group = new Group();
-                group.classList.add(mapping[yBreak]);
-                this.generateValues2([y1, y2], yBreak).map(drawVertical(group))
+                // group.classList.add(mapping[yBreak]);
+                group.setAttribute('stroke', mapping[yBreak]['stroke']);
+                this.generateValues([y1, y2], yBreak).map(drawVertical(group))
                 this.gridGroup.prependChild(group);
             }
 
         } while (xBreak !== undefined || yBreak !== undefined)
-
-    }
-
-    /**
-    * Draws grid lines
-    * TODO: seems problematic that this method creates the gridline groups. What if the user wanted to redraw the grid lines?
-    */
-    drawGridLines3(xBreaks = ['small', 'half', 'big'], yBreaks = ['small', 'half', 'big'], mapping: any = { 'big': 'primary', 'half': 'secondary', 'small': 'tertiary', 'smallHalf': 'quaternary', 'tiny': 'quinary' }) {
-
-        let viewBox = this.internalViewBox.baseVal;
-
-        this.gridGroup.classList.add('grid-lines');
-        this.gridGroup.setAttribute('stroke-width', '1.5px');
-
-        let x1 = viewBox.x;
-        let y1 = viewBox.y;
-        let x2 = viewBox.x + viewBox.width;
-        let y2 = viewBox.y + viewBox.height;
-
-        // horizontal grid lines
-
-        let horizontalLines: Set<number> = new Set()
-        let drawHorizontal = (g: Group) => {
-            return (x: number) => {
-                if (!horizontalLines.has(x)) {
-                    g.line(x, y1, x, y2);
-                    horizontalLines.add(x)
-                }
-            }
-        }
-
-        // vertical lines
-        let verticalLines: Set<number> = new Set()
-        let drawVertical = (g: Group) => {
-            return (y: number) => {
-                if (!verticalLines.has(y)) {
-                    g.line(x1, y, x2, y)
-                    verticalLines.add(y)
-                }
-            }
-        }
-
-        // TODO: since the new and improved generateValues2, it seems like the gridline logic is attached
-        // the the whole view port instead of each individual axis, so it makes sense to maybe have one
-        // set of breakpoints here?
-
-        let xBreak: string;
-        let yBreak: string;
-        do {
-            xBreak = xBreaks.pop();
-            yBreak = yBreaks.pop();
-
-            if (xBreak !== undefined) {
-                let group = new Group();
-                group.classList.add(mapping[xBreak]);
-                this.generateValues3([x1, x2], xBreak).map(drawHorizontal(group));
-                this.gridGroup.prependChild(group);
-            }
-
-            if (yBreak !== undefined) {
-                let group = new Group();
-                group.classList.add(mapping[yBreak]);
-                this.generateValues3([y1, y2], yBreak).map(drawVertical(group))
-                this.gridGroup.prependChild(group);
-            }
-
-        } while (xBreak !== undefined || yBreak !== undefined)
-
 
     }
 

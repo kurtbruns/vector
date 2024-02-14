@@ -1,6 +1,6 @@
-import { Scrubber } from '../elements/input/scrubber'
+import { Scrubber } from '../elements/input/Scrubber'
 import { Frame } from '../index';
-import { Layout } from './layout';
+import { Layout } from './Layout';
 
 export interface Configuration {
   width?: number;

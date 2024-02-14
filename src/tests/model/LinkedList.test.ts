@@ -1,4 +1,4 @@
-import { LinkedList } from "../../model/linked-list";
+import { LinkedList } from "../../model/LinkedList";
 
 test('should construct a linked list of size 0', () => {
   let ll = new LinkedList();

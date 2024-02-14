@@ -1,7 +1,7 @@
 import { Line } from '../svg/line'
-import { ControlCircle } from './control-circle'
-import { Input } from './input'
-import { Point } from '../../model/point'
+import { ControlCircle } from './ControlCircle'
+import { Input } from './Input'
+import { Point } from '../../model/Point'
 
 export interface SliderOptions {
   width?:number,

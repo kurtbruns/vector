@@ -1,5 +1,5 @@
-import { Input } from "../elements/input/input";
-import { Slider } from "../elements/input/slider";
+import { Input } from "../elements/input/Input";
+import { Slider } from "../elements/input/Slider";
 import { BaseElement, BaseNode, Frame } from "../index";
 
 interface Configuration {

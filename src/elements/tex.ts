@@ -1,12 +1,10 @@
-import { Point } from "../model";
 import { flattenSVG } from "../util";
 import { Group, Rectangle, SVG } from "./svg";
-
 
 /**
  * TeX class represents a mathematical expression rendered as SVG using MathJax
  */
-export class TeX extends Group {
+export class Tex extends Group {
 
     private _x: number;
     private _y: number;
@@ -46,7 +44,7 @@ export class TeX extends Group {
 
     }
 
-    replace(s:string) : TeX {
+    replace(s:string) : Tex {
 
         let output = MathJax.tex2svg(s, {});
         let rendered = output.firstChild as SVGSVGElement;
@@ -132,7 +130,7 @@ export class TeX extends Group {
         return matches;
     }
 
-    setColorAll(tex: string, color: string) : TeX {
+    setColorAll(tex: string, color: string) : Tex {
         this.getMatchesByTex(tex).forEach(matchedNodes => {
             matchedNodes.forEach(node => {
                 (node as SVGSVGElement).style.fill = color;
@@ -142,7 +140,7 @@ export class TeX extends Group {
         return this;
     }
 
-    setColor(tex: string, color: string, index: number = 0): TeX {
+    setColor(tex: string, color: string, index: number = 0): Tex {
         const matches = this.getMatchesByTex(tex);
     
         if( matches.length === 0 ) {
@@ -220,7 +218,7 @@ export class TeX extends Group {
         return this;
     }
 
-    alignCenter(): TeX {
+    alignCenter(): Tex {
         let bbox = this.rendered.getBoundingClientRect();
         this.inner.setAttribute('transform', `translate(${-bbox.width / 2}, ${-bbox.height / 2}) scale(${this._scale})`);
         return this;
@@ -248,11 +246,11 @@ export class TeX extends Group {
         rectangle.y += groupBbox.y - rectbbox.y - margin / 2;
     }
 
-    shift(point: { x: number, y: number }): TeX;
+    shift(point: { x: number, y: number }): Tex;
 
-    shift(x: number, y: number): TeX;
+    shift(x: number, y: number): Tex;
 
-    shift(x: any, y?: any): TeX {
+    shift(x: any, y?: any): Tex {
         let pointX, pointY;
         if (typeof x === 'object') {
             pointX = x.x;
@@ -271,7 +269,7 @@ export class TeX extends Group {
     * @param point An object that represents the point to move to.
     * @returns The instance of the class for chaining.
     */
-    moveTo(point: { x: number, y: number }): TeX;
+    moveTo(point: { x: number, y: number }): Tex;
 
     /**
     * Moves to a point provided as two separate numbers.
@@ -279,9 +277,9 @@ export class TeX extends Group {
     * @param y The y value of the point to move to.
     * @returns The instance of the class for chaining.
     */
-    moveTo(x: number, y: number): TeX;
+    moveTo(x: number, y: number): Tex;
 
-    moveTo(x: any, y?: any): TeX {
+    moveTo(x: any, y?: any): Tex {
         let pointX, pointY;
         if (typeof x === 'object') {
             pointX = x.x;

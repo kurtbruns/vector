@@ -1,6 +1,6 @@
-import { Quaternion } from "./Quaternion";
+import { QuaternionPooling } from "./QuaternionPooling";
 import { Scene3D } from "./Scene3D"
-import { Vector3 } from "./Vector3";
+import { Vector3Pooling } from "./Vector3Pooling";
 
 
 export class TrackBall extends Scene3D {

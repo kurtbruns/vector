@@ -1,5 +1,5 @@
-import { Input } from './input'
-import { CheckBox } from './check-box'
+import { Input } from './Input'
+import { CheckBox } from './CheckBox'
 
 /**
 *  Radio Buttons with labels. Only one of the checkboxes will be checked at any given time.

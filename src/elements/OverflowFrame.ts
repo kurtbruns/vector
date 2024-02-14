@@ -1,5 +1,5 @@
-import { Group } from "../elements/svg/group";
-import { Frame, FrameConfig } from "./frame";
+import { Group } from "./svg/group";
+import { Frame, FrameConfig } from "./Frame";
 
 /**
  * A responsive SVG document that is optimized to prevent cumulative layout shift in the browser 

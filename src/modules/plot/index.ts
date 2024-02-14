@@ -1,3 +1,3 @@
-export { Plot } from './plot';
-export { PlotGridBased } from './plot-grid-based';
-export { TrigPlot } from './trig-plot';
+export { Plot } from './Plot';
+export { PlotGridBased } from './PlotGridBased';
+export { TrigPlot } from './TrigPlot';

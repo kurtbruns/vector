@@ -1,6 +1,6 @@
-import { Slider } from '../elements/input/slider'
-import { Input } from '../elements/input/input'
-import { Layout } from './layout';
+import { Slider } from '../elements/input/Slider'
+import { Input } from '../elements/input/Input'
+import { Layout } from './Layout';
 import { Frame } from '../index';
 
 export interface Configuration {

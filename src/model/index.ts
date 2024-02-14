@@ -1,19 +1,19 @@
 export {
   Controller
-} from './controller'
+} from './Controller'
 
 export {
   LinkedList
-} from './linked-list'
+} from './LinkedList'
 
 export {
   BaseNode
-} from './node'
+} from './Node'
 
 export {
   Point
-} from './point'
+} from './Point'
 
 export {
   Value
-} from './value'
+} from './Value'

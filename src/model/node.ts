@@ -1,4 +1,4 @@
-import { Controller } from '../model/controller'
+import { Controller } from './Controller'
 
 /**
 * A basic element of the interactive ecosystem. Each element has an unique
@@ -7,61 +7,69 @@ import { Controller } from '../model/controller'
 */
 export abstract class BaseNode {
 
-  /**
-  * The controller manages the dependencies between elements. Every element
-  * is added to this controller upon creation.
-  */
-  static controller: Controller = new Controller();
+    /**
+    * The controller manages the dependencies between elements. Every element
+    * is added to this controller upon creation.
+    */
+    static controller: Controller = new Controller();
 
-  /**
-  * The update function describes how this element should update itself
-  */
-  update: () => void;
+    /**
+    * The update function describes how this element should update itself
+    */
+    update: () => void;
 
-  /**
-  * Constructs the elements and adds it into the current controller.
-  */
-  constructor() {
+    /**
+    * Constructs the elements and adds it into the current controller.
+    */
+    constructor() {
 
-    // add this element to the controller
-    BaseNode.controller.add(this);
+        // add this element to the controller
+        BaseNode.controller.add(this);
 
-    // initialize update function
-    this.update = () => { };
+        // initialize update function
+        this.update = () => { };
 
-  }
-
-  // animate() : (alpha: number) => void {
-
-  // }
-
-  /**
-  * Clears the static data structures holding elements and resets the count.
-  */
-  static clear() {
-    BaseNode.controller.clear();
-  }
-
-  /**
-  * Removes this element from the dependency graph.
-  */
-  remove() {
-    BaseNode.controller.remove(this);
-  }
-
-  /**
-  * Declares this element dependent on the provided element(s).
-  */
-  addDependency(...elements: BaseNode[]) {
-    for (let element of elements) {
-      BaseNode.controller.dependencyGraph.addDependency(element, this);
     }
-  }
 
-  /**
-  * Updates all of the elements that depend on this element.
-  */
-  updateDependents() {
-    BaseNode.controller.update(this);
-  }
+    // animate() : (alpha: number) => void {
+
+    // }
+
+    /**
+    * Clears the static data structures holding elements and resets the count.
+    */
+    static clear() {
+        BaseNode.controller.clear();
+    }
+
+    /**
+    * Removes this element from the dependency graph.
+    */
+    reset() {
+        BaseNode.controller.remove(this);
+        BaseNode.controller.add(this);
+    }
+
+    /**
+    * Removes this element from the dependency graph.
+    */
+    remove() {
+        BaseNode.controller.remove(this);
+    }
+
+    /**
+    * Declares this element dependent on the provided element(s).
+    */
+    addDependency(...elements: BaseNode[]) {
+        for (let element of elements) {
+            BaseNode.controller.dependencyGraph.addDependency(element, this);
+        }
+    }
+
+    /**
+    * Updates all of the elements that depend on this element.
+    */
+    updateDependents() {
+        BaseNode.controller.update(this);
+    }
 }

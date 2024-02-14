@@ -1,6 +1,6 @@
 import { Rectangle } from "../../index";
 import { TAU } from "../../util/math";
-import { ResponsiveFrame } from "../../elements/responsive";
+import { ResponsiveFrame } from "../../elements/ResponsiveFrame";
 import { Group } from "../../elements/svg/group";
 import { Path } from "../../elements/svg/path";
 import { SVG } from "../../elements/svg/svg";
