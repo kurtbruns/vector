@@ -1,4 +1,4 @@
-import { DependencyGraph } from '../../model/dependency-graph'
+import { DependencyGraph } from '../../model/DependencyGraph'
 
 describe('constructor', () => {
   test('construct dependency graph of size zero', () => {
