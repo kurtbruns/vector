@@ -110,8 +110,8 @@ export class Scene3D {
 
         // this.viewPort.frame.root.style.overflow = 'visible';
 
-        this.viewPort.frame.root.style.outline = `1.5px solid rgba(255,255,255,0.05)`;
-        this.viewPort.frame.root.style.boxShadow = `4px 4px 8px rgba(255, 255, 255, 0.5), -4px -4px 8px rgba(0, 0, 0, 0.2);`;
+        this.viewPort.frame.root.style.outline = `1.5px solid var(--border-color)`;
+        // this.viewPort.frame.root.style.boxShadow = `4px 4px 8px rgba(255, 255, 255, 0.5), -4px -4px 8px rgba(0, 0, 0, 0.2);`;
 
         // TODO: does not actually draw in the foreground?
         this.foreground = this.viewPort.frame.group();

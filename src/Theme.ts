@@ -16,8 +16,10 @@ export class Theme {
         '--background': '#ffffff',
         '--background-darker': '#f8f8f8',
         '--background-lighter': '#f0f0f0',
+
         '--font-color': '#404040',
-        '--border-color': '#d0d0d0',
+        '--border-color': '#e0e0e0',
+
         '--grid-primary': '#c0c0c0',
         '--grid-secondary': '#d0d0d0',
         '--grid-tertiary': '#f0f0f0',
@@ -38,16 +40,18 @@ export class Theme {
         '--background-lighter': '#303030',
 
         '--main': '#f0f0f0',
+        '--medium': '#808080',
         '--font-color': '#f0f0f0',
         '--font-color-light': '#a0a0a0',
-
-        '--border-color': '#606060',
+        '--border-color': '#404040',
         '--primary': '#fee9af',
+
         '--grid-primary': '#505050',
         '--grid-secondary': '#404040',
         '--grid-tertiary': '#303030',
         '--grid-quaternary': '#303030',
         '--grid-quinary': '#282828',
+
         '--red': '#f2777a',
         '--green': '#92d192',
         '--blue': '#6ab0f3',
@@ -59,9 +63,14 @@ export class Theme {
 
         this.mode = 'dark';
 
-        this.style = document.createElement('style');
-        this.style.id = 'vector-style';
-        document.head.appendChild(this.style);
+        let style;
+        if(style = document.querySelector('#vector-style')) {
+            this.style = style;
+        } else {
+            this.style = document.createElement('style');
+            this.style.id = 'vector-style';
+            document.head.appendChild(this.style);
+        }
 
         let lightRule = `
 ${this.lightSelector} {
