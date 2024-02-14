@@ -1,6 +1,6 @@
 {
   "name": "@kurtbruns/vector",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A library for creating vector graphics in the browser.",
   "author": "Kurt Bruns",
   "main": "dist/lib/index.js",
