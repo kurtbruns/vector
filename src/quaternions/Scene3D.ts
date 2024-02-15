@@ -516,7 +516,7 @@ export class Scene3D {
     static generateSphereLatitudeSlices(lats: number, longs: number): Vector3[][] {
         let points: Vector3[][] = [];
 
-        for (let latIndex = 0; latIndex <= lats; latIndex++) {
+        for (let latIndex = 1; latIndex < lats; latIndex++) {
             let slice: Vector3[] = [];
 
             // Compute the latitude angle, ranging from -90 to 90 degrees
