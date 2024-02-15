@@ -12,7 +12,7 @@
 3. Publish the changes to the repo.
 
 ```
-git push main
+git push origin main
 ```
 
 4. Publish the library to the npm registry: This should be the last step. After committing your changes and updating your version number, you're now ready to publish those changes to the npm registry.

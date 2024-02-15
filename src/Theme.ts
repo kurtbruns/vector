@@ -85,7 +85,13 @@ export class Theme {
             '--yellow': '#fff888',
         }
 
-        this.id = `vector-${this.hash(new Date().getUTCMilliseconds().toString(), 7)}`;
+        const uniqueTime = () => {
+            const now = new Date();
+            const highResTime = performance.now();
+            return `${now.getTime()}.${Math.floor(highResTime)}`;
+        };
+
+        this.id = `vector-${this.hash(uniqueTime(), 7)}`;
 
         let style;
         if (style = document.querySelector(`#${this.id}`)) {
