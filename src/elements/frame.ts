@@ -46,16 +46,9 @@ export interface FrameConfig {
 }
 
 /**
-* This class exposes the high level functionality of our library. Elements can
-* created and related together
-*
-* By default input elements are added to a SVG "controls" group and visual
-* elements are added to the "background" group. This ensures that controls will
-* alwaysbe focusable, despite the order in which elements are created.
+* TODO:
 */
 export class Frame extends SVG {
-
-    private static theme : Theme;
 
     /**
     * The container element for this interactive.
@@ -123,8 +116,7 @@ export class Frame extends SVG {
         this.root.appendChild(this.background.root);
         this.root.appendChild(this.input.root)
 
-        Theme.getInstance();
-
+        Theme.getInstance().applyTheme(this);
 
         // // prevent the default behavior of selecting text
         // this.container.addEventListener('mousedown', function( event:MouseEvent ) {
@@ -135,8 +127,6 @@ export class Frame extends SVG {
     /**
     * Returns definitions for this interactive. If undefined, creates and appends
     * a new element.
-    *
-    * TODO: move this up to the SVG level?
     */
     get definitions(): Definitions {
         if (this._definitions === undefined) {
@@ -159,6 +149,10 @@ export class Frame extends SVG {
             this.background.appendChild(child);
         }
         return child;
+    }
+
+    get theme() : Theme {
+        return Theme.getInstance();
     }
 
     /**

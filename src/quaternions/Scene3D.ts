@@ -110,6 +110,8 @@ export class Scene3D {
 
         // this.viewPort.frame.root.style.overflow = 'visible';
 
+        this.viewPort.frame.setAttribute('id', this.constructor.name + (config.suffix ? config.suffix : ''));
+
         this.viewPort.frame.root.style.outline = `1.5px solid var(--border-color)`;
         // this.viewPort.frame.root.style.boxShadow = `4px 4px 8px rgba(255, 255, 255, 0.5), -4px -4px 8px rgba(0, 0, 0, 0.2);`;
 
@@ -199,7 +201,7 @@ export class Scene3D {
         let upAxis: 'x' | 'y' | 'z' = 'z';
         let prevX: number = 0;
         let prevY: number = 0;
-        const bbox = this.viewPort.frame.root.getBoundingClientRect();
+        let bbox = this.viewPort.frame.root.getBoundingClientRect();
 
         /**
          * Projects the coordinates onto the northern hemisphere of a sphere.
@@ -229,6 +231,7 @@ export class Scene3D {
         const handleMouseDown = (event: MouseEvent) => {
             if (this.viewPort.frame.root.contains(event.target as HTMLElement)) {
                 isDragging = true;
+                bbox = this.viewPort.frame.root.getBoundingClientRect();
                 this.viewPort.plot.setCTM();
                 this.viewPort.plot.setBoundingRect();
                 prevX = event.clientX;
