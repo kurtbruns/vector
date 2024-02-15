@@ -144,27 +144,24 @@ export class Theme {
 
     hash(input: string, length: number = 7): string {
         let hash = 0;
-
-        if (input.length === 0) {
-            return '0000000';
-        }
-
         for (let i = 0; i < input.length; i++) {
             const char = input.charCodeAt(i);
             hash = (hash << 5) - hash + char;
             hash = hash & hash; // Convert to 32bit integer
         }
-
-        hash = Math.abs(hash);
-        const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
-        let result = '';
-
-        while (result.length < length) {
-            result += alphabet.charAt(hash % alphabet.length);
-            hash = Math.floor(hash / alphabet.length);
+        hash = Math.abs(hash); // Ensure positive integer
+    
+        // Convert to base 36 (0-9, a-z) and pad/truncate to desired length
+        let hashStr = hash.toString(36);
+        if (hashStr.length > length) {
+            hashStr = hashStr.substring(0, length);
+        } else {
+            while (hashStr.length < length) {
+                hashStr = '0' + hashStr;
+            }
         }
-
-        return result;
+    
+        return hashStr;
     }
 
 

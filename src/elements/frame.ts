@@ -151,10 +151,6 @@ export class Frame extends SVG {
         return child;
     }
 
-    get theme() : Theme {
-        return Theme.getInstance();
-    }
-
     /**
      * Adds an arrow marker element to the defintions.
      */
