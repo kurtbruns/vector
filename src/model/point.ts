@@ -26,6 +26,15 @@ export class Point extends BaseNode {
     }
 
     /**
+     * Sets this point to the coorindates of the other point and returns this point.
+     */
+    set(other:Point): Point {
+        this.x = other.x;
+        this.y = other.y;
+        return this;
+    }
+
+    /**
      * Multiplies this point by a scalar and returns a new point.
      */
     scale(s: number): Point {

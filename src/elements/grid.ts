@@ -394,19 +394,15 @@ export class Grid extends ResponsiveFrame {
 
         mapping = {...defaultMapping, ...mapping};
 
-        // let blueMapping = {
-        //     'big': {
-        //         'stroke': 'var(--blue)'
-        //     },
-        //     'half': {
-        //         'stroke': 'var(--blue)',
-        //         'opacity': '0.8'
-        //     },
-        //     'small': {
-        //         'stroke': 'var(--blue)',
-        //         'opacity': '0.4'
-        //     },
-        // }
+        const apply = (group: Group, map ) => {
+            if(map.stroke) {
+                group.setAttribute('stroke', map['stroke']);
+            }
+
+            if(map.opacity) {
+                group.setAttribute('stroke-opacity', map['opacity']);
+            }
+        }
 
         let viewBox = this.internalViewBox.baseVal;
 
@@ -448,16 +444,14 @@ export class Grid extends ResponsiveFrame {
 
             if (xBreak !== undefined) {
                 let group = new Group();
-                // group.classList.add(mapping[xBreak]);
-                group.setAttribute('stroke', mapping[xBreak]['stroke']);
+                apply(group, mapping[xBreak]);
                 this.generateValues([x1, x2], xBreak).map(drawHorizontal(group));
                 this.gridGroup.prependChild(group);
             }
 
             if (yBreak !== undefined) {
                 let group = new Group();
-                // group.classList.add(mapping[yBreak]);
-                group.setAttribute('stroke', mapping[yBreak]['stroke']);
+                apply(group, mapping[yBreak]);
                 this.generateValues([y1, y2], yBreak).map(drawVertical(group))
                 this.gridGroup.prependChild(group);
             }

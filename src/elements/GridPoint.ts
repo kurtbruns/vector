@@ -74,7 +74,6 @@ export class GridPoint extends Input {
 
         // translate the control to its initial position
         let relativePoint = this.grid.SVGToRelative(this._x, -this._y);
-        console.log(x, y, relativePoint)
         this.moveTo(relativePoint.x - 540, relativePoint.y);
 
         // register event handlers
@@ -265,6 +264,15 @@ export class GridPoint extends Input {
     *[Symbol.iterator]() {
         yield this.x;
         yield this.y;
+    }
+
+    /**
+     * Sets this point to the coorindates of the other point and returns this point.
+     */
+    set(other: Point): Point {
+        this.x = other.x;
+        this.y = other.y;
+        return this;
     }
 
     /**

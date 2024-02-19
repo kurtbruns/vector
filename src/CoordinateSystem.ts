@@ -1,4 +1,5 @@
 import { Definitions, ExportTarget, Group, Line, Path, PlotGridBased, Point, TAU, TeX, download } from "./index";
+import { Player } from "./Player";
 import { Scene, SceneConfig, SceneMode } from "./Scene";
 
 type PointTuple = [number, number]; // Define a tuple type for a point
@@ -42,6 +43,7 @@ export interface CoordinateSystemConfig extends SceneConfig {
     big?: boolean;
     half?: boolean;
     root?: HTMLElement;
+    player?: boolean;
 }
 
 export class CoordinateSystem extends Scene {
@@ -62,16 +64,16 @@ export class CoordinateSystem extends Scene {
     constructor(config: CoordinateSystemConfig = {}) {
 
         let defaultConfig: CoordinateSystemConfig = {
-            width: 640,
-            height: 360,
+            width: 960,
+            height: 540,
             axesColor: 'var(--font-color-subtle)',
             axesArrows: true,
             axesLabels: true,
-            gridWidth: 12.8,
-            gridHeight: 7.2,
+            gridWidth: 16,
+            gridHeight: 9,
             drawGrid: true,
             big: false,
-            half: true,
+            half: false,
         };
 
         config = { ...defaultConfig, ...config };
@@ -177,6 +179,10 @@ export class CoordinateSystem extends Scene {
             }
         }
 
+        if (config.player) {
+            new Player({ scene: this });
+        }
+
     }
 
     projection(w: Point, v: Point): Point {
@@ -186,6 +192,11 @@ export class CoordinateSystem extends Scene {
 
     texVector(...args: any[]): string {
         return `\\left[\\begin{array}{c} \\: ${args.join(`\\: \\\\ \\:`)} \\: \\end{array}\\right]`;
+    }
+
+    texVectorLabel(l:string): string {
+
+        return `\\vec{\\mathbf{${l}}}`;
     }
 
     vectorTipLabel(point: Point, tex: string, color?: string, offset: number = 0, r = 24): TeX {

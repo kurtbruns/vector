@@ -56,9 +56,14 @@ export class Theme {
             '--primary': '#485bfc',
             '--secondary': '#4bb77e',
             '--tertiary': '#c74440',
+
             '--red': '#c74440',
             '--green': '#40a839',
             '--blue': '#485bfc',
+            '--teal': '#3dbcb3',
+            '--purple': '#a452ce'
+
+
         };
 
         this.dark = {
@@ -83,6 +88,10 @@ export class Theme {
             '--green': '#92d192',
             '--blue': '#6ab0f3',
             '--yellow': '#fff888',
+            '--teal': '#8afdff',
+            '--purple': '#db94ff'
+            
+
         }
 
         const uniqueTime = () => {
@@ -201,15 +210,7 @@ export class Theme {
         for (let i = 0; i < rules.length; i++) {
             let rule = rules[i];
             if (rule instanceof CSSStyleRule && rule.selectorText === this.getSelector(mode)) {
-                // Check if the property already exists
-                const currentPropertyValue = rule.style.getPropertyValue(name);
-                if (currentPropertyValue !== undefined) {
-                    rule.style.setProperty(name, value);
-                    break;
-                } else {
-                    rule.style.setProperty(name, value);
-                    break;
-                }
+                rule.style.setProperty(name, value);
             }
         }
 

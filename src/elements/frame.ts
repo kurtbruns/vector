@@ -21,7 +21,7 @@ import {
     RadioControl,
     Scrubber, ScrubberOptions,
     Slider, SliderOptions,
-} from './input/'
+} from './input'
 
 // math elements
 import { Label } from './visual/Label'
