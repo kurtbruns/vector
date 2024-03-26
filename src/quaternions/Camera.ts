@@ -102,7 +102,7 @@ export class Camera extends BaseNode {
         let relativePoint = point.subtract(this.position);
 
         // Apply quaternion rotation
-        let rotatedPoint = relativePoint.applyQuaternion(this.orientation);
+        let rotatedPoint = relativePoint.apply(this.orientation);
 
         // Perspective projection
         let scale = Math.tan(this.fov * 0.5 * Math.PI / 180) * this.nearPlane;
@@ -140,7 +140,7 @@ export class Camera extends BaseNode {
 
                     let r = Quaternion.slerp(orientation, orientation.multiply(rotation), alpha);
                     context._orientation = r;
-                    context._position = new Vector3(0, 0, 1).scale(position.length()).applyQuaternion(r.conjugate())
+                    context._position = new Vector3(0, 0, 1).scale(position.length()).apply(r.conjugate())
 
                     context.updateDependents();
                 };

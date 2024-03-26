@@ -9,7 +9,9 @@ export class Tex extends Group {
     private _x: number;
     private _y: number;
     private _scale: number;
+
     private inner: Group;
+    private background: Group;
     private rendered: SVGSVGElement;
 
     /**
@@ -30,9 +32,11 @@ export class Tex extends Group {
 
         flattenSVG(this.rendered);
 
-        // this.rendered.classList.add('tex', 'mathjax');
+        this.classList.add('tex', 'mathjax');
         this.setAttribute('color', 'var(--font-color)');
+        this.root.setAttribute('font-size', '16px');
 
+        this.background = this.group();
         this.inner = this.group();
         this.inner.root.appendChild(this.rendered);
 
@@ -42,6 +46,18 @@ export class Tex extends Group {
 
         this.moveTo(x, y)
 
+    }
+
+    static alignBy(t1:Tex, t2:Tex, s1:string, s2?:string) {
+
+        if(!s2) {
+            s2 = s1;
+        }
+
+        let t_eq_tex = t1.getPartsByTex(s1)[0].getBoundingClientRect();
+        let r_teq_tex = t2.getPartsByTex(s2)[0].getBoundingClientRect();
+
+        t2.shift(t_eq_tex.x - r_teq_tex.x, 0);
     }
 
     replace(s:string) : Tex {
@@ -170,6 +186,7 @@ export class Tex extends Group {
 
         let output = MathJax.tex2svg(tex, {});
         let matchRendered = output.firstChild as SVGSVGElement;
+        
         flattenSVG(matchRendered);
 
         let tree = this.rendered.querySelector('[data-mml-node="math"]');
@@ -221,29 +238,33 @@ export class Tex extends Group {
     alignCenter(): Tex {
         let bbox = this.rendered.getBoundingClientRect();
         this.inner.setAttribute('transform', `translate(${-bbox.width / 2}, ${-bbox.height / 2}) scale(${this._scale})`);
+        this.background.setAttribute('transform', `translate(${-bbox.width / 2}, ${-bbox.height / 2}) scale(${this._scale})`);
         return this;
     }
 
     drawBackground(replace:boolean = false) {
-        let margin = 6;
+        let top = 3;
+        let bottom = 3;
+        let left = 4;
+        let right = 4;
         let groupBbox = this.rendered.getBoundingClientRect();
         let rectangle = new Rectangle(
-            - margin / 2,
-            - margin / 2,
-            groupBbox.width / this._scale + margin,
-            groupBbox.height / this._scale + margin
+            0,
+            0,
+            groupBbox.width / this._scale + left + right,
+            groupBbox.height / this._scale + top + bottom
         );
         rectangle.setAttribute('fill', 'var(--background)');
         if(replace) {
             // TODO: should check that its a rect
-            this.inner.root.firstChild.remove()
+            this.background.root.firstChild.remove()
         }
         
-        this.inner.root.prepend(rectangle.root);
+        this.background.root.prepend(rectangle.root);
 
         let rectbbox = rectangle.root.getBoundingClientRect();
-        rectangle.x += groupBbox.x - rectbbox.x - margin / 2;
-        rectangle.y += groupBbox.y - rectbbox.y - margin / 2;
+        rectangle.x += groupBbox.x - rectbbox.x - left;
+        rectangle.y += groupBbox.y - rectbbox.y - right;
     }
 
     shift(point: { x: number, y: number }): Tex;

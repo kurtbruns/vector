@@ -1,6 +1,8 @@
 import { BaseElement, CoreAttributes, PresentationAttributes } from './base-element'
 import { Definitions } from './definitions';
+import { Line } from './line';
 import { Marker } from './marker';
+import { Path } from './path';
 
 /**
 * Attributes associated with geometric SVG elements.

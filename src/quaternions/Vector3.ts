@@ -215,12 +215,13 @@ export class Vector3 extends BaseNode {
      * @param q The quaternion to apply.
      * @returns The rotated vector.
      */
-    applyQuaternion(q: Quaternion): this {
+    apply(q: Quaternion): this {
         // Convert the vector to a pure quaternion
         let vectorQuaternion = new Quaternion(0, this.x, this.y, this.z);
 
         // Perform the rotation: q * v * q^(-1)
-        let rotatedQuaternion = q.multiply(vectorQuaternion).multiply(q.inverse());
+        // let rotatedQuaternion = q.multiply(vectorQuaternion).multiply(q.inverse());
+        let rotatedQuaternion = q.multiply(vectorQuaternion).multiply(q.conjugate());
 
         // Update the vector with the rotated values
         this.x = rotatedQuaternion.b;

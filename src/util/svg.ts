@@ -36,7 +36,7 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
 
     const elementsWithMarkersEnd = Array.from(svgElement.querySelectorAll('line[marker-end], path[marker-end]')) as SVGGeometryElement[];
     const elementsWithMarkersStart = Array.from(svgElement.querySelectorAll('line[marker-start], path[marker-start]')) as SVGGeometryElement[];
-    
+
     const trimPath = (el: SVGPathElement, isEnd: boolean) => {
         const totalLength = el.getTotalLength();
         if (isEnd) {
@@ -69,12 +69,12 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
         }
     };
 
-    const processMarker = (el : SVGGeometryElement, markerPosition : string ) => {
+    const processMarker = (el: SVGGeometryElement, markerPosition: string) => {
         const markerUrl = el.getAttribute(markerPosition);
-        if (!markerUrl){
+        if (!markerUrl) {
             return;
-        } 
-    
+        }
+
         const markerId = markerUrl.replace(/^url\(#/, '').replace(/\)$/, '');
         const marker = svgElement.querySelector(`#${markerId}`);
         const markerWidth = parseFloat(marker.getAttribute('markerWidth'));
@@ -83,7 +83,7 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
         const refY = parseFloat(marker.getAttribute('refY'));
 
         let x, y, angle, strokeWidth;
-    
+
         switch (el.tagName.toLowerCase()) {
             case 'line':
                 if (markerPosition === 'marker-end') {
@@ -101,12 +101,12 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
                 }
                 trimLine(el as SVGLineElement, markerPosition === 'marker-end');
                 break;
-    
-             case 'path':
+
+            case 'path':
                 const d = el.getAttribute('d') || "";
                 const pathLength = el.getTotalLength();
                 let coords, p1, p2;
-                
+
                 if (markerPosition === 'marker-end') {
                     coords = d.split(/[ ,MLCZz]/).filter(Boolean).slice(-2);
                     x = parseFloat(coords[0]);
@@ -128,15 +128,15 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
                 angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
                 trimPath(el as SVGPathElement, markerPosition === 'marker-end');
                 break;
-    
+
             default:
                 return;
         }
-    
+
         if (x === undefined || y === undefined || angle === undefined) {
             console.log(`Either x, y or angle is undefined:`, x, y, angle)
         }
-        
+
         const clonedPath = marker.firstChild.cloneNode(true) as SVGPathElement;
 
         const scale = 1.5;
@@ -146,24 +146,25 @@ export function embedMarkers(svgElement: SVGSVGElement, trimPixels = 4): void {
         const adjustedX = x - (refX * scale) * Math.cos(angle) + (refY * scale) * Math.sin(angle);
         const adjustedY = y - (refX * scale) * Math.sin(angle) - (refY * scale) * Math.cos(angle);
         clonedPath.setAttribute('transform', `translate(${adjustedX},${adjustedY}) rotate(${angle * (180 / Math.PI)}) scale(${scale})`);
-        if(el.getAttribute('opacity')) {
+        if (el.getAttribute('opacity')) {
             clonedPath.setAttribute('opacity', el.getAttribute('opacity'))
         }
         // svgElement.appendChild(clonedPath);
         el.insertAdjacentElement('beforebegin', clonedPath)
         el.removeAttribute(markerPosition);
     }
-    
+
     elementsWithMarkersEnd.forEach(el => processMarker(el, 'marker-end'));
     elementsWithMarkersStart.forEach(el => processMarker(el, 'marker-start'));
-    
-    
+
+
 }
 
 /**
  * Flattens the SVG by replacing <use> references with actual content from <defs>.
  */
 export function flattenSVG(svgElement: SVGSVGElement): SVGSVGElement {
+
     const useElements = Array.from(svgElement.querySelectorAll('use'));
 
     useElements.forEach(useElement => {
@@ -187,7 +188,7 @@ export function flattenSVG(svgElement: SVGSVGElement): SVGSVGElement {
 
     // Remove elements tagged with the class 'ignore-on-export`
     const ignoreElements = svgElement.querySelectorAll('.ignore-on-export');
-    for(let i = 0; i < ignoreElements.length; i++) {
+    for (let i = 0; i < ignoreElements.length; i++) {
         ignoreElements[i].remove();
     }
 
@@ -207,6 +208,7 @@ export function flattenSVG(svgElement: SVGSVGElement): SVGSVGElement {
  * @returns A new SVG element with inline styles.
  */
 function createInlineStyledSvg(originalSvg: SVGElement, target: ExportTarget): SVGSVGElement {
+
     const copiedSvg = originalSvg.cloneNode(true) as SVGSVGElement;
     document.body.appendChild(copiedSvg);
 
@@ -215,9 +217,9 @@ function createInlineStyledSvg(originalSvg: SVGElement, target: ExportTarget): S
         const parentStyles = parentElement ? window.getComputedStyle(parentElement) : null;
 
         const styleAttributes = [
-            'fill', 'fill-opacity', 'opacity', 
+            'fill', 'fill-opacity', 'opacity',
             'font', 'font-family', 'font-size',
-            'stroke', 'stroke-width', 'stroke-opacity', 
+            'stroke', 'stroke-width', 'stroke-opacity',
             'vector-effect', 'transform'
         ];
 
@@ -242,8 +244,24 @@ function createInlineStyledSvg(originalSvg: SVGElement, target: ExportTarget): S
 
         // Handle Figma specific styles.
         if (target === ExportTarget.FIGMA && element.classList.contains('mathjax')) {
-            const currentTransform = element.getAttribute('transform') || '';
-            element.setAttribute('transform', `${currentTransform} scale(${4/3})`);
+            if(element.firstElementChild.nextElementSibling) {
+                const currentTransform = element.firstElementChild.nextElementSibling.getAttribute('transform') || '';
+                element.firstElementChild.nextElementSibling.setAttribute('transform', `${currentTransform} scale(1.45)`);
+            }
+        }
+
+        // Handle Figma specific styles.
+        if (target === ExportTarget.BROWSER && element.classList.contains('mathjax')) {
+            const background = element.firstElementChild.firstElementChild;
+            
+            // Hack to fix background rendering issues
+            if( background.tagName === 'rect' ) {
+                let s = 1.03
+                let width = Number(background.getAttribute('width'));
+                let height = Number(background.getAttribute('height'));
+                background.setAttribute('width', (width*s).toFixed(3));
+                background.setAttribute('height', (height*s*s).toFixed(3));
+            }
         }
     }
 

@@ -105,6 +105,7 @@ export class Quaternion extends BaseNode {
 
         let cosHalfTheta = q1.d * q2.d + q1.a * q2.a + q1.b * q2.b + q1.c * q2.c;
 
+        // Choose the shorter path
         if (cosHalfTheta < 0) {
             q2 = new Quaternion(-q2.a, -q2.b, -q2.c, -q2.d);
             cosHalfTheta = -cosHalfTheta;
@@ -327,6 +328,10 @@ export class Quaternion extends BaseNode {
         return new Quaternion(this.a, this.b, this.c, this.d);
     }
 
+    toFormattedString() {
+        return `${this.a.toFixed(2)} + ${this.b.toFixed(2)}i + ${this.c.toFixed(2)}j + ${this.d.toFixed(2)}k`;
+    }
+
     toString(): string {
         return `${this.a} + ${this.b}i + ${this.c}j + ${this.d}k`;
     }
@@ -367,6 +372,26 @@ export class Quaternion extends BaseNode {
                     context.c = c + (endPoint.c - c) * alpha;
                     context.d = d + (endPoint.d - d) * alpha;
                     context.updateDependents();
+                };
+            },
+            slerp: function (r: Quaternion) {
+                let hasStarted = false;
+                let q : Quaternion;
+                let u : Quaternion;
+
+                return (alpha: number) => {
+                    if (!hasStarted) {
+                        q = context.copy();
+                        // u = r.multiply(q).multiply(r.conjugate());
+                        u = r.multiply(q);
+                        hasStarted = true;
+                        // console.log('start q:', q.toFormattedString());
+                        // console.log('rotation r:', r.toFormattedString());
+                        // console.log('dest u:', u.toFormattedString());
+                    }
+                    let t = Quaternion.slerp(q, u, alpha);
+                    // console.log(t.toFormattedString());
+                    context.set(t);
                 };
             },
         };

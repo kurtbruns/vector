@@ -1,4 +1,4 @@
-import { TeX } from '../..';
+import { Tex } from '../..';
 
 const tree1 = 
 `<svg xmlns="http://www.w3.org/2000/svg">

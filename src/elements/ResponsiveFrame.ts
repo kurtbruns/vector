@@ -47,7 +47,7 @@ export class ResponsiveFrame extends Frame {
         super(container, config);
 
         // Fill available space
-        if (config.responsive) {
+        if (this.root.parentElement instanceof HTMLElement && config.responsive) {
             this.style.width = '100%';
             this.style.height = 'auto';
             this.style.display = 'block';

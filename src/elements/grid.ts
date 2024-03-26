@@ -221,6 +221,27 @@ export class Grid extends ResponsiveFrame {
     }
 
     /**
+     * Overload signature for converting point from a point object parameter.
+     * @param point An object with properties x and y, specifying the coordinates relative to the SVG element.
+     * @returns Converted point in the SVG's coordinate system.
+     */
+    absoluteToSVG(point: { x: number, y: number }): DOMPoint;
+
+    /**
+     * Converts a point from relative screen coordinates to the SVG's coordinate system.
+     * It assumes that the point is given in coordinates relative to the same origin
+     * used by the SVG's getBoundingClientRect (typically the top-left of the SVG element).
+     */
+    absoluteToSVG(absoluteXOrPoint: number | { x: number, y: number }, absoluteY?: number) {
+
+        // Determine if the first argument is a point object or a number
+        let absolute = typeof absoluteXOrPoint === 'number' ? { x: absoluteXOrPoint, y: absoluteY } : absoluteXOrPoint;
+
+        // Now we can use the screenToSVG method to convert to SVG coordinates
+        return this.screenToSVG(absolute.x, absolute.y);
+    }
+
+    /**
      * Converts a point in the SVG's coordinate system to the *absolute* screen coordindate
      */
     SVGToScreen(svgX: number, svgY: number) {

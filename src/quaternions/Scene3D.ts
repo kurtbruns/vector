@@ -2,7 +2,7 @@ import { Camera } from "./Camera";
 import { Quaternion } from "./Quaternion";
 import { Vector3 } from "./Vector3";
 import { Vector2 } from "./Vector2";
-import { AnimationFunction, BaseNode, CoordinateSystem, Group, Point, TeX } from "..";
+import { AnimationFunction, BaseNode, CoordinateSystem, Group, Player, Point, Tex } from "..";
 
 export interface Scene3DConfig {
     width?: number;
@@ -25,7 +25,7 @@ export interface Scene3DConfig {
     tickMarksColorAlt?: boolean;
     size?: number;
     distance?: number;
-    controls?: boolean;
+    player?: boolean;
     root?: HTMLElement;
     suffix?: string;
 }
@@ -81,7 +81,7 @@ export class Scene3D {
             yaw: 32,
 
             groundGrid: true,
-            controls: true
+            player: true
         }
 
         config = { ...defaultConfig, ...config };
@@ -110,7 +110,14 @@ export class Scene3D {
 
         // this.viewPort.frame.root.style.overflow = 'visible';
 
-        this.viewPort.frame.setAttribute('id', this.constructor.name + (config.suffix ? config.suffix : ''));
+        let id = this.constructor.name + (config.suffix ? config.suffix : '');
+        this.viewPort.frame.setAttribute('id', id);
+        if (config.player) {
+            new Player({ 
+                scene: this.viewPort,
+                id: id 
+            });
+        }
 
         this.viewPort.frame.root.style.outline = `1.5px solid var(--border-color)`;
         // this.viewPort.frame.root.style.boxShadow = `4px 4px 8px rgba(255, 255, 255, 0.5), -4px -4px 8px rgba(0, 0, 0, 0.2);`;
@@ -178,7 +185,6 @@ export class Scene3D {
                 this.drawTickMarksGrey(config.size - (config.drawAxesArrows ? 1 : 0));
             }
         }
-
 
     }
 
@@ -257,7 +263,7 @@ export class Scene3D {
                 let localRotation = this.camera.orientation.conjugate().multiply(r).multiply(this.camera.orientation).normalize();
 
                 // Apply the local rotation to the camera's orientation
-                this.camera.position.applyQuaternion(localRotation);
+                this.camera.position.apply(localRotation);
 
                 this.camera.orientation = this.camera.orientation.multiply(localRotation.inverse());
 
@@ -283,7 +289,7 @@ export class Scene3D {
 
                     let u = r.multiply(s).normalize();
 
-                    this.camera.position.applyQuaternion(u);
+                    this.camera.position.apply(u);
                     this.camera.orientation = this.camera.orientation.multiply(u.inverse()).normalize();
 
                 } else {
@@ -311,7 +317,7 @@ export class Scene3D {
 
                     let u = s.multiply(r).normalize();
 
-                    this.camera.position.applyQuaternion(u);
+                    this.camera.position.apply(u);
                     this.camera.orientation = this.camera.orientation.multiply(u.inverse()).normalize();
                 }
 
@@ -697,31 +703,32 @@ export class Scene3D {
 
     drawTickMarksGrey(c: number = 5, a: number = 0.15, opacity = 1) {
 
+        let color = 'var(--font-color-light)';
         for (let d = 1; d <= c; d++) {
 
             // Positive z Direction
-            this.line(new Vector3(a, 0, d), new Vector3(-a, 0, d), 'var(--font-color)', opacity);
-            this.line(new Vector3(0, a, d), new Vector3(0, -a, d), 'var(--font-color)', opacity);
+            this.line(new Vector3(a, 0, d), new Vector3(-a, 0, d), color, opacity);
+            this.line(new Vector3(0, a, d), new Vector3(0, -a, d), color, opacity);
 
             // Negative z Direction
-            this.line(new Vector3(a, 0, -d), new Vector3(-a, 0, -d), `var(--font-color)`, opacity);
-            this.line(new Vector3(0, a, -d), new Vector3(0, -a, -d), 'var(--font-color)', opacity);
+            this.line(new Vector3(a, 0, -d), new Vector3(-a, 0, -d), color, opacity);
+            this.line(new Vector3(0, a, -d), new Vector3(0, -a, -d), color, opacity);
 
             // Positive x Direction
-            this.line(new Vector3(d, a, 0), new Vector3(d, -a, 0), 'var(--font-color)', opacity);
-            this.line(new Vector3(d, 0, a), new Vector3(d, 0, -a), 'var(--font-color)', opacity);
+            this.line(new Vector3(d, a, 0), new Vector3(d, -a, 0), color, opacity);
+            this.line(new Vector3(d, 0, a), new Vector3(d, 0, -a), color, opacity);
 
             // Negative x Direction
-            this.line(new Vector3(-d, a, 0), new Vector3(-d, -a, 0), 'var(--font-color)', opacity);
-            this.line(new Vector3(-d, 0, a), new Vector3(-d, 0, -a), 'var(--font-color)', opacity);
+            this.line(new Vector3(-d, a, 0), new Vector3(-d, -a, 0), color, opacity);
+            this.line(new Vector3(-d, 0, a), new Vector3(-d, 0, -a), color, opacity);
 
             // Positive y Direction
-            this.line(new Vector3(a, d, 0), new Vector3(-a, d, 0), 'var(--font-color)', opacity);
-            this.line(new Vector3(0, d, a), new Vector3(0, d, -a), 'var(--font-color)', opacity);
+            this.line(new Vector3(a, d, 0), new Vector3(-a, d, 0), color, opacity);
+            this.line(new Vector3(0, d, a), new Vector3(0, d, -a), color, opacity);
 
             // Negative y Direction
-            this.line(new Vector3(a, -d, 0), new Vector3(-a, -d, 0), 'var(--font-color)', opacity);
-            this.line(new Vector3(0, -d, a), new Vector3(0, -d, -a), 'var(--font-color)', opacity);
+            this.line(new Vector3(a, -d, 0), new Vector3(-a, -d, 0), color, opacity);
+            this.line(new Vector3(0, -d, a), new Vector3(0, -d, -a), color, opacity);
         }
     }
 
@@ -882,7 +889,7 @@ export class Scene3D {
         return t;
     }
 
-    vectorLabel(v: Vector3, label: string, s: number = 0.6): TeX {
+    vectorLabel(v: Vector3, label: string, s: number = 0.6): Tex {
         let t = this.tex(v.add(v.copy().normalize().scale(s)), label);
         t.addDependency(v);
         t.update = () => {
@@ -894,7 +901,7 @@ export class Scene3D {
         return t;
     }
 
-    vectorCoordinatesPrefix(v: Vector3, prefix: string, s: number = 1.5): TeX {
+    vectorCoordinatesPrefix(v: Vector3, prefix: string, s: number = 1.5): Tex {
         let t = this.tex(v.add(v.copy().normalize().scale(s)), `${prefix} \\left[\\begin{array}{c} \\: ${v.x} \\: \\\\ \\: ${v.y} \\: \\\\ \\: ${v.z} \\: \\end{array}\\right]`)
         t.addDependency(v);
         t.update = () => {
@@ -906,7 +913,7 @@ export class Scene3D {
         return t;
     }
 
-    vectorCoordinates(v: Vector3, s: number = 1.5): TeX {
+    vectorCoordinates(v: Vector3, s: number = 1.5): Tex {
         let t = this.tex(v.add(v.copy().normalize().scale(s)), `\\left[\\begin{array}{c} \\: ${v.x} \\: \\\\ \\: ${v.y} \\: \\\\ \\: ${v.z} \\: \\end{array}\\right]`)
             .setColor(`${v.x}`, 'var(--green)')
             .setColor(`${v.y}`, 'var(--red)', Number(Math.abs(v.y) === Math.abs(v.x)))
@@ -914,7 +921,7 @@ export class Scene3D {
         return t;
     }
 
-    vectorCoordinates2(v: Vector3, s: number = 1.5, prefix: string = ''): TeX {
+    vectorCoordinates2(v: Vector3, s: number = 1.5, prefix: string = ''): Tex {
 
         let format = (n: number): string => {
             if (Number(n).toString().length > 2) {

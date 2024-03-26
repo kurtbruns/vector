@@ -1,4 +1,4 @@
-import { Frame, ResponsiveFrame, bundle, saveAs } from '.'
+import { Frame, Rectangle, ResponsiveFrame } from '.'
 
 /**
  * Different types of rate functions
@@ -94,6 +94,11 @@ export class Scene {
     public frame: Frame;
 
     /**
+     * Rectangle for background.
+     */
+    public backgroundRectangle : Rectangle;
+
+    /**
      * Constructs a new scene instance.
      * @param width Optional width of the scene
      * @param height Optional height of the scene
@@ -130,8 +135,9 @@ export class Scene {
         this.frame.setAttribute('id', this.constructor.name + (config.suffix ? config.suffix : ''));
 
         if (config.background) {
-            let background = this.frame.background.rectangle(0, 0, effectiveWidth, effectiveHeight);
-            background.style.fill = 'var(--background)';
+            this.backgroundRectangle = this.frame.rectangle(0, 0, effectiveWidth, effectiveHeight);
+            this.backgroundRectangle.style.fill = 'var(--background)';
+            this.frame.root.prepend(this.backgroundRectangle.root);
         }
 
         this.onDoneCallback = () => {
@@ -235,11 +241,17 @@ export class Scene {
      */
     export(frameCallback: () => void): Promise<void> {
         return new Promise((resolve, reject) => {
-            try {
-                this.currentAnimation = 0;
-                this.runAnimation(0, undefined, frameCallback, resolve);
-            } catch (error) {
-                reject(error);
+            if (this.animations.length === 0) {
+                console.log("No animations to play.");
+            } else if (this.active) {
+                console.log("Animation already in progress.");
+            } else {
+                try {
+                    this.currentAnimation = 0;
+                    this.runAnimation(0, undefined, frameCallback, resolve);
+                } catch (error) {
+                    reject(error);
+                }
             }
         });
     }

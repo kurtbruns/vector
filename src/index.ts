@@ -1,13 +1,3 @@
-export {
-  CoordinateSystem
-} from './CoordinateSystem';
-
-export {
-  Animation,
-  AnimationFunction,
-  Scene,
-  SceneMode,
-} from './Scene';
 
 export {
   BaseNode,
@@ -53,7 +43,7 @@ export {
   Grid,
   OverflowFrame,
   ResponsiveFrame,
-  TeX,
+  Tex,
 } from './elements';
 
 export {
@@ -94,14 +84,32 @@ export {
 } from './Theme';
 
 export {
+  Color,
   interpolateColor,
   hexToRGB
 } from './Color';
+
+export {
+  Animation,
+  AnimationFunction,
+  Scene,
+  SceneMode,
+} from './Scene';
+
+export {
+  CoordinateSystem,
+  CoordinateSystemConfig
+} from './CoordinateSystem';
+
+export {
+  Player
+} from './Player';
 
 export {
   Vector2,
   Vector3,
   Quaternion,
   Camera,
-  Scene3D
+  Scene3D,
 } from './quaternions'
+

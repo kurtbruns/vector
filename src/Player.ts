@@ -11,7 +11,13 @@ export interface PlayerConfig {
 export class Player {
 
     scene: Scene;
-    private _downloadCallback: () => void;
+
+    static downloadTarget: ExportTarget = ExportTarget.BROWSER;
+
+    private _downloadCallback: (scene: Scene) => void;
+    private static _defaultDownloadCallback: (scene: Scene) => void = () => {
+        console.log('No callback provided.')
+    }
 
     container: HTMLElement;
     controls: HTMLElement;
@@ -27,7 +33,7 @@ export class Player {
 
         config = { ...defaultConfig, ...config };
 
-        let scene = config.scene;
+        this.scene = config.scene;
 
         let container = document.createElement('div');
         container.classList.add('player');
@@ -41,13 +47,12 @@ export class Player {
         container.style.margin = `2rem auto`;
         container.style.display = `flex`;
         container.style.flexDirection = `column`;
-        container.style.maxWidth = `${scene.frame.width}px`;
-
+        container.style.maxWidth = `${this.scene.frame.width}px`;
 
         let controls = document.createElement('div');
         controls.classList.add('controls')
 
-        container.append(scene.frame.root, controls);
+        container.append(this.scene.frame.root, controls);
 
         let left = document.createElement('div');
         left.classList.add('left');
@@ -79,7 +84,7 @@ export class Player {
 
         right.append(captureButton, downloadButton);
 
-        middle.innerHTML = config.id === '' ? scene.constructor.name : config.id; 
+        middle.innerHTML = config.id === '' ? this.scene.constructor.name : config.id;
 
         this.container = container;
         this.controls = controls;
@@ -87,21 +92,19 @@ export class Player {
         this.middle = middle;
         this.right = right;
 
-        this.downloadCallback = () => {
-            console.log('No callback provided.')
-        }
+        this.downloadCallback = Player._defaultDownloadCallback;
 
-        scene.setOnDone(() => {
+        this.scene.setOnDone(() => {
             // playButton.innerHTML = 'reset';
         })
 
         playButton.onclick = () => {
             // TODO: move functionality to scene class?
-            if (scene.reset) {
-                scene.reset();
+            if (this.scene.reset) {
+                this.scene.reset();
             }
-            scene.setMode(SceneMode.Live);
-            scene.start();
+            this.scene.setMode(SceneMode.Live);
+            this.scene.start();
             // TODO: change to pause button
             // TODO: disable double start when pressed twice
             // TODO: on finish change button to reset
@@ -109,24 +112,28 @@ export class Player {
 
         captureButton.onclick = () => {
             let prefix = document.getElementsByTagName('html')[0].classList.contains('light-theme') ? '.light.svg' : '';
-            download(scene.frame.root, scene.frame.root.id + prefix, ExportTarget.FIGMA);
+            download(this.scene.frame.root, this.scene.frame.root.id + prefix, Player.downloadTarget);
         }
 
         downloadButton.onclick = () => {
-            if (scene.reset) {
-                scene.reset();
+            if (this.scene.reset) {
+                this.scene.reset();
             }
-            this.downloadCallback();
+            this.downloadCallback(this.scene);
         }
 
     }
 
-    set downloadCallback(fn : () => void ) {
+    static setDefaultDownloadCallback(fn: (scene: Scene) => void) {
+        Player._defaultDownloadCallback = fn;
+    }
+
+    set downloadCallback(fn: (scene: Scene) => void) {
         this._downloadCallback = fn;
     }
 
-    get downloadCallback() : () => void  {
-        return this._downloadCallback
+    get downloadCallback(): (scene: Scene) => void {
+        return this._downloadCallback;
     }
 
 }

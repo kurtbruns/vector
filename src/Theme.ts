@@ -60,7 +60,8 @@ export class Theme {
             '--red': '#c74440',
             '--green': '#40a839',
             '--blue': '#485bfc',
-            '--teal': '#3dbcb3',
+            '--teal': '#1aa59b',
+
             '--purple': '#a452ce'
 
 
@@ -116,6 +117,13 @@ export class Theme {
             this.style.sheet.insertRule(lightRule, this.style.sheet.cssRules.length);
         }
 
+    }
+
+    /**
+     * Returns the current theme mode
+     */
+    getMode() : 'light' | 'dark' {
+        return document.documentElement.classList.contains('light-theme') ? 'light' : 'dark';
     }
 
     /**
@@ -221,7 +229,7 @@ export class Theme {
       * @param name The name of the CSS variable to retrieve.
       * @returns The value of the CSS variable or undefined if the variable is not found.
       */
-    public getVariable(name: string, mode: 'light' | 'dark' = 'dark'): string {
+    public getVariable(name: string, mode: 'light' | 'dark' = this.getMode()): string {
 
         // Ensure the variable name starts with '--'
         if (!name.startsWith('--')) {

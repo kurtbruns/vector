@@ -1,33 +1,8 @@
-import { Definitions, ExportTarget, Group, Line, Path, PlotGridBased, Point, TAU, TeX, download } from "./index";
+import { Definitions, Group, Line, Path, PlotGridBased, Point, TAU, Tex } from "./index";
 import { Player } from "./Player";
-import { Scene, SceneConfig, SceneMode } from "./Scene";
+import { Scene, SceneConfig } from "./Scene";
 
 type PointTuple = [number, number]; // Define a tuple type for a point
-
-export type Color = [number, number, number];
-
-export function hexToRGB(hex: string): Color {
-    const rgb = parseInt(hex.replace(/^#/, ''), 16);
-    return [(rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff];
-}
-
-export function interpolateColor(color1: string, color2: string, factor: number = 0.5): string {
-
-    const rgb1 = hexToRGB(color1);
-    const rgb2 = hexToRGB(color2);
-
-    // Calculate the interpolated color
-    const interpolate = (start: number, end: number) => {
-        return Math.round(start + factor * (end - start));
-    };
-
-    const result = rgb1.map((component, index) => {
-        return interpolate(component, rgb2[index]);
-    });
-
-    // Convert interpolated rgb back to hex
-    return `#${result.map(x => x.toString(16).padStart(2, '0')).join('')}`;
-}
 
 export interface CoordinateSystemConfig extends SceneConfig {
     suffix?: string;
@@ -78,7 +53,7 @@ export class CoordinateSystem extends Scene {
 
         config = { ...defaultConfig, ...config };
 
-        config.root = config.root === undefined ? document.querySelector('#root') : config.root,
+        config.root = config.root === undefined ? document.querySelector('#root') : config.root;
 
         super({
             root: config.root,
@@ -116,13 +91,22 @@ export class CoordinateSystem extends Scene {
         if (config.drawGrid) {
             if (config.big && !config.half) {
                 plot.drawGridLines();
+                // plot.drawGridLines(
+                //     ['tiny', 'small-half', 'small'], 
+                //     ['tiny', 'small-half', 'small'], 
+                //     {
+                //         'small': {'stroke': 'var(--grid-primary)'},
+                //         'small-half': {'stroke': 'var(--grid-secondary)'},
+                //         'tiny': {'stroke': 'var(--grid-tertiary)'},
+                //     }
+                // );
             } else if (config.big && config.half) {
                 plot.drawGridLines(
-                    ['half', 'big'], 
+                    ['half', 'big'],
                     ['half', 'big'],
                     {
-                        'big': {'stroke': 'var(--grid-primary)'},
-                        'second': {'stroke': 'var(--grid-secondary)'},
+                        'big': { 'stroke': 'var(--grid-primary)' },
+                        'second': { 'stroke': 'var(--grid-secondary)' },
                     });
             }
             else if (!config.half) {
@@ -130,15 +114,15 @@ export class CoordinateSystem extends Scene {
                     ['small'],
                     ['small'],
                     {
-                        'small': {'stroke': 'var(--grid-primary)'},
+                        'small': { 'stroke': 'var(--grid-primary)' },
                     });
             } else {
                 plot.drawGridLines(
                     ['small-half', 'small'],
                     ['small-half', 'small'],
                     {
-                        'small': {'stroke': 'var(--grid-primary)'},
-                        'small-half': {'stroke': 'var(--grid-tertiary)'},
+                        'small': { 'stroke': 'var(--grid-primary)' },
+                        'small-half': { 'stroke': 'var(--grid-tertiary)' },
                     });
             }
         }
@@ -180,7 +164,10 @@ export class CoordinateSystem extends Scene {
         }
 
         if (config.player) {
-            new Player({ scene: this });
+            new Player({
+                scene: this,
+                id: this.constructor.name + (config.suffix ? config.suffix : '')
+            });
         }
 
     }
@@ -194,12 +181,44 @@ export class CoordinateSystem extends Scene {
         return `\\left[\\begin{array}{c} \\: ${args.join(`\\: \\\\ \\:`)} \\: \\end{array}\\right]`;
     }
 
-    texVectorLabel(l:string): string {
+    texVectorLabel(l: string): string {
 
         return `\\vec{\\mathbf{${l}}}`;
     }
 
-    vectorTipLabel(point: Point, tex: string, color?: string, offset: number = 0, r = 24): TeX {
+
+    vectorLabel(v: Point, tex: string, opts: { color?: string, scale?: number } = {}): Tex {
+
+        let options: {
+            color: string,
+            scale: number,
+        } = {
+            color: 'var(--font-color)',
+            scale: 1,
+        }
+
+        options = { ...options, ...opts }
+
+        let t = this.frame.tex(tex);
+
+        t.addDependency(v);
+        t.update = () => {
+
+            let x = v.x;
+            let y = v.y;
+
+
+            t.moveTo(this.plot.SVGToRelative(v.add(v.normalize().scale(options.scale))))
+                .alignCenter()
+        }
+        t.update();
+
+        t.setAttribute('color', options.color);
+
+        return t;
+    }
+
+    vectorTipLabel(point: Point, tex: string, color?: string, offset: number = 0, r = 24): Tex {
 
         let t = this.frame.tex(tex);
 
@@ -225,7 +244,7 @@ export class CoordinateSystem extends Scene {
         return t;
     }
 
-    vectorVariables(point: Point, color?: string, offset: number = 0, vars: [string, string] = ['x', 'y']): TeX {
+    vectorVariables(point: Point, color?: string, offset: number = 0, vars: [string, string] = ['x', 'y']): Tex {
 
         let x = point.x;
         let y = point.y;
@@ -246,7 +265,7 @@ export class CoordinateSystem extends Scene {
         return tex;
     }
 
-    vectorCoordinatesTex(point: Point, color?: string, offset: number = 0, radius: number = 40, prefix: string = ''): TeX {
+    vectorCoordinatesTex(point: Point, color?: string, offset: number = 0, radius: number = 40, prefix: string = ''): Tex {
 
         let x = point.x;
         let y = point.y;
@@ -283,6 +302,22 @@ export class CoordinateSystem extends Scene {
                     .moveTo(this.plot.SVGToRelative(value.x, 0));
             }
         });
+    }
+
+    updateArrow(element: Path | Line, color: string) {
+
+        element.setAttribute('stroke', color);
+
+        let marker;
+        if (marker = element.getAttribute('marker-start')) {
+            const id = marker.match(/url\(#(.+?)\)/)[1];
+            document.getElementById(id).firstElementChild.setAttribute('fill', color);
+        }
+
+        if (marker = element.getAttribute('marker-end')) {
+            const id = marker.match(/url\(#(.+?)\)/)[1];
+            document.getElementById(id).firstElementChild.setAttribute('fill', color);
+        }
     }
 
     vector(p1: Point, p2: Point, color: string = 'var(--primary)'): Line {
@@ -369,7 +404,11 @@ export class CoordinateSystem extends Scene {
 
         const refX = 6;
         const refY = 5;
-        const scale = path.getAttribute('stroke-width') ? Number(path.getAttribute('stroke-width')) : 1.5;
+        let scale = 1.5;
+        let strokeWidth;
+        if (strokeWidth = path.getAttribute('stroke-width')) {
+            scale = Number(strokeWidth.replace(/px$/, ''));
+        }
 
         let g = this.frame.group();
         g.appendChild(path);
@@ -443,7 +482,7 @@ export class CoordinateSystem extends Scene {
         return v;
     }
 
-    label(point: Point, label: string, color: string = 'var(--font-color)', offset = 0): TeX {
+    label(point: Point, label: string, color: string = 'var(--font-color)', offset = 0): Tex {
 
         let x = point.x;
         let y = point.y;
@@ -465,7 +504,7 @@ export class CoordinateSystem extends Scene {
     addlabel(line: Line, label: string, color: string = 'var(--font-color)') {
         let l = this.frame.tex(label, 0, 0)
             .alignCenter()
-            .setAttribute('color', color) as TeX;
+            .setAttribute('color', color) as Tex;
 
         l.addDependency(line);
         l.update = () => {
@@ -495,7 +534,7 @@ export class CoordinateSystem extends Scene {
         return line;
     }
 
-    brace(p1: Point, p2: Point, label?: string, reverse: boolean = false, color: string = 'var(--primary)', space: number = 4): TeX {
+    brace(p1: Point, p2: Point, label?: string, reverse: boolean = false, color: string = 'var(--primary)', space: number = 4): Tex {
 
         if (reverse) {
             this.frame.gridBrace(this.plot, p2, p1, space);
@@ -525,7 +564,163 @@ export class CoordinateSystem extends Scene {
 
     }
 
-    braceLabel2(p1: Point, p2: Point, label: string, opts = {}): TeX {
+    regularBraceLabel(p1: Point, p2: Point, label: string, opts = {}): Tex {
+
+        let options: { reverse?: Boolean, space?: number, color?: string, buff?: number, group?: Group } = {
+            reverse: false,
+            color: 'var(--primary)',
+            space: 4,
+            buff: 42
+        }
+
+        options = { ...options, ...opts };
+
+        let g = options.group ? options.group : this.frame.group();
+        if (options.reverse) {
+            g.appendChild(this.frame.brace(p1.x, p1.y, p2.x, p2.y));
+        } else {
+            g.appendChild(this.frame.brace(p2.x, p2.y, p1.x, p1.y));
+        }
+
+        let l = this.frame.tex(label, 0, 0)
+            .alignCenter();
+
+        g.appendChild(l);
+
+        l.addDependency(p1, p2);
+        l.update = () => {
+            let mx = p1.x + (p2.x - p1.x) / 2;
+            let my = p1.y + (p2.y - p1.y) / 2;
+
+            const a = Math.atan2(my, mx) + TAU / 4 + (options.reverse ? 0 : TAU / 2);
+            l.moveTo({ x: mx - options.buff * Math.cos(a), y: my + options.buff * Math.sin(a) });
+        };
+        l.update();
+
+        return l;
+
+    }
+    
+    private getEncompassingBoundingClientRectangle(elements : SVGElement[]) : DOMRect {
+
+        // Initialize variables to track the min and max x and y coordinates
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        // Iterate over all elements to find their bounding client rectangles
+        elements.forEach(element => {
+            let bbox = element.getBoundingClientRect();
+            minX = Math.min(minX, bbox.left);
+            minY = Math.min(minY, bbox.top);
+            maxX = Math.max(maxX, bbox.right);
+            maxY = Math.max(maxY, bbox.bottom);
+        });
+
+        // Create a new bounding client rectangle that includes all elements
+        return new DOMRect(minX, minY, maxX - minX, maxY - minY);
+
+    }
+
+    braceLabelAbove(texParts: SVGElement[], label: string, options: { reverse?: Boolean, space?: number, color?: string, buff?: number, group?: Group } = {}) {
+
+        let defaultOptions = {
+            reverse: true,
+            color: 'var(--primary)',
+            space: 6,
+            buff: 42
+        }
+
+        options = { ...defaultOptions, ...options };
+
+        let bbox = this.getEncompassingBoundingClientRectangle(texParts);
+
+        let domPoint1 = this.plot.absoluteToSVG(new Point(bbox.left, bbox.top));
+        let domPoint2 = this.plot.absoluteToSVG(new Point(bbox.right, bbox.top));
+
+        let p1 = new Point(domPoint1.x, domPoint1.y);
+        let p2 = new Point(domPoint2.x, domPoint2.y);
+
+        let g = options.group ? options.group : this.frame.group();
+        if (options.reverse) {
+            g.appendChild(this.frame.gridBrace(this.plot, p2, p1, options.space));
+        } else {
+            g.appendChild(this.frame.gridBrace(this.plot, p1, p2, options.space));
+        }
+
+        if (options.color) {
+            g.setAttribute('fill', options.color);
+        }
+
+        let l = this.frame.tex(label, 0, 0)
+            .alignCenter();
+
+        g.appendChild(l);
+
+        l.addDependency(p1, p2);
+        l.update = () => {
+            let mx = p1.x + (p2.x - p1.x) / 2;
+            let my = p1.y + (p2.y - p1.y) / 2;
+
+            const p = this.plot.SVGToRelative(mx, my);
+            const a = Math.atan2(p2.y - p1.y, p2.x - p1.x) + TAU / 4 + (options.reverse ? TAU / 2 : 0);
+            l.moveTo({ x: p.x - options.buff * Math.cos(a), y: p.y + options.buff * Math.sin(a) });
+        };
+        l.update();
+
+        return l;
+
+    }
+
+    braceLabelBelow(texParts: SVGElement[], label: string, options: { reverse?: Boolean, space?: number, color?: string, buff?: number, group?: Group } = {}) {
+
+        let defaultOptions = {
+            reverse: false,
+            color: 'var(--primary)',
+            space: 6,
+            buff: 42
+        }
+
+        options = { ...defaultOptions, ...options };
+
+        let bbox = this.getEncompassingBoundingClientRectangle(texParts);
+
+        let domPoint1 = this.plot.absoluteToSVG(new Point(bbox.left, bbox.bottom));
+        let domPoint2 = this.plot.absoluteToSVG(new Point(bbox.right, bbox.bottom));
+
+        let p1 = new Point(domPoint1.x, domPoint1.y);
+        let p2 = new Point(domPoint2.x, domPoint2.y);
+
+        let g = options.group ? options.group : this.frame.group();
+        if (options.reverse) {
+            g.appendChild(this.frame.gridBrace(this.plot, p2, p1, options.space));
+        } else {
+            g.appendChild(this.frame.gridBrace(this.plot, p1, p2, options.space));
+        }
+
+        if (options.color) {
+            g.setAttribute('fill', options.color);
+        }
+
+        let l = this.frame.tex(label, 0, 0)
+            .alignCenter();
+
+        g.appendChild(l);
+
+        l.addDependency(p1, p2);
+        l.update = () => {
+            let mx = p1.x + (p2.x - p1.x) / 2;
+            let my = p1.y + (p2.y - p1.y) / 2;
+
+            const p = this.plot.SVGToRelative(mx, my);
+            const a = Math.atan2(p2.y - p1.y, p2.x - p1.x) + TAU / 4 + (options.reverse ? TAU / 2 : 0);
+            l.moveTo({ x: p.x - options.buff * Math.cos(a), y: p.y + options.buff * Math.sin(a) });
+        };
+        l.update();
+
+        return l;
+
+    }
+
+    braceLabel2(p1: Point, p2: Point, label: string, opts = {}): Tex {
 
         let options: { reverse?: Boolean, space?: number, color?: string, buff?: number, group?: Group } = {
             reverse: false,
@@ -541,6 +736,10 @@ export class CoordinateSystem extends Scene {
             g.appendChild(this.frame.gridBrace(this.plot, p2, p1, options.space));
         } else {
             g.appendChild(this.frame.gridBrace(this.plot, p1, p2, options.space));
+        }
+
+        if (options.color) {
+            g.setAttribute('fill', options.color);
         }
 
         let l = this.frame.tex(label, 0, 0)
@@ -564,7 +763,7 @@ export class CoordinateSystem extends Scene {
     }
 
     // TODO: remove and update all to use the behavior of braceLabel2
-    braceLabel(p1: Point, p2: Point, label: string, reverse: boolean = false, color: string = 'var(--primary)', space: number = 4, buff: number = 42): TeX {
+    braceLabel(p1: Point, p2: Point, label: string, reverse: boolean = false, color: string = 'var(--primary)', space: number = 4, buff: number = 42): Tex {
 
         let g = this.frame.group();
         if (reverse) {

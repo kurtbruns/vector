@@ -1,3 +1,4 @@
+import { Theme } from "./Theme";
 
 export type Color = [number, number, number];
 
@@ -8,9 +9,22 @@ export function hexToRGB(hex: string): Color {
 
 export function interpolateColor(color1: string, color2: string, factor: number = 0.5): string {
 
+    let theme = Theme.getInstance();
+
+    // Regex to match the pattern 'var(--some-variable)'
+    const varRegex = /^var\((--[^)]+)\)$/;
+
+    // Function to extract variable name and get its value
+    function getColorValue(color) {
+        const match = color.match(varRegex);
+        return match ? theme.getVariable(match[1]) : color;
+    }
+
+    color1 = getColorValue(color1);
+    color2 = getColorValue(color2);
+
     const rgb1 = hexToRGB(color1);
     const rgb2 = hexToRGB(color2);
-
 
     // Calculate the interpolated color
     const interpolate = (start: number, end: number) => {
