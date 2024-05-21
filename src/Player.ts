@@ -12,7 +12,7 @@ export class Player {
 
     scene: Scene;
 
-    static downloadTarget: ExportTarget = ExportTarget.BROWSER;
+    static downloadTarget: ExportTarget = ExportTarget.FIGMA;
 
     private _downloadCallback: (scene: Scene) => void;
     private static _defaultDownloadCallback: (scene: Scene) => void = () => {
@@ -111,8 +111,9 @@ export class Player {
         }
 
         captureButton.onclick = () => {
-            let prefix = document.getElementsByTagName('html')[0].classList.contains('light-theme') ? '.light.svg' : '';
-            download(this.scene.frame.root, this.scene.frame.root.id + prefix, Player.downloadTarget);
+            let suffix = document.getElementsByTagName('html')[0].classList.contains('light-theme') ? '.light.svg' : '';
+            download(this.scene.frame.root, this.scene.frame.root.id + suffix, Player.downloadTarget);
+            download(this.scene.frame.root, this.scene.frame.root.id + '.browser.svg', ExportTarget.BROWSER);
         }
 
         downloadButton.onclick = () => {

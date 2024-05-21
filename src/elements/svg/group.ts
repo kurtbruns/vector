@@ -45,8 +45,7 @@ export class Group extends BaseElement implements Descriptive, Shape, Structural
         return {
             setOpacity: function (value:number) {
                 let hasStarted = false;
-                let startValue;
-    
+                let startValue;    
                 return (alpha) => {
                     if (!hasStarted) {
                         startValue = parseFloat(context.getAttribute('opacity'));
@@ -114,7 +113,7 @@ export class Group extends BaseElement implements Descriptive, Shape, Structural
     line(x1: number, y1: number, x2: number, y2: number): Line {
         return this.appendChild(new Line(x1, y1, x2, y2));
     }
-    path(d: string): Path {
+    path(d: string = '' ): Path {
         return this.appendChild(new Path(d));
     }
     polygon(points: string): Polygon {

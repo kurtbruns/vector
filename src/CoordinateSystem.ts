@@ -13,6 +13,8 @@ export interface CoordinateSystemConfig extends SceneConfig {
     axesLabels?: boolean;
     gridWidth?: number;
     gridHeight?: number;
+    internalX?: number;
+    internalY?: number;
     drawGrid?: boolean;
     drawAxes?: boolean;
     big?: boolean;
@@ -53,6 +55,14 @@ export class CoordinateSystem extends Scene {
 
         config = { ...defaultConfig, ...config };
 
+        if (isNaN(config.internalX)) {
+            config.internalX = -config.gridWidth / 2;
+        }
+
+        if (isNaN(config.internalY)) {
+            config.internalY = -config.gridHeight / 2;
+        }
+
         config.root = config.root === undefined ? document.querySelector('#root') : config.root;
 
         super({
@@ -71,8 +81,8 @@ export class CoordinateSystem extends Scene {
 
         this.internalWidth = config.gridWidth;
         this.internalHeight = config.gridHeight;
-        this.internalX = -this.internalWidth / 2;;
-        this.internalY = -this.internalHeight / 2;;
+        this.internalX = config.internalX;
+        this.internalY = config.internalY;
 
         let plot = new PlotGridBased(frame.background.root, {
             x: 0,
@@ -128,39 +138,7 @@ export class CoordinateSystem extends Scene {
         }
 
         if (config.drawAxes) {
-            let origin = this.plot.SVGToRelative(new Point(0, 0));
-            this.axes = frame.group();
-            let xAxis = this.axes.line(origin.x - this.width / 2, origin.y, origin.x + this.width / 2, origin.y);
-            xAxis.setAttribute('stroke-width', '1.5');
-            xAxis.setAttribute('stroke', config.axesColor);
-            if (config.axesArrows) {
-                xAxis.attatchArrow(this.defs, true, config.axesColor);
-                xAxis.attatchArrow(this.defs, false, config.axesColor);
-            }
-
-            let yAxis = this.axes.line(origin.x, origin.y - this.height / 2, origin.x, origin.y + this.height / 2);
-            yAxis.setAttribute('stroke-width', '1.5');
-            yAxis.setAttribute('stroke', config.axesColor);
-            if (config.axesArrows) {
-                yAxis.attatchArrow(this.defs, true, config.axesColor);
-                yAxis.attatchArrow(this.defs, false, config.axesColor);
-            }
-
-            if (config.axesLabels) {
-                let b = this.internalWidth / 20;
-                let yLabel = frame.tex("y")
-                    .alignCenter()
-                    .moveTo(plot.SVGToRelative(0, this.internalHeight / 2 - b))
-                    .setAttribute('color', config.axesColor);
-
-                let xLabel = frame.tex("x")
-                    .alignCenter()
-                    .moveTo(plot.SVGToRelative(this.internalWidth / 2 - b, 0))
-                    .setAttribute('color', config.axesColor);
-
-                this.axes.appendChild(xLabel);
-                this.axes.appendChild(yLabel);
-            }
+            this.drawAxes(config.axesArrows, config.axesColor, config.axesLabels)
         }
 
         if (config.player) {
@@ -172,9 +150,48 @@ export class CoordinateSystem extends Scene {
 
     }
 
+    drawAxes(axesArrows : boolean, axesColor = 'var(--font-color-subtle)', axesLabels = true) {
+
+        let origin = this.plot.SVGToRelative(new Point(0, 0));
+        let p1 = this.plot.SVGToRelative(this.internalX, -this.internalY);
+        let p2 = this.plot.SVGToRelative(this.internalX + this.internalWidth, -(this.internalY + this.internalHeight));
+        this.axes = this.frame.group();
+        let xAxis = this.axes.line(p1.x, origin.y, p2.x, origin.y);
+        xAxis.setAttribute('stroke-width', '1.5');
+        xAxis.setAttribute('stroke', axesColor);
+        if (axesArrows) {
+            xAxis.attatchArrow(this.defs, true, axesColor);
+            xAxis.attatchArrow(this.defs, false, axesColor);
+        }
+
+        let yAxis = this.axes.line(origin.x, p1.y, origin.x, p2.y);
+        yAxis.setAttribute('stroke-width', '1.5');
+        yAxis.setAttribute('stroke', axesColor);
+        if (axesArrows) {
+            yAxis.attatchArrow(this.defs, true, axesColor);
+            yAxis.attatchArrow(this.defs, false, axesColor);
+        }
+
+        if (axesLabels) {
+            let b = this.internalWidth / 20;
+            let yLabel = this.frame.tex("y")
+                .alignCenter()
+                .moveTo(this.plot.SVGToRelative(0, -this.internalY - b))
+                .setAttribute('color', axesColor);
+
+            let xLabel = this.frame.tex("x")
+                .alignCenter()
+                .moveTo(this.plot.SVGToRelative(this.internalX + this.internalWidth - b, 0))
+                .setAttribute('color', axesColor);
+
+            this.axes.appendChild(xLabel);
+            this.axes.appendChild(yLabel);
+        }
+    }
+
     projection(w: Point, v: Point): Point {
         let scalarProjection = w.dot(v) / v.dot(v);
-        return v.scale(scalarProjection);
+        return v.copy().scale(scalarProjection);
     }
 
     texVector(...args: any[]): string {
@@ -185,7 +202,6 @@ export class CoordinateSystem extends Scene {
 
         return `\\vec{\\mathbf{${l}}}`;
     }
-
 
     vectorLabel(v: Point, tex: string, opts: { color?: string, scale?: number } = {}): Tex {
 
@@ -320,7 +336,7 @@ export class CoordinateSystem extends Scene {
         }
     }
 
-    vector(p1: Point, p2: Point, color: string = 'var(--primary)'): Line {
+    vector(p1: Point, p2: Point, color: string = 'var(--font-color)'): Line {
         let v = this.frame.line(0, 0, 0, 0);
         v.setAttribute('stroke-width', '1.5');
         v.setAttribute('stroke', color);
@@ -600,8 +616,8 @@ export class CoordinateSystem extends Scene {
         return l;
 
     }
-    
-    private getEncompassingBoundingClientRectangle(elements : SVGElement[]) : DOMRect {
+
+    private getEncompassingBoundingClientRectangle(elements: SVGElement[]): DOMRect {
 
         // Initialize variables to track the min and max x and y coordinates
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;

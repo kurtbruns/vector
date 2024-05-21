@@ -144,9 +144,6 @@ export class Grid extends ResponsiveFrame {
         this.backgroundRectangle.stroke = 'none';
         this.root.prepend(this.backgroundRectangle.root)
 
-
-        // TODO: draw axis
-
     }
 
     setBoundingRect() {

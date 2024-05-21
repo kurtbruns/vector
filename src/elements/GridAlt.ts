@@ -166,7 +166,6 @@ export class GridAlt extends ResponsiveFrame {
     let viewBox = this.internalViewBox.baseVal;
     let p1 = this.SVGToRelative(viewBox.x, viewBox.y);
     let p2 = this.SVGToRelative(viewBox.x + viewBox.width, viewBox.y + viewBox.height);
-    console.log(p1, p2)
 
     let group3 = this.gridGroup.group();
     group3.style.stroke = '#f8f8f8'

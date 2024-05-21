@@ -44,6 +44,10 @@ export class Theme {
             '--background-darker': '#f8f8f8',
             '--background-lighter': '#f0f0f0',
 
+            '--main': '#404040',
+            '--medium': '#808080',
+            '--faint': '#e6e6e6',
+
             '--font-color': '#404040',
             '--border-color': '#e0e0e0',
 
@@ -52,7 +56,7 @@ export class Theme {
             '--grid-tertiary': '#f0f0f0',
             '--grid-quaternary': '#f4f4f4',
             '--grid-quinary': '#f8f8f8',
-            '--main': '#404040',
+            
             '--primary': '#485bfc',
             '--secondary': '#4bb77e',
             '--tertiary': '#c74440',
@@ -61,19 +65,24 @@ export class Theme {
             '--green': '#40a839',
             '--blue': '#485bfc',
             '--teal': '#1aa59b',
-
+            '--cyan': '#1aa59b',
+            '--pink': '#db32c6',
+            '--yellow': '#1aa59b',
             '--purple': '#a452ce'
 
 
         };
 
         this.dark = {
-            '--background': '#181818',
+            // '--background': '#181818',
+            '--background': '#101010',
             '--background-darker': '#181818',
             '--background-lighter': '#303030',
 
             '--main': '#f0f0f0',
             '--medium': '#808080',
+            '--faint': '#404040',
+
             '--font-color': '#f0f0f0',
             '--font-color-light': '#a0a0a0',
             '--border-color': '#404040',
@@ -90,8 +99,11 @@ export class Theme {
             '--blue': '#6ab0f3',
             '--yellow': '#fff888',
             '--teal': '#8afdff',
-            '--purple': '#db94ff'
-            
+            '--cyan': '#8afdff',
+            '--purple': '#db94ff',
+            '--pink': '#ff89e7',
+            '--magenta': '#ff89e7'
+    
 
         }
 

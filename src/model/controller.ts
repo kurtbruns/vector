@@ -45,7 +45,9 @@ export class Controller {
     update(element: BaseNode) {
         let deps = this.dependencyGraph.getDependents(element);
         for (let d of deps) {
-            d.update();
+            if( d.update !== undefined ) {
+                d.update();
+            }
         }
     }
 }

@@ -23,11 +23,8 @@ export abstract class BaseNode {
     */
     constructor() {
 
-        // add this element to the controller
-        BaseNode.controller.add(this);
-
         // initialize update function
-        this.update = () => { };
+        this.update = undefined;
 
     }
 

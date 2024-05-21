@@ -6,6 +6,8 @@ import { Frame, Rectangle, ResponsiveFrame } from '.'
 const EASING_FUNCTIONS = {
     'linear': (t: number) => t,
     'easeInOut': (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+    'easeIn': (t: number) => t * t,
+    'easeOut': (t: number) => t * (2 - t),
     // ... add other easing functions as needed
 };
 

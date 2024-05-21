@@ -2,7 +2,7 @@ import { Camera } from "./Camera";
 import { Quaternion } from "./Quaternion";
 import { Vector3 } from "./Vector3";
 import { Vector2 } from "./Vector2";
-import { AnimationFunction, BaseNode, CoordinateSystem, Group, Player, Point, Tex } from "..";
+import { AnimationFunction, BaseNode, CoordinateSystem, Group, Player, Point, Tex, Value, interpolateColor } from "..";
 
 export interface Scene3DConfig {
     width?: number;
@@ -81,7 +81,8 @@ export class Scene3D {
             yaw: 32,
 
             groundGrid: true,
-            player: true
+            player: true,
+            disableEventListeners: false,
         }
 
         config = { ...defaultConfig, ...config };
@@ -113,9 +114,9 @@ export class Scene3D {
         let id = this.constructor.name + (config.suffix ? config.suffix : '');
         this.viewPort.frame.setAttribute('id', id);
         if (config.player) {
-            new Player({ 
+            new Player({
                 scene: this.viewPort,
-                id: id 
+                id: id
             });
         }
 
@@ -150,14 +151,12 @@ export class Scene3D {
         let orientation = Quaternion.orientationBetween(position, this.origin);
 
         this.camera = new Camera(position, orientation, fov, aspectRatio, nearPlane, farPlane);
-        this.camera.lookAt(this.origin, new Vector3(0, 0, -1));
+        this.camera.lookAt(this.origin, new Vector3(0, 0, 1));
         if (config.cameraOrientation) {
             this.camera.orientation = config.cameraOrientation;
         }
 
-        this.registerEventListeners(distance);
-
-        // this.drawDots(3);
+        this.registerEventListeners();
 
         if (config.groundGrid) {
             this.drawGroundGrid(config.size);
@@ -196,11 +195,11 @@ export class Scene3D {
         this.viewPort.wait(duration);
     }
 
-    play(animations: AnimationFunction[], duration: number = 1, type: "easeInOut" | "linear" = "easeInOut") {
+    play(animations: AnimationFunction[], duration: number = 1, type: "easeInOut" | "easeIn" | "easeOut" | "linear" = "easeInOut") {
         this.viewPort.play(animations, duration, type);
     }
 
-    registerEventListeners(d: number) {
+    registerEventListeners() {
 
         let isDragging = false;
         let isSpaceDown = false;
@@ -432,6 +431,7 @@ export class Scene3D {
         window.addEventListener('mouseup', handleMouseUp);
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
+
     }
 
     drawComponents(v: Vector3) {
@@ -497,7 +497,7 @@ export class Scene3D {
         return new Vector3(x, y, z)
     }
 
-    static generateSphereLongitudeSlices(lats: number, longs: number): Vector3[][] {
+    static generateVerticalSlices(lats: number, longs: number, r: Quaternion = Quaternion.identity()): Vector3[][] {
         let points: Vector3[][] = [];
 
         for (let longIndex = 0; longIndex < longs; longIndex++) {
@@ -507,9 +507,12 @@ export class Scene3D {
             let long = (2 * Math.PI * longIndex / longs);
 
             for (let latIndex = 0; latIndex <= lats; latIndex++) {
-                // Compute the latitude angle, ranging from -90 to 90 degrees
+
                 let lat = (Math.PI / 2) - (Math.PI * latIndex / lats);
-                slice.push(Scene3D.convertSphericalToCartesian(lat, long));
+
+                let p = Scene3D.convertSphericalToCartesian(lat, long);
+
+                slice.push(p.apply(r));
 
             }
 
@@ -519,7 +522,7 @@ export class Scene3D {
         return points;
     }
 
-    static generateSphereLatitudeSlices(lats: number, longs: number): Vector3[][] {
+    static generateHorizontalSlices(lats: number, longs: number, r: Quaternion = Quaternion.identity()): Vector3[][] {
         let points: Vector3[][] = [];
 
         for (let latIndex = 1; latIndex < lats; latIndex++) {
@@ -533,8 +536,9 @@ export class Scene3D {
                 // Compute the longitude angle, ranging from 0 to 360 degrees
                 let long = (2 * Math.PI * longIndex / longs);
 
-                // Add point to slice. No need to exclude poles here as we're iterating over longitude
-                slice.push(Scene3D.convertSphericalToCartesian(lat, long));
+                let p = Scene3D.convertSphericalToCartesian(lat, long);
+
+                slice.push(p.apply(r));
             }
 
             // Add the slice to the points array
@@ -806,23 +810,25 @@ export class Scene3D {
     }
 
     drawCube(c: number = 5, points: boolean = true) {
+
+        let cubeColor = 'var(--faint)';
         let t1 = new Vector3(-c, -c, c);
         let t2 = new Vector3(c, -c, c);
         let t3 = new Vector3(c, c, c);
         let t4 = new Vector3(-c, c, c);
 
         if (points) {
-            this.drawPoint(t1, { color: 'var(--muted-primary)' });
-            this.drawPoint(t2, { color: 'var(--muted-primary)' });
-            this.drawPoint(t3, { color: 'var(--muted-primary)' });
-            this.drawPoint(t4, { color: 'var(--muted-primary)' });
+            this.drawPoint(t1, { color: cubeColor });
+            this.drawPoint(t2, { color: cubeColor });
+            this.drawPoint(t3, { color: cubeColor });
+            this.drawPoint(t4, { color: cubeColor });
         }
 
 
-        this.line(t1, t2, 'var(--muted-primary)');
-        this.line(t2, t3, 'var(--muted-primary)');
-        this.line(t3, t4, 'var(--muted-primary)');
-        this.line(t4, t1, 'var(--muted-primary)');
+        this.line(t1, t2, cubeColor);
+        this.line(t2, t3, cubeColor);
+        this.line(t3, t4, cubeColor);
+        this.line(t4, t1, cubeColor);
 
         // middle
         // this.drawPoint(new Vector3(-2, -2, 0), '#404040');
@@ -838,21 +844,21 @@ export class Scene3D {
         let b4 = new Vector3(-c, c, -c);
 
         if (points) {
-            this.drawPoint(b1, { color: 'var(--muted-primary)' });
-            this.drawPoint(b2, { color: 'var(--muted-primary)' });
-            this.drawPoint(b3, { color: 'var(--muted-primary)' });
-            this.drawPoint(b4, { color: 'var(--muted-primary)' });
+            this.drawPoint(b1, { color: cubeColor });
+            this.drawPoint(b2, { color: cubeColor });
+            this.drawPoint(b3, { color: cubeColor });
+            this.drawPoint(b4, { color: cubeColor });
         }
 
-        this.line(b1, b2, 'var(--muted-primary)');
-        this.line(b2, b3, 'var(--muted-primary)');
-        this.line(b3, b4, 'var(--muted-primary)');
-        this.line(b4, b1, 'var(--muted-primary)');
+        this.line(b1, b2, cubeColor);
+        this.line(b2, b3, cubeColor);
+        this.line(b3, b4, cubeColor);
+        this.line(b4, b1, cubeColor);
 
-        this.line(t1, b1, 'var(--muted-primary)');
-        this.line(t2, b2, 'var(--muted-primary)');
-        this.line(t3, b3, 'var(--muted-primary)');
-        this.line(t4, b4, 'var(--muted-primary)');
+        this.line(t1, b1, cubeColor);
+        this.line(t2, b2, cubeColor);
+        this.line(t3, b3, cubeColor);
+        this.line(t4, b4, cubeColor);
     }
 
     project(u: Vector3, p: Vector3): Vector3 {
@@ -948,7 +954,7 @@ export class Scene3D {
         return t;
     }
 
-    vector(v1: Vector3, v2: Vector3, color: string = 'var(--medium)', opacity = 1) {
+    vector(v1: Vector3, v2: Vector3, color: string = 'var(--font-color)', opacity = 1) {
 
         v1.addDependency(this.camera);
         v2.addDependency(this.camera);
@@ -1103,13 +1109,14 @@ export class Scene3D {
         return l;
     }
 
-    path(config: { 'stroke'?: string; 'stroke-width'?: string; 'opacity'?: string; } = {}, ...vectors: Vector3[]) {
+    path(config: { 'fill'?: string; 'stroke'?: string; 'stroke-width'?: string; 'opacity'?: string; } = {}, ...vectors: Vector3[]) {
 
         let defaultConfig = { 'stroke': 'var(--main)', 'stroke-width': '1.5px', 'opacity': '1' };
 
         config = { ...defaultConfig, ...config };
 
         let p = this.viewPort.frame.path();
+        p.setAttribute('fill', config['fill']);
         p.setAttribute('stroke', config['stroke']);
         p.setAttribute('stroke-width', config['stroke-width']);
         p.setAttribute('opacity', config['opacity']);
@@ -1206,7 +1213,7 @@ export class Scene3D {
 
     }
 
-    drawPoint(p: Vector3, options: { color?: string, opacity?: number, radius?: number, scale?: boolean, s?: number } = {}) {
+    drawPoint(p: Vector3, options: { color?: string, opacity?: number, radius?: number, scale?: boolean, s?: number, colorValue?: Value, colorValueTo?: string } = {}) {
 
         let defaultOptions = {
             color: 'var(--font-color)',
@@ -1228,7 +1235,7 @@ export class Scene3D {
         let c = this.viewPort.frame.circle(0, 0, 3);
         c.setAttribute('fill', options.color);
         c.setAttribute('opacity', `${options.opacity}`);
-        c.addDependency(q)
+        c.addDependency(q, options.colorValue)
         c.update = () => {
             let relativePoint = this.viewPort.plot.SVGToRelative(q.x, q.y);
             c.cx = relativePoint.x + vbox[0];
@@ -1237,6 +1244,9 @@ export class Scene3D {
                 c.r = options.s / (q.z * q.z);
             } else {
                 c.r = options.radius;
+            }
+            if (options.colorValue) {
+                c.setAttribute('fill', interpolateColor(options.color, options.colorValueTo, options.colorValue.value))
             }
 
         }

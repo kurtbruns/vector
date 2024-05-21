@@ -8,6 +8,9 @@ export class Quaternion extends BaseNode {
     c: number;
     d: number;
 
+    /**
+     * Constructs a new Quaternion in the form a + bi + ci + di
+     */
     constructor(a: number = 0, b: number = 0, c: number = 0, d: number = 0) {
         super();
         this.a = a;
@@ -17,7 +20,7 @@ export class Quaternion extends BaseNode {
     }
 
     /**
-    * Returns the identity quaternion (1, 0, 0, 0).
+    * Returns the identity quaternion 1 + 0i + 0j + 0k
     */
     static identity(): Quaternion {
         return new Quaternion(1, 0, 0, 0);
@@ -44,7 +47,7 @@ export class Quaternion extends BaseNode {
         let direction = to.subtract(from).normalize();
 
         // Calculate and return the desired orientation
-        return Quaternion.fromDirection(direction);
+        return Quaternion.fromDirection(direction).normalize();
     }
 
     static fromDirection(direction: Vector3): Quaternion {
@@ -81,16 +84,77 @@ export class Quaternion extends BaseNode {
 
     }
 
+    /**
+     * Creates a quaternion representing a rotation around a specified axis by a given angle.
+     * 
+     * @param axis The rotation axis
+     * @param angle The rotation angle in radians.
+     * @return A new Quaternion object representing the specified rotation.
+     */
     static fromAxisAngle(axis: Vector3, angle: number): Quaternion {
+        let normalized = axis;
+        if( axis.length() !== 1) {
+            normalized = axis.normalize();
+        }
         let halfAngle = angle / 2;
         let sinHalfAngle = Math.sin(halfAngle);
         return new Quaternion(
             Math.cos(halfAngle),
-            axis.x * sinHalfAngle,
-            axis.y * sinHalfAngle,
-            axis.z * sinHalfAngle
+            normalized.x * sinHalfAngle,
+            normalized.y * sinHalfAngle,
+            normalized.z * sinHalfAngle
         );
     }
+
+    // Factory function to create a SLERP function with pre-computed constants
+    static createSlerpFunction(q1: Quaternion, q2: Quaternion, shortestPath: boolean = true) {
+        let cosHalfTheta = q1.d * q2.d + q1.a * q2.a + q1.b * q2.b + q1.c * q2.c;
+        let adjustedQ2 = q2;
+
+        // Adjust q2 for the shortest path and recompute cosHalfTheta if needed
+        if (cosHalfTheta < 0 && shortestPath) {
+            adjustedQ2 = new Quaternion(-q2.a, -q2.b, -q2.c, -q2.d);
+            cosHalfTheta = -cosHalfTheta;
+        }
+
+        if (cosHalfTheta >= 1.0) {
+            // If the quaternions are essentially the same, return an interpolation of q1
+            return (t: number) => {
+                return new Quaternion(
+                    (1 - t) * q1.a + t * q1.a,
+                    (1 - t) * q1.b + t * q1.b,
+                    (1 - t) * q1.c + t * q1.c,
+                    (1 - t) * q1.d + t * q1.d
+                ).normalize();
+            };
+        }
+
+        const halfTheta = Math.acos(cosHalfTheta);
+        const sinHalfTheta = Math.sqrt(1.0 - cosHalfTheta * cosHalfTheta);
+
+        // Return a function that only computes the final interpolation
+        return (t: number): Quaternion => {
+            if (Math.abs(sinHalfTheta) < 0.001) {
+                return new Quaternion(
+                    (1 - t) * q1.a + t * adjustedQ2.a,
+                    (1 - t) * q1.b + t * adjustedQ2.b,
+                    (1 - t) * q1.c + t * adjustedQ2.c,
+                    (1 - t) * q1.d + t * adjustedQ2.d
+                ); // removed normalize for QuaternionPool
+            }
+
+            const ratioA = Math.sin((1 - t) * halfTheta) / sinHalfTheta;
+            const ratioB = Math.sin(t * halfTheta) / sinHalfTheta;
+
+            return new Quaternion(
+                ratioA * q1.a + ratioB * adjustedQ2.a,
+                ratioA * q1.b + ratioB * adjustedQ2.b,
+                ratioA * q1.c + ratioB * adjustedQ2.c,
+                ratioA * q1.d + ratioB * adjustedQ2.d
+            ); // removed normalize for QuaternionPool
+        };
+    }
+
 
     // Instance method for spherical linear interpolation
     static slerp(q1: Quaternion, q2: Quaternion, t: number): Quaternion {
@@ -98,7 +162,7 @@ export class Quaternion extends BaseNode {
         if (t <= 0) {
             return q1;
         }
-        
+
         if (t >= 1) {
             return q2;
         }
@@ -261,7 +325,7 @@ export class Quaternion extends BaseNode {
         return matrix;
     }
 
-    set(q: Quaternion) {
+    set(q: Quaternion  ) {
         this.a = q.a;
         this.b = q.b;
         this.c = q.c;
@@ -324,12 +388,27 @@ export class Quaternion extends BaseNode {
         return new Quaternion(this.a / norm, this.b / norm, this.c / norm, this.d / norm);
     }
 
+    /**
+     * Returns a copy of this quaternion
+     */
     copy(): Quaternion {
-        return new Quaternion(this.a, this.b, this.c, this.d);
+        return new Quaternion(this.a, this.b, this.c, this.d)
     }
 
-    toFormattedString() {
-        return `${this.a.toFixed(2)} + ${this.b.toFixed(2)}i + ${this.c.toFixed(2)}j + ${this.d.toFixed(2)}k`;
+    /**
+     * Returns a string representing this quaternion formatted to 2-digit fixed string decimal.
+     */
+    toFormattedString(numDigits = 2): string {
+        let epsilon = 0.00000001;
+
+        const format = (value: number, isFirst: boolean = false) => {
+            if (Math.abs(value) < epsilon) {
+                return isFirst ? (0).toFixed(numDigits) : '+' + (0).toFixed(numDigits) ;
+            }
+            return (value >= 0 ? (isFirst ? '' : '+') : '') + value.toFixed(numDigits);
+        };
+
+        return `${format(this.a, true)} ${format(this.b)}i ${format(this.c)}j ${format(this.d)}k`;
     }
 
     toString(): string {
@@ -340,19 +419,30 @@ export class Quaternion extends BaseNode {
         return new Vector3(this.b, this.c, this.d);
     }
 
+    /**
+     * Ret
+     */
     toConstructor(format: (number) => string = (n) => { return Number(n).toString() }): string {
         return `new Quaternion(${format(this.a)}, ${format(this.b)}, ${format(this.c)}, ${format(this.d)})`
     }
 
+    /**
+     * Returns true if this Quaternion is equal to the other quaternion.
+     */
     equals(other: Quaternion): boolean {
         return this.a === other.a && this.b === other.b && this.c === other.c && this.d === other.d;
     }
 
+    /**
+     * Returns different animation methods for this Quaternion
+     */
     get animate() {
-        const context: Quaternion = this;
 
         return {
-            set: function (endPoint: { a: number, b: number, c: number, d: number }) {
+            /**
+             * Linearly interpolates between two quaternions, however use `slerp` if a smooth and uniform rotation is desired
+             */
+            set: (endPoint: { a: number, b: number, c: number, d: number }) => {
                 let hasStarted = false;
                 let a: number;
                 let b: number;
@@ -361,37 +451,55 @@ export class Quaternion extends BaseNode {
 
                 return (alpha: number) => {
                     if (!hasStarted) {
-                        a = context.a;
-                        b = context.b;
-                        c = context.c;
-                        d = context.d;
+                        a = this.a;
+                        b = this.b;
+                        c = this.c;
+                        d = this.d;
                         hasStarted = true;
                     }
-                    context.a = a + (endPoint.a - a) * alpha;
-                    context.b = b + (endPoint.b - b) * alpha;
-                    context.c = c + (endPoint.c - c) * alpha;
-                    context.d = d + (endPoint.d - d) * alpha;
-                    context.updateDependents();
+                    this.a = a + (endPoint.a - a) * alpha;
+                    this.b = b + (endPoint.b - b) * alpha;
+                    this.c = c + (endPoint.c - c) * alpha;
+                    this.d = d + (endPoint.d - d) * alpha;
+                    this.updateDependents();
                 };
             },
-            slerp: function (r: Quaternion) {
+            /**
+             * Rotates the current quaternion by the rotation represented by r.
+             */
+            rotate: (r: Quaternion, shortestPath: boolean = true) => {
                 let hasStarted = false;
-                let q : Quaternion;
-                let u : Quaternion;
+                let q: Quaternion;
+                let u: Quaternion;
+                let slerp: (t: number) => Quaternion;
 
                 return (alpha: number) => {
                     if (!hasStarted) {
-                        q = context.copy();
-                        // u = r.multiply(q).multiply(r.conjugate());
+                        q = this.copy();
                         u = r.multiply(q);
+                        slerp = Quaternion.createSlerpFunction(q, u, shortestPath);
                         hasStarted = true;
-                        // console.log('start q:', q.toFormattedString());
-                        // console.log('rotation r:', r.toFormattedString());
-                        // console.log('dest u:', u.toFormattedString());
                     }
-                    let t = Quaternion.slerp(q, u, alpha);
-                    // console.log(t.toFormattedString());
-                    context.set(t);
+
+                    this.set(slerp(alpha));
+                };
+            },
+            /**
+             * Smoothly interpolate between two quaternion states.
+             */
+            slerp: (u: Quaternion, shortestPath: boolean = true) => {
+                let hasStarted = false;
+                let q: Quaternion;
+                let slerp: (t: number) => Quaternion;
+
+                return (alpha: number) => {
+                    if (!hasStarted) {
+                        q = this.copy();
+                        slerp = Quaternion.createSlerpFunction(q, u, shortestPath);
+                        hasStarted = true;
+                    }
+
+                    this.set(slerp(alpha));
                 };
             },
         };

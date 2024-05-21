@@ -33,7 +33,7 @@ export class Camera extends BaseNode {
     }
 
     set position(p: Vector3) {
-        this._position = p;
+        this._position.set(p);
         this.updateDependents();
     }
 
@@ -42,7 +42,7 @@ export class Camera extends BaseNode {
     }
 
     set orientation(o: Quaternion) {
-        this._orientation = o;
+        this._orientation.set(o);
         this.updateDependents();
     }
 

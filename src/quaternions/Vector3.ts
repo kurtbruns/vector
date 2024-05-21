@@ -90,6 +90,7 @@ export class Vector3 extends BaseNode {
 
     /**
      * Scales this vector by the scalar
+     * TODO: should return a new vector
      * 
      * @param s The scalar value
      */
@@ -216,12 +217,13 @@ export class Vector3 extends BaseNode {
      * @returns The rotated vector.
      */
     apply(q: Quaternion): this {
+        
         // Convert the vector to a pure quaternion
         let vectorQuaternion = new Quaternion(0, this.x, this.y, this.z);
 
         // Perform the rotation: q * v * q^(-1)
-        // let rotatedQuaternion = q.multiply(vectorQuaternion).multiply(q.inverse());
-        let rotatedQuaternion = q.multiply(vectorQuaternion).multiply(q.conjugate());
+        let rotatedQuaternion = q.multiply(vectorQuaternion).multiply(q.inverse());
+        // let rotatedQuaternion = q.multiply(vectorQuaternion).multiply(q.conjugate());
 
         // Update the vector with the rotated values
         this.x = rotatedQuaternion.b;
