@@ -8,7 +8,7 @@ export {
 
 export {
   BaseNode
-} from './Node'
+} from './BaseNode'
 
 export {
   Point
