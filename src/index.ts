@@ -76,6 +76,7 @@ export {
   embedMarkers,
   ExportTarget,
   flattenSVG,
+  mulberry32,
   saveAs
 } from './util';
 
