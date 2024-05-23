@@ -111,9 +111,18 @@ export class Player {
         }
 
         captureButton.onclick = () => {
-            let suffix = document.getElementsByTagName('html')[0].classList.contains('light-theme') ? '.light.svg' : '';
+            let suffix = '';
+            switch(Player.downloadTarget) {
+                case ExportTarget.BROWSER:
+                    suffix = '.browser.svg'
+                    break;
+                case ExportTarget.ILLUSTRATOR:
+                    suffix = '.illustrator.svg'
+                    break;
+                default:
+                    break;
+            }
             download(this.scene.frame.root, this.scene.frame.root.id + suffix, Player.downloadTarget);
-            download(this.scene.frame.root, this.scene.frame.root.id + '.browser.svg', ExportTarget.BROWSER);
         }
 
         downloadButton.onclick = () => {

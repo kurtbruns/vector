@@ -128,7 +128,6 @@ export class PlotGridBased extends Grid {
             yAxis.attatchArrow(defs, false, '#a0a0a0');
         }
 
-
         return axisGroup;
     }
 

@@ -101,15 +101,6 @@ export class CoordinateSystem extends Scene {
         if (config.drawGrid) {
             if (config.big && !config.half) {
                 plot.drawGridLines();
-                // plot.drawGridLines(
-                //     ['tiny', 'small-half', 'small'], 
-                //     ['tiny', 'small-half', 'small'], 
-                //     {
-                //         'small': {'stroke': 'var(--grid-primary)'},
-                //         'small-half': {'stroke': 'var(--grid-secondary)'},
-                //         'tiny': {'stroke': 'var(--grid-tertiary)'},
-                //     }
-                // );
             } else if (config.big && config.half) {
                 plot.drawGridLines(
                     ['half', 'big'],
@@ -150,7 +141,7 @@ export class CoordinateSystem extends Scene {
 
     }
 
-    drawAxes(axesArrows : boolean, axesColor = 'var(--font-color-subtle)', axesLabels = true) {
+    drawAxes(axesArrows: boolean, axesColor = 'var(--font-color-subtle)', axesLabels = true) {
 
         let origin = this.plot.SVGToRelative(new Point(0, 0));
         let p1 = this.plot.SVGToRelative(this.internalX, -this.internalY);

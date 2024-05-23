@@ -122,44 +122,30 @@ export class Camera extends BaseNode {
     }
 
     get animate() {
-        const context: Camera = this;
 
         return {
-            rotate: function (axis: Vector3, angle: number) {
+            rotate: (axis: Vector3, angle: number) => {
 
                 let hasStarted = false;
-                let rotation = Quaternion.fromAxisAngle(axis, angle);
-                let position: Vector3 = context._position;
-                let orientation: Quaternion;
+                let q : Quaternion;
+                let slerp : (t:number) => Quaternion;
+                let p : Vector3;
 
                 return (alpha: number) => {
                     if (!hasStarted) {
+                        q = this.orientation.copy();
+                        p = this.position.copy();
+
+                        let r = Quaternion.fromAxisAngle(axis.apply(this.orientation), angle);
+                        let u = r.multiply(q).normalize();
+                        slerp = Quaternion.createSlerpFunction(q, u);
                         hasStarted = true;
-                        orientation = context._orientation.copy();
                     }
 
-                    let r = Quaternion.slerp(orientation, orientation.multiply(rotation), alpha);
-                    context._orientation = r;
-                    context._position = new Vector3(0, 0, 1).scale(position.length()).apply(r.conjugate())
+                    this._orientation.set(slerp(alpha));
+                    this._position.set(Quaternion.standardForwardDirection().scale(p.length()).apply(this.orientation.inverse().normalize()));
 
-                    context.updateDependents();
-                };
-            },
-            spin: function (axis: Vector3, angle: number) {
-
-                let hasStarted = false;
-                let rotation = Quaternion.fromAxisAngle(axis, angle);
-                let position: Vector3 = context._position;
-                let orientation: Quaternion;
-                return (alpha: number) => {
-                    if (!hasStarted) {
-                        hasStarted = true;
-                        orientation = context._orientation.copy().inverse();
-                    }
-
-                    let r = Quaternion.slerp(orientation, orientation.multiply(rotation), alpha);
-                    context._orientation = r;
-                    context.updateDependents();
+                    this.updateDependents();
                 };
             },
         };
