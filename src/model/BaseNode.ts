@@ -64,6 +64,15 @@ export abstract class BaseNode {
     }
 
     /**
+    * Removes this element as being dependent on the provided element(s).
+    */
+    removeDependency(...elements: BaseNode[]) {
+        for (let element of elements) {
+            BaseNode.controller.dependencyGraph.removeDependency(element, this);
+        }
+    }
+
+    /**
     * Updates all of the elements that depend on this element.
     */
     updateDependents() {

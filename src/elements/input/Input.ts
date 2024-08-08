@@ -5,40 +5,40 @@ import { Group } from '../svg/group'
 */
 export class Input extends Group {
 
-  private _onchange : () => void;
+    private _onchange: () => void;
 
-  /**
-  * Constructs a new input group.
-  */
-  constructor(){
-    super();
+    /**
+    * Constructs a new input group.
+    */
+    constructor() {
+        super();
 
-    // set the default behavior of the onchange function
-    let input = this;
-    input._onchange = function() {
-      input.updateDependents();
-    };
-  }
-
-  pushOnChange( func: () => void ) {
-    let temp = this;
-    let fn = temp._onchange;
-    temp.onchange = () => {
-      func();
-      fn();
+        // set the default behavior of the onchange function
+        let input = this;
+        input._onchange = function () {
+            input.updateDependents();
+        };
     }
-  }
 
-  /**
-  * This function is called whenever the state of an input element changes. The
-  * default behavior of this function is to update the dependents of this
-  * element. WARNING: changing this function can have unintented side effects.
-  */
-  set onchange( func: () => void ) {
-    this._onchange = func;
-  }
+    pushOnChange(func: () => void) {
+        let temp = this;
+        let fn = temp._onchange;
+        temp.onchange = () => {
+            func();
+            fn();
+        }
+    }
 
-  get onchange() {
-    return this._onchange
-  }
+    /**
+    * This function is called whenever the state of an input element changes. The
+    * default behavior of this function is to update the dependents of this
+    * element. WARNING: changing this function can have unintented side effects.
+    */
+    set onchange(func: () => void) {
+        this._onchange = func;
+    }
+
+    get onchange() {
+        return this._onchange
+    }
 }

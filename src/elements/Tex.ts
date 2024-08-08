@@ -48,6 +48,9 @@ export class Tex extends Group {
 
     }
 
+    /**
+     * Aligns t2 to t1
+     */
     static alignBy(t1:Tex, t2:Tex, s1:string, s2?:string) {
 
         if(!s2) {
@@ -57,7 +60,55 @@ export class Tex extends Group {
         let t_eq_tex = t1.getPartsByTex(s1)[0].getBoundingClientRect();
         let r_teq_tex = t2.getPartsByTex(s2)[0].getBoundingClientRect();
 
+        t2.shift(t_eq_tex.x - r_teq_tex.x, t_eq_tex.y - r_teq_tex.y);
+    }
+
+    static alignVerticallyBy(t1:Tex, t2:Tex, s1:string, s2?:string) {
+
+        if(!s2) {
+            s2 = s1;
+        }
+
+        let t_eq_tex = t1.getPartsByTex(s1)[0].getBoundingClientRect();
+        let r_teq_tex = t2.getPartsByTex(s2)[0].getBoundingClientRect();
+
+        t2.shift(0, t_eq_tex.y - r_teq_tex.y);
+    }
+
+    static alignHorizontallyBy(t1:Tex, t2:Tex, s1:string, s2?:string) {
+
+        if(!s2) {
+            s2 = s1;
+        }
+
+        let t_eq_tex = t1.getPartsByTex(s1)[0].getBoundingClientRect();
+        let r_teq_tex = t2.getPartsByTex(s2)[0].getBoundingClientRect();
+
         t2.shift(t_eq_tex.x - r_teq_tex.x, 0);
+    }
+
+    static setOpacityOfTex = (t:SVGElement[], value:number) => {
+        let hasStarted = false;
+        let startValue : number;    
+        return (alpha : number) => {
+            if (!hasStarted) {
+                startValue = parseFloat(t[0].getAttribute('opacity'));
+                if(isNaN(startValue)) {
+                    startValue = 1;
+                }
+                hasStarted = true;
+            }
+            const opacity = startValue + (value - startValue)*alpha;
+            for(let i = 0; i < t.length; i++) {
+                t[i].setAttribute('opacity', opacity.toString());
+            }
+        };
+    }
+
+    static setOpacity = (t:SVGElement[], value:number) => {
+        for(let i = 0; i < t.length; i++) {
+            t[i].setAttribute('opacity', value.toString());
+        }
     }
 
     replace(s:string) : Tex {
@@ -179,6 +230,24 @@ export class Tex extends Group {
 
     // TODO: ability to chain calls to getMatches
 
+    getFirstMatch(tex: string): SVGElement[] | null {
+
+        let output = MathJax.tex2svg(tex, {});
+        let matchRendered = output.firstChild as SVGSVGElement;
+        
+        flattenSVG(matchRendered);
+
+        let tree = this.rendered.querySelector('[data-mml-node="math"]');
+        let match = matchRendered.querySelector('[data-mml-node="math"]');
+
+        let matches = this.findSubtreeMatches(tree, match) as SVGElement[][];
+
+        // TODO: some check?
+
+        return matches[0];
+
+    }
+
     /**
      * Returns one or more collections of elements that match the provided tex string's structure.
      */
@@ -265,6 +334,8 @@ export class Tex extends Group {
         let rectbbox = rectangle.root.getBoundingClientRect();
         rectangle.x += groupBbox.x - rectbbox.x - left;
         rectangle.y += groupBbox.y - rectbbox.y - right;
+
+        return rectangle;
     }
 
     shift(point: { x: number, y: number }): Tex;
@@ -318,6 +389,84 @@ export class Tex extends Group {
             `translate(${this._x}, ${this._y})`
         );
         return this;
+    }
+
+    get animate() {
+
+        return {
+            setOpacity: (value:number) => {
+                let hasStarted = false;
+                let startValue : number;    
+                return (alpha : number) => {
+                    if (!hasStarted) {
+                        startValue = parseFloat(this.getAttribute('opacity'));
+                        if(isNaN(startValue)) {
+                            startValue = 1;
+                        }
+                        hasStarted = true;
+                    }
+                    const opacity = startValue + (value - startValue)*alpha;
+                    this.setAttribute('opacity', opacity.toString()) 
+                };
+            },
+            alignParts: (other: Tex, s: string) => {
+                let t_eq_tex = this.getPartsByTex(s)[0].getBoundingClientRect();
+                let r_teq_tex = other.getPartsByTex(s)[0].getBoundingClientRect();
+        
+                let shiftX = t_eq_tex.x - r_teq_tex.x;
+                let shiftY = t_eq_tex.y - r_teq_tex.y;
+
+                let hasStarted = false;
+                let startX : number;
+                let startY : number;
+
+                return (alpha : number ) => {
+                    if (!hasStarted) {
+                        startX = this._x;
+                        startY = this._y;
+                        hasStarted = true;
+                    }
+
+                    this.moveTo(startX - shiftX * alpha, startY - shiftY * alpha);
+                    this.updateDependents();
+                };
+            },
+            moveTo: (x: number, y: number) => {
+                let hasStarted = false;
+                let startX : number;
+                let startY : number;
+
+                return (alpha : number ) => {
+                    if (!hasStarted) {
+                        startX = this._x;
+                        startY = this._y;
+                        hasStarted = true;
+                    }
+
+                    this.moveTo(startX + (x - startX) * alpha, startY + (y - startY) * alpha);
+                    this.updateDependents();
+                };
+            },
+            shift: (x: number, y: number) => {
+                let hasStarted = false;
+                let startX: number;
+                let startY: number;
+
+                return (alpha: number) => {
+                    if (!hasStarted) {
+                        startX = this._x;
+                        startY = this._y;
+                        hasStarted = true;
+                    }
+
+                    const newX = startX + x * alpha;
+                    const newY = startY + y * alpha;
+
+                    this.moveTo(newX, newY);
+                    this.updateDependents();
+                }
+            },
+        };
     }
 }
 

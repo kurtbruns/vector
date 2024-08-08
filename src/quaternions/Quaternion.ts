@@ -140,7 +140,7 @@ export class Quaternion extends BaseNode {
                     (1 - t) * q1.b + t * adjustedQ2.b,
                     (1 - t) * q1.c + t * adjustedQ2.c,
                     (1 - t) * q1.d + t * adjustedQ2.d
-                ); // removed normalize for QuaternionPool
+                );
             }
 
             const ratioA = Math.sin((1 - t) * halfTheta) / sinHalfTheta;
@@ -151,7 +151,7 @@ export class Quaternion extends BaseNode {
                 ratioA * q1.b + ratioB * adjustedQ2.b,
                 ratioA * q1.c + ratioB * adjustedQ2.c,
                 ratioA * q1.d + ratioB * adjustedQ2.d
-            ); // removed normalize for QuaternionPool
+            );
         };
     }
 
@@ -325,6 +325,25 @@ export class Quaternion extends BaseNode {
         return matrix;
     }
 
+    static rotationToVector(v:Vector3) : Quaternion {
+        const normalized = v.normalize();
+        const forward = Quaternion.standardForwardDirection();
+        const axis = forward.cross(normalized);
+        const angle = Math.acos(forward.dot(normalized));
+
+        // No rotation needed
+        if (angle === 0) {
+            return new Quaternion(1, 0, 0, 0);
+        }
+
+        // Vectors are opposite
+        if( axis.x === 0 && axis.y === 0 && axis.z === 0) {
+            return new Quaternion(0, 1, 0, 0);
+        }
+
+        return Quaternion.fromAxisAngle(axis.normalize(), angle);
+    }
+
     set(q: Quaternion  ) {
         this.a = q.a;
         this.b = q.b;
@@ -367,6 +386,10 @@ export class Quaternion extends BaseNode {
 
     conjugate(): Quaternion {
         return new Quaternion(this.a, -this.b, -this.c, -this.d);
+    }
+
+    negate() : Quaternion {
+        return new Quaternion(-this.a, -this.b, -this.c, -this.d);
     }
 
     inverse(): Quaternion {

@@ -68,14 +68,16 @@ export class Theme {
             '--cyan': '#1aa59b',
             '--pink': '#db32c6',
             '--yellow': '#1aa59b',
-            '--purple': '#a452ce'
-
+            '--purple': '#a452ce',
+            '--orange': '#ff9f4c',
+        
 
         };
 
         this.dark = {
             // '--background': '#181818',
-            '--background': '#101010',
+            '--background': '#000000',
+            // '--background': '#101010',
             '--background-darker': '#181818',
             '--background-lighter': '#303030',
 
@@ -94,17 +96,30 @@ export class Theme {
             '--grid-quaternary': '#303030',
             '--grid-quinary': '#282828',
 
-            '--red': '#f2777a',
+            // Darken for export because of final cut
+
+            // '--red': '#f2777a',
+            // '--green': '#92d192',
+            // '--blue': '#6ab0f3',
+            // '--cyan': '#8afdff',
+            // '--yellow': '#fff888',
+            // '--pink': '#ff89e7',
+            // '--magenta': '#ff89e7',
+            // '--teal': '#8afdff',
+
+            '--red': '#E76E71',
             '--green': '#92d192',
             '--blue': '#6ab0f3',
-            '--yellow': '#fff888',
-            '--teal': '#8afdff',
             '--cyan': '#8afdff',
+            '--teal': '#8afdff',
+            '--yellow': '#FFF461',
+            '--pink': '#FF70E3',
+            '--magenta': '#FF70E3',
+            
             '--purple': '#db94ff',
-            '--pink': '#ff89e7',
-            '--magenta': '#ff89e7'
-    
+            '--orange': '#ff9f4c',
 
+    
         }
 
         const uniqueTime = () => {

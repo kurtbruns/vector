@@ -237,22 +237,34 @@ export class GridPoint extends Input {
 
     // Getter function that returns an object with moveTo method
     get animate() {
-        // The context for `this` is stored to be used in the returned function below
-        const context = this;
 
         return {
-            // The moveTo method takes another Point instance as the end point
-            moveTo: function (endPoint: Point) {
-                const startX = context.x;
-                const startY = context.y;
+            setOpacity: (value: number) => {
+                let hasStarted = false;
+                let startValue;
+                return (alpha) => {
+                    if (!hasStarted) {
+                        startValue = parseFloat(this.getAttribute('opacity'));
+                        if (isNaN(startValue)) {
+                            startValue = 1;
+                        }
+                        hasStarted = true;
+                    }
+                    const opacity = startValue + (value - startValue) * alpha;
+                    this.setAttribute('opacity', opacity.toString())
+                };
+            }, 
+            moveTo: (endPoint: Point) => {
+                const startX = this.x;
+                const startY = this.y;
                 const endX = endPoint.x;
                 const endY = endPoint.y;
 
                 // The returned function interpolates the point's position to the end point's position
                 return (alpha: number) => {
-                    context.x = startX + (endX - startX) * alpha;
-                    context.y = startY + (endY - startY) * alpha;
-                    context.updateDependents();
+                    this.x = startX + (endX - startX) * alpha;
+                    this.y = startY + (endY - startY) * alpha;
+                    this.updateDependents();
                 };
             },
         };

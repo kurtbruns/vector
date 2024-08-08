@@ -3,6 +3,7 @@ export {
   BaseNode,
   Point,
   Value,
+  StringValue
 } from './model';
 
 export {

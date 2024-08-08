@@ -167,9 +167,12 @@ export class Frame extends SVG {
     tex(s: string, x: number = 0, y: number = 0, background: boolean = true): Tex {
         let tex = this.appendChild(new Tex(s, x, y));
         tex.setAttribute('id', s);
-        if (background) {
-            tex.drawBackground()
+
+        let r = tex.drawBackground();
+        if(!background) {
+            r.setAttribute('fill', 'transparent')
         }
+
         return tex;
     }
 

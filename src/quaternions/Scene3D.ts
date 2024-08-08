@@ -2,7 +2,8 @@ import { Camera } from "./Camera";
 import { Quaternion } from "./Quaternion";
 import { Vector3 } from "./Vector3";
 import { Vector2 } from "./Vector2";
-import { AnimationFunction, BaseNode, CoordinateSystem, Group, Player, Point, Tex, Value, interpolateColor } from "..";
+import { AnimationFunction, BaseNode, CoordinateSystem, Group, Line, Player, Point, Tex, Value, interpolateColor } from "..";
+import { StringValue } from "../model/StringValue";
 
 export interface Scene3DConfig {
     width?: number;
@@ -185,6 +186,10 @@ export class Scene3D {
             }
         }
 
+    }
+
+    get reset() : () => void {
+        return this.viewPort.reset;
     }
 
     set reset(lambda: () => void) {
@@ -657,9 +662,9 @@ export class Scene3D {
 
         options = { ...defaultOptions, ...options };
 
-        let x = this.tex(this.positiveX.scale(c + options.a), 'x')
-        let y = this.tex(this.positiveY.scale(c + options.a), 'y')
-        let z = this.tex(this.positiveZ.scale(c + options.a), 'z')
+        let x = this.tex(this.positiveX.copy().scale(c + options.a), 'x')
+        let y = this.tex(this.positiveY.copy().scale(c + options.a), 'y')
+        let z = this.tex(this.positiveZ.copy().scale(c + options.a), 'z')
 
         if (options.color) {
             x.setColorAll('x', 'var(--green)');
@@ -954,7 +959,8 @@ export class Scene3D {
         return t;
     }
 
-    vector(v1: Vector3, v2: Vector3, color: string = 'var(--font-color)', opacity = 1) {
+    // TODO: refactor into options
+    vector(v1: Vector3, v2: Vector3, color: string = 'var(--font-color)', opacity = 1 ) : Line {
 
         v1.addDependency(this.camera);
         v2.addDependency(this.camera);
@@ -1213,7 +1219,7 @@ export class Scene3D {
 
     }
 
-    drawPoint(p: Vector3, options: { color?: string, opacity?: number, radius?: number, scale?: boolean, s?: number, colorValue?: Value, colorValueTo?: string } = {}) {
+    drawPoint(p: Vector3, options: { color?: string, opacity?: number, radius?: number, scale?: boolean, s?: number, colorValue?: StringValue,} = {}) {
 
         let defaultOptions = {
             color: 'var(--font-color)',
@@ -1246,7 +1252,7 @@ export class Scene3D {
                 c.r = options.radius;
             }
             if (options.colorValue) {
-                c.setAttribute('fill', interpolateColor(options.color, options.colorValueTo, options.colorValue.value))
+                c.setAttribute('fill', options.colorValue.value)
             }
 
         }

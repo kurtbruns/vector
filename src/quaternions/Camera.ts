@@ -121,6 +121,19 @@ export class Camera extends BaseNode {
 
     }
 
+    rotate(axis: Vector3, angle: number) {
+        let q = this.orientation.copy();
+        let p = this.position.copy();
+
+        let r = Quaternion.fromAxisAngle(axis.apply(this.orientation), angle);
+        let u = r.multiply(q).normalize();
+
+        this._orientation.set(u);
+        this._position.set(Quaternion.standardForwardDirection().scale(p.length()).apply(this.orientation.inverse().normalize()));
+        this.updateDependents();
+
+    }
+  
     get animate() {
 
         return {
@@ -136,9 +149,33 @@ export class Camera extends BaseNode {
                         q = this.orientation.copy();
                         p = this.position.copy();
 
-                        let r = Quaternion.fromAxisAngle(axis.apply(this.orientation), angle);
+                        let r = Quaternion.fromAxisAngle(axis.copy().apply(this.orientation), angle);
                         let u = r.multiply(q).normalize();
                         slerp = Quaternion.createSlerpFunction(q, u);
+                        hasStarted = true;
+                    }
+
+                    this._orientation.set(slerp(alpha));
+                    this._position.set(Quaternion.standardForwardDirection().scale(p.length()).apply(this.orientation.inverse().normalize()));
+
+                    this.updateDependents();
+                };
+            },
+            slerp: (u:Quaternion) => {
+
+                let hasStarted = false;
+                let q : Quaternion;
+                let slerp : (t:number) => Quaternion;
+                let p : Vector3;
+
+                return (alpha: number) => {
+                    if (!hasStarted) {
+                        q = this.orientation.copy();
+                        p = this.position.copy();
+
+                        slerp = Quaternion.createSlerpFunction(q, u);
+
+                        console.log(q.toFormattedString(), '\n', u.toFormattedString())
                         hasStarted = true;
                     }
 

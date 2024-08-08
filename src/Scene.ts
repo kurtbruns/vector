@@ -4,6 +4,7 @@ import { Frame, Rectangle, ResponsiveFrame } from '.'
  * Different types of rate functions
  */
 const EASING_FUNCTIONS = {
+    'wait': () => 0,
     'linear': (t: number) => t,
     'easeInOut': (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
     'easeIn': (t: number) => t * t,
@@ -14,7 +15,7 @@ const EASING_FUNCTIONS = {
 /**
  * Represents the rate function for the animation.
  */
-export type EasingType = keyof typeof EASING_FUNCTIONS;
+export type AnimationType = keyof typeof EASING_FUNCTIONS;
 
 
 /**
@@ -28,7 +29,7 @@ export type AnimationFunction = (alpha: number) => void;
 export type Animation = {
     animation: AnimationFunction,
     duration: number,
-    type?: EasingType
+    type?: AnimationType
 };
 
 export enum SceneMode {
@@ -56,9 +57,15 @@ export interface SceneConfig {
  */
 export class Scene {
 
-    private mode: SceneMode = SceneMode.Live;
+    /**
+     * Export or Live mode
+     */
+    private mode: SceneMode;
 
-    private fps: number = 60;
+    /**
+     * Frames per second.
+     */
+    private _fps: number;
 
     /**
      * The array of animations that comprise the scene.
@@ -123,6 +130,8 @@ export class Scene {
         this.active = false;
         this.currentAnimation = 0;
         this.currentAnimationFrame = 0;
+        this._fps = 30;
+        this.mode = SceneMode.Live;
 
         // If width and height are not provided, default to these values
         let effectiveWidth = config.width;
@@ -156,6 +165,13 @@ export class Scene {
     }
 
     /**
+     * Returns the frames per second
+     */
+    get fps() : number {
+        return this._fps;
+    }
+
+    /**
      * Sets the reset function
      */
     set reset(fn: () => void) {
@@ -185,12 +201,12 @@ export class Scene {
      * @param {FrameRequestCallback} callback - The callback to be executed upon receiving a new animation frame.
      * @param {() => void} [frameCallback] - Optional callback to be executed for manual frame updates in Export mode.
      */
-    private requestFrame(callback: FrameRequestCallback, frameCallback?: () => void) {
+    private requestFrame(callback: FrameRequestCallback, frameCallback: (isWait:boolean) => void, isWait:boolean) {
         if (this.mode === SceneMode.Live) {
             requestAnimationFrame(callback);
         } else {
-            frameCallback();
-            callback(this.currentAnimationFrame + 1000 / this.fps);
+            frameCallback(isWait);
+            callback(this.currentAnimationFrame + 1000 / this._fps);
         }
     }
 
@@ -205,9 +221,10 @@ export class Scene {
      * @param {() => void} [frameCallback] - Optional callback to be executed for manual frame updates in Export mode.
      * @param {() => void} [doneCallback] - Optional callback to be executed once all animations in the sequence are completed.
      */
-    private runAnimation(timestamp: number, previousTimestamp?: number, frameCallback?: () => void, doneCallback?: () => void) {
+    private runAnimation(timestamp: number, previousTimestamp?: number, frameCallback?: (isWait: boolean) => void, doneCallback?: () => void) {
         const animation = this.animations[this.currentAnimation];
         const rateFunc = EASING_FUNCTIONS[animation.type || 'linear'];
+        const isWait = animation.type === 'wait';
 
         if (!previousTimestamp) {
             previousTimestamp = timestamp;
@@ -215,21 +232,21 @@ export class Scene {
 
         const elapsed = this.mode === SceneMode.Live
             ? timestamp - previousTimestamp
-            : 1000 / this.fps;
+            : 1000 / this._fps;
 
         this.currentAnimationFrame += elapsed;
 
         if (this.currentAnimationFrame <= animation.duration) {
             const alpha = rateFunc(this.currentAnimationFrame / animation.duration);
             animation.animation(alpha);
-            this.requestFrame(ts => this.runAnimation(ts, timestamp, frameCallback, doneCallback), frameCallback)
+            this.requestFrame(ts => this.runAnimation(ts, timestamp, frameCallback, doneCallback), frameCallback, isWait)
         } else {
             animation.animation(1);
             this.currentAnimationFrame = 0;
             this.currentAnimation++;
 
             if (this.currentAnimation < this.animations.length) {
-                this.requestFrame(ts => this.runAnimation(ts, timestamp, frameCallback, doneCallback), frameCallback)
+                this.requestFrame(ts => this.runAnimation(ts, timestamp, frameCallback, doneCallback), frameCallback, isWait)
             } else {
                 if (doneCallback) {
                     doneCallback();
@@ -241,7 +258,7 @@ export class Scene {
     /**
      * Exports the animation sequence as a Promise that resolves upon the completion of the entire sequence.
      */
-    export(frameCallback: () => void): Promise<void> {
+    export(frameCallback: (isWait: boolean) => void): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this.animations.length === 0) {
                 console.log("No animations to play.");
@@ -284,13 +301,14 @@ export class Scene {
         this.animations.push({
             duration: duration * 1000,
             animation: (alpha: number) => { },
+            type: 'wait'
         });
     }
 
     /**
      * Schedule a play animation for the provided duration in seconds.
      */
-    play(animations: AnimationFunction[], duration: number = 1, type: EasingType = 'easeInOut'): void {
+    play(animations: AnimationFunction[], duration: number = 1, type: AnimationType = 'easeInOut'): void {
         this.animations.push({
             duration: duration * 1000,
             animation: (alpha: number) => {

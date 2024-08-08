@@ -60,8 +60,7 @@ export class DependencyGraph<T> {
     }
 
     /**
-    Adds a dependency between two nodes. If either of the nodes do not exist within the dependency 
-    * graph, throws an exception.
+    Adds a dependency between two nodes.
     */
     addDependency(from: T, to: T): void {
         // Make sure the nodes exist
@@ -73,6 +72,20 @@ export class DependencyGraph<T> {
 
         // Check for circular dependencies
         this.traverse(from, from);
+    }
+
+    /**
+    Remove a dependency between two nodes.
+    */
+    removeDependency(from: T, to: T): void {
+
+        // Make sure the nodes exist
+        this.add(from);
+        this.add(to);
+
+        // Add the dependency
+        this.relationships.get(from).delete(to)
+
     }
 
     /**

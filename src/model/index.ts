@@ -17,3 +17,7 @@ export {
 export {
   Value
 } from './Value'
+
+export {
+  StringValue
+} from './StringValue'

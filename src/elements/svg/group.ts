@@ -38,23 +38,21 @@ export class Group extends BaseElement implements Descriptive, Shape, Structural
         super(group);
     }
 
-    get animate() : any {
-        const context : Group = this;
-
+    get animate() {
         return {
-            setOpacity: function (value:number) {
+            setOpacity: (value:number)  => {
                 let hasStarted = false;
                 let startValue;    
                 return (alpha) => {
                     if (!hasStarted) {
-                        startValue = parseFloat(context.getAttribute('opacity'));
+                        startValue = parseFloat(this.getAttribute('opacity'));
                         if(isNaN(startValue)) {
                             startValue = 1;
                         }
                         hasStarted = true;
                     }
                     const opacity = startValue + (value - startValue)*alpha;
-                    context.setAttribute('opacity', opacity.toString()) 
+                    this.setAttribute('opacity', opacity.toString()) 
                 };
             },
         };
