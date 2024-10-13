@@ -98,7 +98,7 @@ export class Frame extends SVG {
 
         // Construct the svg document 
         if (typeof config.x === 'number' && typeof config.y === 'number') {
-            super(config.width, config.height, config.x, config.x)
+            super(config.width, config.height, config.x, config.y)
         } else {
             super(config.width, config.height);
         }
@@ -164,11 +164,11 @@ export class Frame extends SVG {
     /**
      * 
      */
-    tex(s: string, x: number = 0, y: number = 0, background: boolean = true): Tex {
+    tex(s: string, x: number = 0, y: number = 0, background: boolean = true, backgroundColor = 'var(--background)'): Tex {
         let tex = this.appendChild(new Tex(s, x, y));
         tex.setAttribute('id', s);
 
-        let r = tex.drawBackground();
+        let r = tex.drawBackground(false, backgroundColor);
         if(!background) {
             r.setAttribute('fill', 'transparent')
         }

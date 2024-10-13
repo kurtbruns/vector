@@ -250,7 +250,6 @@ export class Grid extends ResponsiveFrame {
         return p.matrixTransform(svg.getScreenCTM());
     }
 
-
     /**
      * Converts a point in the SVG's coordinate system to the relative screen coordinate.
      * Overload that accepts separate x and y coordinates.
@@ -305,8 +304,8 @@ export class Grid extends ResponsiveFrame {
         p.x = pointToUse.x; 
         p.y = -pointToUse.y;
         let convertedPoint = p.matrixTransform(ctm);
-        convertedPoint.x -= bbox.left;
-        convertedPoint.y -= bbox.top;
+        convertedPoint.x -= bbox.left - this.x;
+        convertedPoint.y -= bbox.top - this.y;
 
         // Return the point relative to the screen
         return convertedPoint;
@@ -323,7 +322,7 @@ export class Grid extends ResponsiveFrame {
     /**
      * Draws a border around the plot SVG that does not change the dimensions of the plot object.
      */
-    drawBorder() {
+    drawBorder(strokeWidth = 2) : Rectangle {
 
         // Or use clipping path
         let spacing = 0;
@@ -332,12 +331,13 @@ export class Grid extends ResponsiveFrame {
         this.border = new Rectangle(viewbox.x, viewbox.y, viewbox.width, viewbox.height);
         this.border.appendSelfWithin(this.root);
 
+        this.border.setAttribute('stroke', 'var(--faint)');
         this.border.root.setAttribute('vector-effect', 'non-scaling-stroke');
-        this.border.style.strokeWidth = '2';
+        this.border.style.strokeWidth = `${strokeWidth}`;
         return this.border;
     }
 
-    generateValues(range, magnitude: string = 'big'): number[] {
+    generateValues( range:[number, number], magnitude: string = 'big'): number[] {
 
         let viewBox = this.internalViewBox.baseVal;
         let x1 = viewBox.x;

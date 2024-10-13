@@ -244,6 +244,7 @@ function createInlineStyledSvg(originalSvg: SVGElement, target: ExportTarget): S
 
         // Handle Figma specific styles.
         if (target === ExportTarget.FIGMA && element.classList.contains('mathjax')) {
+            element.setAttribute('font-size', '12px');
             if(element.firstElementChild.nextElementSibling) {
                 const currentTransform = element.firstElementChild.nextElementSibling.getAttribute('transform') || '';
                 element.firstElementChild.nextElementSibling.setAttribute('transform', `${currentTransform} scale(1.45)`);

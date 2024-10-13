@@ -123,7 +123,6 @@ export abstract class Shape extends BaseElement {
 
         // defs.root.innerHTML += `<marker id="${id}" refX="10" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path d="M 0 0.5 L 10 5 L 0 9.5 L 2 5 z" fill="${color}" stroke="none"></path></marker>`;
 
-
         // Compute the length of the path.
         let pathLength = this.getTotalLength();
 

@@ -6,6 +6,29 @@ import { Point } from '../model/Point'
 export const TAU = 2 * Math.PI;
 
 /**
+ * Generates a linearly spaced array of numbers between a start and end value.
+ *
+ * @param {number} start - The starting value of the sequence.
+ * @param {number} end - The ending value of the sequence.
+ * @param {number} num - The number of elements in the resulting array.
+ *                        If `num` is 1, the array will contain only the `start` value.
+ *                        If `num` is greater than 1, the array will contain `num` equally spaced values between `start` and `end`.
+ * @returns {number[]} An array of `num` values, starting from `start` and ending at `end`, spaced equally.
+ */
+export function linearSpace(start: number, end: number, num: number): number[] {
+    const result: number[] = [];
+    if (num === 1) {
+        result.push(start);
+    } else {
+        const step = (end - start) / (num - 1);
+        for (let i = 0; i < num; i++) {
+            result.push(start + step * i);
+        }
+    }
+    return result;
+}
+
+/**
  * Returns the factorial of n (not optimized)
  */
 export function factorial(n: number) {

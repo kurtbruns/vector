@@ -1,10 +1,10 @@
 import { TAU } from "../../util/math";
-import { Plot } from "./Plot";
+import { PlotOld } from "./PlotOld";
 
 /**
  * An extension of the plot object that specializes in drawing a tau scaled coordinate system
  */
-export class TrigPlot extends Plot {
+export class TrigPlot extends PlotOld {
 	constructor(e, f, c = {}) {
 
 		let defaultConfig = {

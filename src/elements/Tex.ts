@@ -9,6 +9,7 @@ export class Tex extends Group {
     private _x: number;
     private _y: number;
     private _scale: number;
+    private _backgroundColor: string;
 
     private inner: Group;
     private background: Group;
@@ -111,7 +112,7 @@ export class Tex extends Group {
         }
     }
 
-    replace(s:string) : Tex {
+    replace(s:string, backgroundColor = this._backgroundColor) : Tex {
 
         let output = MathJax.tex2svg(s, {});
         let rendered = output.firstChild as SVGSVGElement;
@@ -121,7 +122,7 @@ export class Tex extends Group {
         this.inner.root.removeChild(this.rendered);
         this.inner.root.appendChild(rendered);
         this.rendered = rendered;
-        this.drawBackground(true);
+        this.drawBackground(true, backgroundColor);
         return this;
     }
 
@@ -311,7 +312,7 @@ export class Tex extends Group {
         return this;
     }
 
-    drawBackground(replace:boolean = false) {
+    drawBackground(replace:boolean = false, backgroundColor = 'var(--background)') {
         let top = 3;
         let bottom = 3;
         let left = 4;
@@ -323,13 +324,18 @@ export class Tex extends Group {
             groupBbox.width / this._scale + left + right,
             groupBbox.height / this._scale + top + bottom
         );
-        rectangle.setAttribute('fill', 'var(--background)');
+        rectangle.setAttribute('fill', backgroundColor);
+        
         if(replace) {
             // TODO: should check that its a rect
             this.background.root.firstChild.remove()
+            rectangle.setAttribute('fill', backgroundColor);
         }
         
         this.background.root.prepend(rectangle.root);
+
+        // TODO: this seems weird
+        this._backgroundColor = backgroundColor;
 
         let rectbbox = rectangle.root.getBoundingClientRect();
         rectangle.x += groupBbox.x - rectbbox.x - left;

@@ -135,6 +135,20 @@ export class SVG extends BaseElement implements Descriptive, Shape, Structural, 
     }
 
     /**
+    * Returns the smallest x-coordinate in the internal (drawing) coordinate system
+    */
+    get minX(): number {
+        return this.root.viewBox.baseVal.x;
+    }
+
+    /**
+     * Returns the smallest y-coordinate in the internal (drawing) coordinate system
+     */
+    get minY(): number {
+        return this.root.viewBox.baseVal.y;
+    }
+
+    /**
     * Returns the maximum x-coordinate in the internal (drawing) coordinate system
     */
     get maxX(): number {

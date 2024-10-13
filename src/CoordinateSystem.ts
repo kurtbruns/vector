@@ -28,6 +28,11 @@ export class CoordinateSystem extends Scene {
     width: number;
     height: number;
 
+    // private internalX: number;
+    // private internalY: number;
+    // private internalWidth: number;
+    // private internalHeight: number;
+
     internalX: number;
     internalY: number;
     internalWidth: number;
@@ -79,6 +84,7 @@ export class CoordinateSystem extends Scene {
         this.width = config.width;
         this.height = config.height;
 
+        // TODO: this is weird to store these twice here and in the plot
         this.internalWidth = config.gridWidth;
         this.internalHeight = config.gridHeight;
         this.internalX = config.internalX;
@@ -141,6 +147,24 @@ export class CoordinateSystem extends Scene {
 
     }
 
+    // TODO: get internal coordinates flipped
+
+    get minX(): number {
+        return this.internalX;
+    }
+
+    get maxX(): number {
+        return this.internalX + this.internalWidth;
+    }
+
+    get minY(): number {
+        return -(this.internalY + this.internalHeight);
+    }
+
+    get maxY(): number {
+        return -this.internalY;
+    }
+
     drawAxes(axesArrows: boolean, axesColor = 'var(--font-color-subtle)', axesLabels = true) {
 
         let origin = this.plot.SVGToRelative(new Point(0, 0));
@@ -194,7 +218,15 @@ export class CoordinateSystem extends Scene {
         return `\\vec{\\mathbf{${l}}}`;
     }
 
-    vectorLabel(v: Point, tex: string, opts: { color?: string, scale?: number } = {}): Tex {
+    vectorLabel(
+        v: Point,
+        tex: string,
+        opts: {
+            color?: string,
+            scale?: number,
+            backgroundColor?: string
+        } = {}
+    ): Tex {
 
         let options: {
             color: string,
@@ -206,14 +238,13 @@ export class CoordinateSystem extends Scene {
 
         options = { ...options, ...opts }
 
-        let t = this.frame.tex(tex);
+        let t = this.frame.tex(tex, 0, 0, true, opts.backgroundColor);
 
         t.addDependency(v);
         t.update = () => {
 
             let x = v.x;
             let y = v.y;
-
 
             t.moveTo(this.plot.SVGToRelative(v.add(v.normalize().scale(options.scale))))
                 .alignCenter()
@@ -268,6 +299,42 @@ export class CoordinateSystem extends Scene {
         if (color) {
             tex.setAttribute('color', color);
         }
+
+        return tex;
+    }
+
+    vectorCoordinatesTex2(point: Point, options : {
+        color?: string, 
+        offset?: number,
+        radius?: number,
+        prefix?: string,
+        backgroundColor?: string,
+    }): Tex {
+
+        let defaultOptions = {
+            color: 'var(--font-color)',
+            offset: 0,
+            radius: 40,
+            prefix: '',
+            backgroundColor: 'var(--background)',
+        }
+        
+        options = { ...defaultOptions, ...options };
+
+        let x = point.x;
+        let y = point.y;
+
+        // Rest of your original method implementation
+        let angle = Math.atan2(y, x) + options.offset;
+        let r = options.radius;
+
+        let tex = this.frame.tex(`${options.prefix}\\begin{bmatrix} \\: ${x.toString()} \\: \\\\ \\: ${y.toString()} \\: \\end{bmatrix}`, 0, 0, true, options.backgroundColor)
+            .moveTo(this.plot.SVGToRelative(new Point(x, y)))
+            .alignCenter()
+            .shift(r * Math.cos(angle), -r * Math.sin(angle));
+
+        tex.setAttribute('color', options.color);
+
 
         return tex;
     }
@@ -427,16 +494,25 @@ export class CoordinateSystem extends Scene {
         a.update = () => {
             const length = path.getTotalLength();
             const p1 = path.getPointAtLength(length - refX)
-            const p2 = path.getPointAtLength(length)
+            const p2 = path.getPointAtLength(length - 1)
+
+            if (length < 10) {
+                const minScale = 0.1; // Minimum scale when length is 0
+                const maxScale = 1.5; // Maximum scale when length is 5 or more
+        
+                // Interpolate scale based on the length
+                scale = (length / 10) * (maxScale - minScale) + minScale;
+            } else {
+                scale = 1.5;
+            }
 
             const x = p2.x;
             const y = p2.y;
             const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
 
-
             const adjustedX = x - (refX * scale) * Math.cos(angle) + (refY * scale) * Math.sin(angle);
             const adjustedY = y - (refX * scale) * Math.sin(angle) - (refY * scale) * Math.cos(angle);
-
+            
             a.d = `M 0 0.5 L 6 5 L 0 9.5 `;
             a.setAttribute('transform', `translate(${adjustedX},${adjustedY}) rotate(${angle * (180 / Math.PI)}) scale(${scale})`);
         };
@@ -804,7 +880,8 @@ export class CoordinateSystem extends Scene {
         let line = this.frame.line(0, 0, 0, 0);
         line.addDependency(v);
         line.update = () => {
-            const endpoints = this.findLineEndpoints(v, this.internalX, this.internalY, this.internalWidth, this.internalHeight);
+            const endpoints = this.findLineEndpoints(v);
+            // const endpoints = this.findLineEndpoints(v, this.internalX, this.internalY, this.internalWidth, this.internalHeight);
             const p1 = this.plot.SVGToRelative(endpoints[0][0], endpoints[0][1]);
             const p2 = this.plot.SVGToRelative(endpoints[1][0], endpoints[1][1]);
             line.x1 = p1.x;
@@ -817,65 +894,212 @@ export class CoordinateSystem extends Scene {
         return line;
     }
 
-    findLineEndpoints(v: Point, minX: number, minY: number, width: number, height: number): PointTuple[] {
 
-        const x = v.x;
-        const y = v.y;
+    findRayIntersectionWithRectangle(
+        v: Point,
+    ): PointTuple | null {
 
 
-        let potentialEndpoints: PointTuple[] = []; // Initialize array to hold potential endpoints
-        let slope: number; // Variable to hold the slope
+        const minX = this.internalX;
+        const minY = -(this.internalY + this.internalHeight);
+        const width = this.internalWidth;
+        const height = this.internalHeight;
 
-        // Calculate slope of the line
-        if (x !== 0) { // Avoid division by zero for vertical lines
-            slope = y / x;
-        } else {
-            slope = Infinity; // Infinite slope for vertical lines
+        console.log(minX, minY, width, height)
+
+        // Check if vector v is zero
+        if (v.x === 0 && v.y === 0) {
+            // The vector has zero length; cannot define a direction
+            return null;
         }
 
-        // Check intersection with left and right viewbox boundaries
-        const leftIntersectionY = slope * (minX); // x = minX for left boundary
-        const rightIntersectionY = slope * (minX + width); // x = minX + width for right boundary
+        // const vx = v.x;
+        // const vy = -v.y;
 
-        // If the y-coordinates of left and right intersections are within the viewbox, add them to potential endpoints
-        if (minY <= leftIntersectionY && leftIntersectionY <= minY + height) {
-            potentialEndpoints.push([minX, leftIntersectionY]);
-        }
-        if (minY <= rightIntersectionY && rightIntersectionY <= minY + height) {
-            potentialEndpoints.push([minX + width, rightIntersectionY]);
-        }
+        const vx = v.x;
+        const vy = v.y;
 
-        // Check intersection with top and bottom viewbox boundaries
-        if (slope !== Infinity) { // Avoid division by zero for horizontal lines
-            const bottomIntersectionX = minY / slope; // y = minY for bottom boundary
-            const topIntersectionX = (minY + height) / slope; // y = minY + height for top boundary
+        const potentialIntersections: { point: PointTuple; t: number }[] = [];
 
-            // If the x-coordinates of top and bottom intersections are within the viewbox, add them to potential endpoints
-            if (minX <= bottomIntersectionX && bottomIntersectionX <= minX + width) {
-                potentialEndpoints.push([bottomIntersectionX, minY]);
+        const xBounds = [minX, minX + width];
+        const yBounds = [minY, minY + height];
+
+        // Check for intersections with vertical boundaries (x = minX and x = minX + width)
+        if (vx !== 0) {
+            // Intersection with x = minX
+            const tLeft = minX / vx;
+            if (tLeft >= 0) {
+                const yAtTLeft = v.y * tLeft;
+                if (yBounds[0] <= yAtTLeft && yAtTLeft <= yBounds[1]) {
+                    potentialIntersections.push({ point: [minX, yAtTLeft], t: tLeft });
+                }
             }
-            if (minX <= topIntersectionX && topIntersectionX <= minX + width) {
-                potentialEndpoints.push([topIntersectionX, minY + height]);
+
+            // Intersection with x = minX + width
+            const tRight = (minX + width) / vx;
+            if (tRight >= 0) {
+                const yAtTRight = vy * tRight;
+                if (yBounds[0] <= yAtTRight && yAtTRight <= yBounds[1]) {
+                    potentialIntersections.push({ point: [minX + width, yAtTRight], t: tRight });
+                }
             }
         }
 
-        // Special handling for vertical lines (slope is Infinity)
-        if (x === 0) {
-            potentialEndpoints.push([0, minY], [0, minY + height]);
+        // Check for intersections with horizontal boundaries (y = minY and y = minY + height)
+        if (vy !== 0) {
+            // Intersection with y = minY
+            const tBottom = minY / vy;
+            if (tBottom >= 0) {
+                const xAtTBottom = vx * tBottom;
+                if (xBounds[0] <= xAtTBottom && xAtTBottom <= xBounds[1]) {
+                    potentialIntersections.push({ point: [xAtTBottom, minY], t: tBottom });
+                }
+            }
+
+            // Intersection with y = minY + height
+            const tTop = (minY + height) / vy;
+            if (tTop >= 0) {
+                const xAtTTop = vx * tTop;
+                if (xBounds[0] <= xAtTTop && xAtTTop <= xBounds[1]) {
+                    potentialIntersections.push({ point: [xAtTTop, minY + height], t: tTop });
+                }
+            }
         }
 
-        // Special handling for horizontal lines (y component is 0)
-        if (y === 0) {
-            potentialEndpoints.push([minX, 0], [minX + width, 0]);
+        // Handle the cases where vx == 0
+        if (vx === 0 && vy !== 0) {
+            if (minX <= 0 && 0 <= minX + width) {
+                // x coordinate is constant at 0, which is within x bounds
+                // Compute t for y boundaries
+                const tBottom = minY / vy;
+                if (tBottom >= 0) {
+                    potentialIntersections.push({ point: [0, minY], t: tBottom });
+                }
+                const tTop = (minY + height) / vy;
+                if (tTop >= 0) {
+                    potentialIntersections.push({ point: [0, minY + height], t: tTop });
+                }
+            }
         }
 
-        // Reduce the number of endpoints to the two that are on different axes (x and y), if necessary
-        if (potentialEndpoints.length > 2) {
-            potentialEndpoints.sort((a, b) => a[0] - b[0] || a[1] - b[1]); // Sort by x first, then by y
-            return [potentialEndpoints[0], potentialEndpoints[potentialEndpoints.length - 1]]; // Take the first and last points
-        } else {
-            return potentialEndpoints; // Return the calculated endpoints
+        // Handle the cases where vy == 0
+        if (vy === 0 && vx !== 0) {
+            if (minY <= 0 && 0 <= minY + height) {
+                // y coordinate is constant at 0, which is within y bounds
+                // Compute t for x boundaries
+                const tLeft = minX / vx;
+                if (tLeft >= 0) {
+                    potentialIntersections.push({ point: [minX, 0], t: tLeft });
+                }
+                const tRight = (minX + width) / vx;
+                if (tRight >= 0) {
+                    potentialIntersections.push({ point: [minX + width, 0], t: tRight });
+                }
+            }
         }
+
+        // If no intersections were found, return null
+        if (potentialIntersections.length === 0) {
+            return null;
+        }
+
+        // Sort the intersections by t (smallest t first)
+        potentialIntersections.sort((a, b) => a.t - b.t);
+
+        // Return the point with the smallest t
+        return potentialIntersections[0].point;
+    }
+
+    findLineEndpoints(
+        v: Point,
+    ): PointTuple[] {
+    
+        const vx = v.x;
+        const vy = v.y;
+    
+        const potentialEndpoints: { point: PointTuple; t: number }[] = [];
+    
+        const xBounds = [this.minX, this.minX + this.internalWidth];
+        const yBounds = [this.minY, this.minY + this.internalHeight];
+        const minX = this.minX;
+        const minY = this.minY;
+        const width = this.internalWidth;
+        const height = this.internalHeight;
+    
+        // Intersection with left boundary (x = minX)
+        if (vx !== 0) {
+            const t = (minX - v.x) / vx;
+            const yAtBoundary = v.y + t * vy;
+            if (yBounds[0] <= yAtBoundary && yAtBoundary <= yBounds[1]) {
+                potentialEndpoints.push({ point: [minX, yAtBoundary], t });
+            }
+        }
+    
+        // Intersection with right boundary (x = minX + width)
+        if (vx !== 0) {
+            const t = (minX + width - v.x) / vx;
+            const yAtBoundary = v.y + t * vy;
+            if (yBounds[0] <= yAtBoundary && yAtBoundary <= yBounds[1]) {
+                potentialEndpoints.push({ point: [minX + width, yAtBoundary], t });
+            }
+        }
+    
+        // Intersection with bottom boundary (y = minY)
+        if (vy !== 0) {
+            const t = (minY - v.y) / vy;
+            const xAtBoundary = v.x + t * vx;
+            if (xBounds[0] <= xAtBoundary && xAtBoundary <= xBounds[1]) {
+                potentialEndpoints.push({ point: [xAtBoundary, minY], t });
+            }
+        }
+    
+        // Intersection with top boundary (y = minY + height)
+        if (vy !== 0) {
+            const t = (minY + height - v.y) / vy;
+            const xAtBoundary = v.x + t * vx;
+            if (xBounds[0] <= xAtBoundary && xAtBoundary <= xBounds[1]) {
+                potentialEndpoints.push({ point: [xAtBoundary, minY + height], t });
+            }
+        }
+    
+        // Handle vertical lines (vx = 0)
+        if (vx === 0) {
+            if (minX <= v.x && v.x <= minX + width) {
+                // Intersect with bottom and top boundaries
+                potentialEndpoints.push({ point: [v.x, minY], t: minY / vy });
+                potentialEndpoints.push({ point: [v.x, minY + height], t: (minY + height) / vy });
+            }
+        }
+    
+        // Handle horizontal lines (vy = 0)
+        if (vy === 0) {
+            if (minY <= v.y && v.y <= minY + height) {
+                // Intersect with left and right boundaries
+                potentialEndpoints.push({ point: [minX, v.y], t: minX / vx });
+                potentialEndpoints.push({ point: [minX + width, v.y], t: (minX + width) / vx });
+            }
+        }
+    
+        // Remove duplicate points
+        const uniqueEndpoints = potentialEndpoints.reduce((unique, item) => {
+            if (
+                !unique.some(
+                    (u) => u.point[0] === item.point[0] && u.point[1] === item.point[1]
+                )
+            ) {
+                unique.push(item);
+            }
+            return unique;
+        }, []);
+    
+        // Sort the endpoints based on t (to ensure the point in the direction of v is first)
+        uniqueEndpoints.sort((a, b) => b.t - a.t);
+    
+        // Extract the sorted points
+        const sortedPoints = uniqueEndpoints.map((item) => item.point);
+    
+        // Return up to two endpoints
+        return sortedPoints.slice(0, 2);
     }
 
 }

@@ -75,7 +75,7 @@ export class PlotGridBased extends Grid {
         this.classList.add('plot-grid-based')
         this.fnGroup = this.foreground.group();
         this.fnGroup.classList.add('non-scaling-stroke')
-        this.fnGroup.setAttribute('stroke', 'var(--primary)');
+        this.fnGroup.setAttribute('stroke', 'var(--font-color)');
         this.fnGroup.setAttribute('stroke-width', '1.5px');
         this.functionPaths = [];
         this.functions = [];
@@ -89,43 +89,61 @@ export class PlotGridBased extends Grid {
 
     }
 
-    getMinY() {
+    /**
+     * 
+     * @returns The smallest y-value of the SVG
+     */
+    getSVGMinY() {
         let viewBox = this.root.viewBox.baseVal
         return viewBox.y
     }
 
-    getMaxY() {
+    /**
+     * 
+     * @returns The largest y-value of the SVG
+     */
+    getSVGMaxY() {
         let viewBox = this.root.viewBox.baseVal
         return viewBox.y + viewBox.height
     }
 
-    getMinX() {
+    /**
+     * 
+     * @returns The smallest x-value of the SVG
+     */
+    getSVGMinX() {
         let viewBox = this.root.viewBox.baseVal
         return viewBox.x
     }
 
-    getMaxX() {
+    /**
+     * 
+     * @returns The smallest y-value of the SVG
+     */
+    getSVGMaxX() {
         let viewBox = this.root.viewBox.baseVal
         return viewBox.x + viewBox.width
     }
 
     drawAxes(arrows?: boolean): Group {
 
-        let axisGroup = this.gridGroup.appendChild(new Group());
-        axisGroup.classList.add('axes');
+        let color = 'var(--medium)';
 
-        let xAxis = axisGroup.line(this.getMaxX(), 0, this.getMinX(), 0);
-        let yAxis = axisGroup.line(0, this.getMinY(), 0, this.getMaxY());
+        let axisGroup = this.gridGroup.appendChild(new Group());
+        axisGroup.setAttribute('stroke', color);
+
+        let xAxis = axisGroup.line(this.getSVGMaxX(), 0, this.getSVGMinX(), 0);
+        let yAxis = axisGroup.line(0, this.getSVGMinY(), 0, this.getSVGMaxY());
 
         xAxis.setAttribute('vector-effect', 'non-scaling-stroke');
         yAxis.setAttribute('vector-effect', 'non-scaling-stroke');
 
         if (arrows) {
             let defs = this.defs();
-            xAxis.attatchArrow(defs, true, '#a0a0a0');
-            xAxis.attatchArrow(defs, false, '#a0a0a0');
-            yAxis.attatchArrow(defs, true, '#a0a0a0');
-            yAxis.attatchArrow(defs, false, '#a0a0a0');
+            xAxis.attatchArrow(defs, true, color);
+            xAxis.attatchArrow(defs, false, color);
+            yAxis.attatchArrow(defs, true, color);
+            yAxis.attatchArrow(defs, false, color);
         }
 
         return axisGroup;
@@ -188,7 +206,7 @@ export class PlotGridBased extends Grid {
     getHorizontalValues(magnitude = 'big'): Map<number, DOMPoint> {
         // TODO: some sort of setter getter
         let viewBox = this.root.viewBox.baseVal;
-        let x1 = Math.floor(viewBox.x);
+        let x1 = Math.ceil(viewBox.x);
         let x2 = Math.floor(viewBox.x + viewBox.width);
         let points = new Map();
         this.generateValues([x1, x2], magnitude).map((x) => {
@@ -202,11 +220,11 @@ export class PlotGridBased extends Grid {
      */
     getVerticalValues(magnitude = 'big'): Map<number, DOMPoint> {
         let viewBox = this.root.viewBox.baseVal;
-        let y1 = Math.floor(viewBox.y);
+        let y1 = Math.ceil(viewBox.y);
         let y2 = Math.floor(viewBox.y + viewBox.height);
         let points = new Map();
         this.generateValues([y1, y2], magnitude).map((y) => {
-            points[-y] = this.SVGToRelative(0, y)
+            points[-y] = this.SVGToRelative(0, -y)
         })
         return points;
     }
@@ -270,6 +288,47 @@ export class PlotGridBased extends Grid {
     }
 
     /**
+     * Draws the parametric plot of the function for a range of t-values.
+     */
+    drawParametric(fn : {x:(t:number) => number, y:(t:number) => number }) {
+
+        let p = this.getInternalSVG().root.createSVGPoint();
+
+        // Define t range for the parametric function
+        let tMin = -10; // You can set this based on the specific parametric equation
+        let tMax = 10;
+        let tStep = 0.1;  // Step size for incrementing t
+
+        let d = '';
+
+        // Loop through a range of t values
+        for (let t = tMin; t <= tMax; t += tStep) {
+
+            // Calculate parametric x(t) and y(t) coordinates
+            let x_t = fn.x(t);  // x(t)
+            let y_t = fn.y(t);  // y(t)
+
+            // Map the point to the internal coordinate system
+            p.x = x_t;
+            p.y = y_t;
+
+            if (t === tMin) {
+                // Move to the starting point
+                d += `M ${p.x} ${p.y}`;
+            } else {
+                // Draw line to the next point
+                d += `L ${p.x} ${p.y}`;
+            }
+        }
+        
+        let path = this.fnGroup.path('');
+        this.functionPaths.push(path);
+        path.d = d;
+
+        return path
+    }
+
+    /**
    * Draws the plot of the function for all x-values in the view ports range 
    */
     drawArea(x1: number, x2: number, fn: (number) => number): Path {
@@ -307,7 +366,7 @@ export class PlotGridBased extends Grid {
         d += `L ${p.x} ${0} Z`;
 
         let path = this.fnGroup.path(d);
-        path.style.stroke = 'var(--blue)';
+        path.style.stroke = 'var(--font-color)';
         this.functionPaths.push(path);
 
         return path;
@@ -360,9 +419,10 @@ export class PlotGridBased extends Grid {
     draw2() {
 
         let spacing = 0;
-        let bbox = this.root.getBoundingClientRect();
+        let bbox = this.backgroundRectangle.root.getBoundingClientRect();
         let x1 = bbox.x + spacing;
         let x2 = bbox.x + bbox.width - spacing;
+
 
         let ctm = this.getInternalSVG().root.getScreenCTM();
         let inverse = ctm.inverse();
@@ -395,7 +455,7 @@ export class PlotGridBased extends Grid {
 
             // Loop through each pixel, convert the x-position to the internal coordinates, call the 
             // function and add to the path
-            for (let x = x1; x <= x2; x++) {
+            for (let x = x1; x <= x2 + 1; x++) {
                 point.x = x;
                 p = point.matrixTransform(inverse);
                 output = {
@@ -403,33 +463,29 @@ export class PlotGridBased extends Grid {
                     y: this.call(fn, p.x)
                 }
 
-                let command = 'L'
-
                 if (this.outsideViewBox(output.y) && this.outsideViewBox(previous.y)) {
                     // skip
                     previous = output;
                     continue;
                 } else if (this.outsideViewBox(output.y)) {
                     // leaving
-                    if (output.y < this.getMinY()) {
-                        d += `L ${this.findXCoordinateForY(previous, output, this.getMinY())} ${this.getMinY()} `;
-                    } else if (output.y > this.getMaxY()) {
-                        d += `L ${this.findXCoordinateForY(previous, output, this.getMaxY())} ${this.getMaxY()} `;
+                    if (output.y < this.getSVGMinY()) {
+                        d += `L ${this.findXCoordinateForY(previous, output, this.getSVGMinY())} ${this.getSVGMinY()} `;
+                    } else if (output.y > this.getSVGMaxY()) {
+                        d += `L ${this.findXCoordinateForY(previous, output, this.getSVGMaxY())} ${this.getSVGMaxY()} `;
                     }
                 } else if (this.outsideViewBox(previous.y)) {
                     // entering
-                    if (previous.y < this.getMinY()) {
-                        d += `M ${this.findXCoordinateForY(previous, output, this.getMinY())} ${this.getMinY()} `;
-                    } else if (previous.y > this.getMaxY()) {
-                        d += `M ${this.findXCoordinateForY(previous, output, this.getMaxY())} ${this.getMaxY()} `;
+                    if (previous.y < this.getSVGMinY()) {
+                        d += `M ${this.findXCoordinateForY(previous, output, this.getSVGMinY())} ${this.getSVGMinY()} `;
+                    } else if (previous.y > this.getSVGMaxY()) {
+                        d += `M ${this.findXCoordinateForY(previous, output, this.getSVGMaxY())} ${this.getSVGMaxY()} `;
                     }
                 } else {
                     d += `L ${output.x} ${output.y} `;
                 }
                 previous = output;
             }
-
-            // console.log(d)
 
             this.functionPaths[i].d = d;
         }
