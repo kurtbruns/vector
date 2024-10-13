@@ -1,7 +1,7 @@
 import { Camera } from "./Camera";
 import { Quaternion } from "./Quaternion";
 import { Vector3 } from "./Vector3";
-import { AnimationFunction, CoordinateSystem, Frame, Group, Line, Player, Plot, Point, Tex } from "..";
+import { Circle, Frame, Group, Line, Plot, Point, Tex } from "..";
 import { StringValue } from "../model/StringValue";
 
 export interface CoordinateSystem3DConfig {
@@ -9,12 +9,18 @@ export interface CoordinateSystem3DConfig {
     y?: number;
     width?: number;
     height?: number;
+
     viewportX?: number;
     viewportY?: number;
     viewportWidth?: number;
     viewportHeight?: number;
+
     cameraPosition?: Vector3;
     cameraOrientation?: Quaternion;
+    cameraFieldOfView?: number;
+    cameraTrackBallInvert?: boolean;
+    cameraTrackBallRadius?: number;
+
     groundGrid?: boolean;
     drawCube?: boolean;
     drawAxes?: boolean;
@@ -26,6 +32,9 @@ export interface CoordinateSystem3DConfig {
     tickMarksColor?: boolean;
     tickMarksColorAlt?: boolean;
     size?: number;
+    sizeX?: number;
+    sizeY?: number;
+    sizeZ?: number;
     distance?: number;
     player?: boolean;
     root?: HTMLElement;
@@ -36,20 +45,32 @@ export class CoordinateSystem3D {
 
     origin: Vector3;
 
-
     plot: Plot;
     cameraDistance: number;
     camera: Camera;
 
+    axes: Group;
     foreground: Group;
+    background: Group;
+
+    yAxis: Line;
+    xAxis: Line;
+    zAxis: Line;
+    xAxisLabel: Tex;
+    yAxisLabel: Tex;
+    zAxisLabel: Tex;
+    upAxis: 'x' | 'y' | 'z';
+
 
     constructor(container: Frame | Group, config: CoordinateSystem3DConfig = {}) {
 
         let defaultConfig = {
 
             // cameraOrientation: new Quaternion(-1, 0, 0, 0).multiply(Quaternion.fromAxisAngle(new Vector3(0, 0, 1), Math.PI)),
-            cameraOrientation: new Quaternion(0, 0, 0, -1),
-            cameraPosition: new Vector3(0, 0, 20),
+            cameraOrientation: new Quaternion(1, 0, 0, 0),
+            cameraPosition: new Vector3(0, 0, -20),
+            cameraFieldOfView: 60,
+            cameraTrackBallRadius: 2,
 
             // // 16x9
             // gridWidth: 0.096,
@@ -77,15 +98,11 @@ export class CoordinateSystem3D {
             tickMarksColor: false,
             tickMarksColorAlt: false,
             size: 5,
-            pitch: 43,
-            yaw: 32,
 
             groundGrid: true,
             player: true,
             disableEventListeners: false,
         }
-
-        console.log(defaultConfig.cameraOrientation.toFormattedString())
 
         config = { ...defaultConfig, ...config };
 
@@ -113,35 +130,23 @@ export class CoordinateSystem3D {
             // axesColor: 'none',
             // big: true,
         })
-
-        // this.plot.frame.root.style.outline = `1.5px solid var(--border-color)`;
-
     
         this.foreground = this.plot.foreground;
+        this.background = this.plot.frame.group();
+        this.background.root.dataset.role = "background";
+        this.axes = this.background.group();
 
         this.origin = new Vector3(0, 0, 0);
         this.cameraDistance = config.distance;
 
-        let fov = 60; // Field of view in degrees
+        let fov = config.cameraFieldOfView;
         let aspectRatio = config.viewportWidth / config.viewportHeight;
         let nearPlane = 0.1;
         let farPlane = 1000;
 
-        let position = new Vector3(0, -0.0001, this.cameraDistance);
+        this.camera = new Camera(config.cameraPosition, config.cameraOrientation, fov, aspectRatio, nearPlane, farPlane);
 
-        if (config.cameraPosition) {
-            position = config.cameraPosition;
-        }
-
-        let orientation = Quaternion.orientationBetween(position, this.origin);
-
-        this.camera = new Camera(position, orientation, fov, aspectRatio, nearPlane, farPlane);
-        this.camera.lookAt(this.origin, new Vector3(0, 0, 1));
-        if (config.cameraOrientation) {
-            this.camera.orientation = config.cameraOrientation;
-        }
-
-        this.registerEventListeners();
+        this.registerEventListeners(config.cameraTrackBallRadius, config.cameraTrackBallInvert);
 
         if (config.groundGrid) {
             this.drawGroundGrid(config.size);
@@ -152,7 +157,12 @@ export class CoordinateSystem3D {
         }
 
         if (config.drawAxes) {
-            this.drawAxes(config.size, { color: config.axesColor, arrows: config.drawAxesArrows });
+            let sizes = {
+                sizeX: config.sizeX ? config.sizeX : config.size,
+                sizeY: config.sizeY ? config.sizeY : config.size,
+                sizeZ: config.sizeZ ? config.sizeZ : config.size,
+            }
+            this.drawAxes(config.size, { ...{ color: config.axesColor, arrows: config.drawAxesArrows }, ...sizes });
         }
 
         if (config.labelAxes) {
@@ -172,11 +182,11 @@ export class CoordinateSystem3D {
 
     }
 
-    registerEventListeners() {
+    registerEventListeners(r = 2, invert = false) {
 
         let isDragging = false;
         let isSpaceDown = false;
-        let upAxis: 'x' | 'y' | 'z' = 'z';
+        this.upAxis = 'z';
         let prevX: number = 0;
         let prevY: number = 0;
         let bbox = this.plot.frame.root.getBoundingClientRect();
@@ -186,11 +196,15 @@ export class CoordinateSystem3D {
          */
         const projectOnTrackball = (touchX: number, touchY: number) => {
 
-            let r = 1;
+            // let d = this.camera.position.length();
+            // console.log(d)
+            // let r = d*1/Math.sqrt(d*d - 1);
+
             // let x = touchX / window.innerWidth * 2 - 1;
             // let y = -(touchY / window.innerHeight * 2 - 1);
-            let x = (touchX - bbox.left - bbox.width / 2) / bbox.height;
-            let y = -(touchY - bbox.top - bbox.height / 2) / bbox.height;
+
+            let x = (invert ? 1 : -1) * (touchX - bbox.left - bbox.width / 2) / bbox.height;
+            let y = (invert ? 1 : -1) * (touchY - bbox.top - bbox.height / 2) / bbox.height;
             let z = 0.0;
             let distance = x * x + y * y;
             if (distance <= r * r / 2) {
@@ -200,16 +214,17 @@ export class CoordinateSystem3D {
             } else {
                 // On hyperbola
                 z = (r * r / 2) / Math.sqrt(distance);
+
             }
 
-            return new Vector3(x, y, z).normalize();
+            return new Vector3(-x, y, z).normalize();
         }
 
         // Mouse down handler
         const handleMouseDown = (event: MouseEvent) => {
             if (this.plot.frame.root.contains(event.target as HTMLElement)) {
                 isDragging = true;
-                bbox = this.plot.frame.root.getBoundingClientRect();
+                bbox = this.plot.getFrameBoundingRect();
                 this.plot.setCTM();
                 this.plot.setBoundingRect();
                 prevX = event.clientX;
@@ -217,86 +232,104 @@ export class CoordinateSystem3D {
             }
         };
 
-
         // Mouse move handler
         const handleMouseMove = (event: MouseEvent) => {
 
-            if (isSpaceDown && isDragging && (event.clientX !== prevX || event.clientY !== prevY)) {
+            if (isDragging && (event.clientX !== prevX || event.clientY !== prevY)) {
 
-                const v1 = projectOnTrackball(prevX, prevY);
-                const v2 = projectOnTrackball(event.clientX, event.clientY);
+                if (isSpaceDown) {
 
-                const q1 = Quaternion.fromVector(v1);
-                const q2 = Quaternion.fromVector(v2);
+                    const v1 = projectOnTrackball(prevX, prevY);
+                    const v2 = projectOnTrackball(event.clientX, event.clientY);
 
-                let r = q2.multiply(q1.conjugate());
+                    const q1 = Quaternion.fromVector(v1);
+                    const q2 = Quaternion.fromVector(v2);
 
-                // Convert the global rotation to a local rotation
-                let localRotation = this.camera.orientation.conjugate().multiply(r).multiply(this.camera.orientation).normalize();
+                    let r = q2.multiply(q1.conjugate());
 
-                // Apply the local rotation to the camera's orientation
-                this.camera.position.apply(localRotation);
+                    // Convert the global rotation to a local rotation
+                    let localRotation = this.camera.orientation.conjugate().multiply(r).multiply(this.camera.orientation).normalize();
 
-                this.camera.orientation = this.camera.orientation.multiply(localRotation.inverse());
+                    // Apply the local rotation to the camera's orientation
+                    this.camera.position.apply(localRotation);
+                    this.camera.orientation = this.camera.orientation.multiply(localRotation.inverse());
 
-
-            } else if (isDragging && (event.clientX !== prevX || event.clientY !== prevY)) {
-
-                let up_vec;
-                let right_vec: Vector3;
-
-                if (upAxis === 'x') {
-
-                    up_vec = new Vector3(0, 0, 1);
-                    right_vec = new Vector3(0, 1, 0);
-
-                    let q = this.camera.orientation.conjugate();
-                    let c = q.conjugate();
-                    let up = q.multiply(Quaternion.fromVector(up_vec)).multiply(c);
-                    let forward = q.multiply(Quaternion.fromVector(right_vec)).multiply(c);
-
-                    let scalar = 200;
-                    let r = Quaternion.fromAxisAngle(new Vector3(1, 0, 0), -(event.clientX - prevX) / scalar);
-                    let s = Quaternion.fromAxisAngle(up.toVector3().cross(forward.toVector3()).normalize(), -(event.clientY - prevY) / scalar);
-
-                    let u = r.multiply(s).normalize();
-
-                    this.camera.position.apply(u);
-                    this.camera.orientation = this.camera.orientation.multiply(u.inverse()).normalize();
 
                 } else {
-                    switch (upAxis) {
-                        case 'y':
-                            up_vec = new Vector3(0, 1, 0);
-                            right_vec = new Vector3(0, 0, -1);
-                            break;
-                        default:
-                            up_vec = new Vector3(0, 0, 1);
-                            right_vec = new Vector3(0, 1, 0);
-                            break;
+
+                    let up_vec: Vector3;
+                    let right_vec: Vector3;
+
+                    if (this.upAxis === 'x') {
+
+                        up_vec = new Vector3(0, 0, 1);
+                        right_vec = new Vector3(0, -1, 0);
+
+                        let q = this.camera.orientation.conjugate();
+                        let c = q.conjugate();
+                        let up = q.multiply(Quaternion.fromVector(up_vec)).multiply(c);
+                        let forward = q.multiply(Quaternion.fromVector(right_vec)).multiply(c);
+
+                        let scalar = 200;
+
+                        // TODO: note this is different for some reason
+                        let r = Quaternion.fromAxisAngle(new Vector3(1, 0, 0), (event.clientX - prevX) / scalar);
+                        let s = Quaternion.fromAxisAngle(up.toVector3().cross(forward.toVector3()).normalize(), (event.clientY - prevY) / scalar);
+
+                        let u = r.multiply(s).normalize();
+
+                        this.camera.position.apply(u);
+                        this.camera.orientation = this.camera.orientation.multiply(u.inverse()).normalize();
+
+                    } else if (this.upAxis === 'y') {
+
+                        up_vec = new Vector3(0, 1, 0);
+                        right_vec = new Vector3(0, 0, 1);
+
+                        let q = this.camera.orientation.conjugate();
+                        let c = q.conjugate();
+                        let up = q.multiply(Quaternion.fromVector(up_vec)).multiply(c);
+                        let forward = q.multiply(Quaternion.fromVector(right_vec)).multiply(c);
+
+                        let scalar = 200;
+                        let r = Quaternion.fromAxisAngle(up.toVector3().cross(forward.toVector3()).normalize(), (event.clientY - prevY) / scalar);
+                        let s = Quaternion.fromAxisAngle(up_vec, (event.clientX - prevX) / scalar);
+
+                        let u = s.multiply(r).normalize();
+
+                        this.camera.position.apply(u);
+                        this.camera.orientation = this.camera.orientation.multiply(u.inverse()).normalize();
+
+                    } else {
+
+                        up_vec = new Vector3(0, 0, 1);
+                        right_vec = new Vector3(0, 1, 0);
+                        let q = this.camera.orientation.conjugate();
+                        let c = q.conjugate();
+                        let up = q.multiply(Quaternion.fromVector(up_vec)).multiply(c);
+                        let forward = q.multiply(Quaternion.fromVector(right_vec)).multiply(c);
+
+                        let scalar = 200;
+                        let r = Quaternion.fromAxisAngle(up.toVector3().cross(forward.toVector3()).normalize(), -(event.clientY - prevY) / scalar);
+                        // let r = Quaternion.fromAxisAngle(forward.toVector3().cross(up.toVector3()).normalize(), (event.clientY - prevY)/scalar);
+                        let s = Quaternion.fromAxisAngle(up_vec, -(event.clientX - prevX) / scalar);
+
+                        let u = s.multiply(r).normalize();
+
+                        this.camera.position.apply(u);
+                        this.camera.orientation = this.camera.orientation.multiply(u.inverse()).normalize();
                     }
 
-
-                    let q = this.camera.orientation.conjugate();
-                    let c = q.conjugate();
-                    let up = q.multiply(Quaternion.fromVector(up_vec)).multiply(c);
-                    let forward = q.multiply(Quaternion.fromVector(right_vec)).multiply(c);
-
-                    let scalar = 200;
-                    let r = Quaternion.fromAxisAngle(up.toVector3().cross(forward.toVector3()).normalize(), -(event.clientY - prevY) / scalar);
-                    // let r = Quaternion.fromAxisAngle(forward.toVector3().cross(up.toVector3()).normalize(), (event.clientY - prevY)/scalar);
-                    let s = Quaternion.fromAxisAngle(up_vec, -(event.clientX - prevX) / scalar);
-
-                    let u = s.multiply(r).normalize();
-
-                    this.camera.position.apply(u);
-                    this.camera.orientation = this.camera.orientation.multiply(u.inverse()).normalize();
                 }
+
+                event.preventDefault();
 
             }
 
             prevX = event.clientX;
             prevY = event.clientY;
+
+
         };
 
         // Mouse up handler
@@ -305,6 +338,8 @@ export class CoordinateSystem3D {
             this.plot.releaseBoundingRect();
             this.plot.releaseCTM();
         };
+
+        let scaleFactor = 1.1;
 
         // Keydown handler
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -323,29 +358,55 @@ export class CoordinateSystem3D {
                     // Handle arrow right key
                     break;
                 case 'Enter':
-                    console.log(`cameraOrientation: ${this.camera.orientation.toConstructor((n) => n.toFixed(3))}, \n        cameraPosition: ${this.camera.position.toConstructor((n) => n.toFixed(3))},`);
+                    // console.log(`cameraOrientation: ${this.camera.orientation.toConstructor((n) => n.toFixed(3))}, \n        cameraPosition: ${this.camera.position.toConstructor((n) => n.toFixed(3))},`);
+                    console.log(`let cameraOrientation = ${this.camera.orientation.toConstructor((n) => n.toFixed(5))}; \n        let cameraPosition = ${this.camera.position.toConstructor((n) => n.toFixed(5))};`);
                     break;
                 case '=':
-                    this.camera.position = this.camera.position.subtract(this.camera.position.normalize().copy());
+                    this.camera.position.set(this.camera.position.scale(1 / scaleFactor));
+                    // this.camera.position = this.camera.position.subtract(this.camera.position.normalize().copy());
                     this.camera.updateDependents();
                     break;
                 case '-':
-                    this.camera.position = this.camera.position.add(this.camera.position.normalize().copy());
+                    this.camera.position.set(this.camera.position.scale(scaleFactor));
+                    // this.camera.position = this.camera.position.add(this.camera.position.normalize().copy());
                     this.camera.updateDependents();
                     break;
                 case 'x':
-                    upAxis = 'x';
-                    this.camera.lookAt(this.origin, new Vector3(-1, 0, 0));
+                    this.upAxis = 'x';
+                    this.camera.orientation.set(new Quaternion(1, 0, 0, 0).multiply(Quaternion.fromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2)));
+                    this.camera.position.set(new Vector3(0, 0, -this.camera.position.length()))
+                    this.camera.orientation.updateDependents();
+                    this.camera.position.updateDependents();
+                    this.camera.updateDependents();
+
+
+                    // this.camera.lookAt(this.origin, new Vector3(-1, 0, 0));
                     event.preventDefault();
                     break;
                 case 'y':
-                    upAxis = 'y';
-                    this.camera.lookAt(this.origin, new Vector3(0, -1, 0));
+                    this.upAxis = 'y';
+                    this.camera.orientation.set(new Quaternion(1, 0, 0, 0));
+                    this.camera.position.set(new Vector3(0, 0, -this.camera.position.length()))
+                    this.camera.orientation.updateDependents();
+                    this.camera.position.updateDependents();
+                    this.camera.updateDependents();
+
+                    // this.camera.lookAt(this.origin, new Vector3(0, -1, 0));
                     event.preventDefault();
                     break;
                 case 'z':
-                    upAxis = 'z';
-                    this.camera.lookAt(this.origin, new Vector3(0, 0, -1));
+                    this.upAxis = 'z';
+                    // this.camera.orientation.set(new Quaternion(0, 0, -Math.sqrt(2) / 2, Math.sqrt(2) / 2));
+                    this.camera.orientation.set(new Quaternion(0, 0, -Math.sqrt(2) / 2, Math.sqrt(2) / 2).multiply(new Quaternion(0, 0, 0, 1)));
+                    this.camera.position.set(new Vector3(0, -this.camera.position.length(), 0));
+                    this.camera.orientation.updateDependents();
+                    this.camera.position.updateDependents();
+                    this.camera.updateDependents();
+
+
+
+                    // this.camera.orientation.set(Quaternion.identity());
+                    // this.camera.position.set(new Vector(this.camera.position.length()))
                     event.preventDefault();
                     break;
                 case ' ':
@@ -565,39 +626,6 @@ export class CoordinateSystem3D {
         return points;
     }
 
-    drawSphere(radius: number, count: number, center: Vector3 = new Vector3()) {
-
-        const points: Vector3[] = [];
-        const offset = 2 / count;
-        const increment = Math.PI * (3 - Math.sqrt(5));
-
-        for (let i = 0; i < count; i++) {
-            const y = ((i * offset) - 1) + (offset / 2);
-            const r = Math.sqrt(1 - y * y);
-            const phi = ((i + 1) % count) * increment; // Ensuring last and first points are not the same
-            const x = Math.cos(phi) * r;
-            const z = Math.sin(phi) * r;
-
-            points.push(new Vector3(x, y, z).normalize().scale(radius).add(center));
-        }
-
-        for (let i = 0; i < points.length; i++) {
-            this.drawPoint(points[i], { color: 'var(--main)', opacity: 0.25 });
-        }
-
-        // let N = 100;
-        // let start = this.viewPort.plot.SVGToRelative(1, 0);
-        // let path = this.viewPort.frame.path(`M ${start.x} ${start.y}`);
-        // for (let n = 1; n < N; n++) {
-        //     let a = (n/N)*2*Math.PI;
-        //     let x = Math.cos(a);
-        //     let y = Math.sin(a);
-        //     let t = this.viewPort.plot.SVGToRelative(x, y);
-        //     path.d += `L ${t.x} ${t.y} `
-
-        // }
-    }
-
     drawDots(x: number = 5) {
         for (let i = -x; i <= x; i++) {
             for (let j = -x; j <= x; j++) {
@@ -628,20 +656,20 @@ export class CoordinateSystem3D {
 
         options = { ...defaultOptions, ...options };
 
-        let x = this.tex(new Vector3(1, 0, 0).scale(c + options.a), 'x')
-        let y = this.tex(new Vector3(0, 1, 0).scale(c + options.a), 'y')
-        let z = this.tex(new Vector3(0, 0, 1).scale(c + options.a), 'z')
+        this.xAxisLabel = this.tex(new Vector3(1, 0, 0).scale(c + options.a), 'x')
+        this.yAxisLabel = this.tex(new Vector3(0, 1, 0).scale(c + options.a), 'y')
+        this.zAxisLabel = this.tex(new Vector3(0, 0, 1).scale(c + options.a), 'z')
 
         if (options.color) {
-            x.setColorAll('x', 'var(--green)');
-            y.setColorAll('y', 'var(--red)');
-            z.setColorAll('z', 'var(--blue)');
+            this.xAxisLabel.setColorAll('x', 'var(--green)');
+            this.yAxisLabel.setColorAll('y', 'var(--red)');
+            this.zAxisLabel.setColorAll('z', 'var(--blue)');
         }
 
-        let group = this.foreground.group();
-        group.appendChild(x);
-        group.appendChild(y);
-        group.appendChild(z);
+        let group = this.axes.group();
+        group.appendChild(this.xAxisLabel);
+        group.appendChild(this.yAxisLabel);
+        group.appendChild(this.zAxisLabel);
         return group;
 
     }
@@ -844,10 +872,10 @@ export class CoordinateSystem3D {
         return q;
     }
 
-    tex(v: Vector3, s: string, replace?: () => string) {
+    tex(v: Vector3, s: string, replace?: () => string, background = true) {
 
         v.addDependency(this.camera);
-        let t = this.plot.frame.tex(s)
+        let t = this.plot.frame.tex(s, 0, 0, background)
             .alignCenter();
 
         t.setAttribute('color', 'var(--font-color)')
@@ -926,7 +954,7 @@ export class CoordinateSystem3D {
     }
 
     // TODO: refactor into options
-    vector(v1: Vector3, v2: Vector3, color: string = 'var(--font-color)', opacity = 1 ) : Line {
+    vector(v1: Vector3, v2: Vector3, color: string = 'var(--font-color)', opacity = 1): Line {
 
         v1.addDependency(this.camera);
         v2.addDependency(this.camera);
@@ -1070,11 +1098,13 @@ export class CoordinateSystem3D {
             l.x2 = p2.x;
             l.y2 = p2.y;
 
-            if (t1.z < 0 || t2.z < 0) {
-                l.setAttribute('opacity', `${0}`);
-            } else {
-                l.setAttribute('opacity', `${opacity}`);
-            }
+            // if (t1.z < 0 || t2.z < 0) {
+            //     l.setAttribute('opacity', `${0}`);
+            // } else {
+            //     l.setAttribute('opacity', `${opacity}`);
+            // }
+            l.setAttribute('opacity', `${opacity}`);
+
         }
         l.update();
 
@@ -1115,22 +1145,29 @@ export class CoordinateSystem3D {
         return p;
     }
 
-    drawAxes(d: number = 5, options: { color?: string, arrows?: boolean, opacity?: number } = {}) {
+    drawAxes(d: number = 5, options: { color?: string, arrows?: boolean, opacity?: number, sizeX?: number, sizeY?: number, sizeZ?: number } = {}) {
 
         let defaultOptions = {
             color: 'var(--font-color-light)',
             arrows: true,
-            opacity: 1
+            opacity: 1,
+            sizeX: d,
+            sizeY: d,
+            sizeZ: d,
         };
 
         options = { ...defaultOptions, ...options };
 
-        this.drawAxesHelper(new Vector3(d, 0, 0), new Vector3(-d, 0, 0), options);
-        this.drawAxesHelper(new Vector3(0, d, 0), new Vector3(0, -d, 0), options);
-        this.drawAxesHelper(new Vector3(0, 0, d), new Vector3(0, 0, -d), options);
+        let x = options.sizeX;
+        let y = options.sizeY;
+        let z = options.sizeZ;
+
+        this.xAxis = this.drawAxesHelper(new Vector3(x, 0, 0), new Vector3(-x, 0, 0), options);
+        this.yAxis = this.drawAxesHelper(new Vector3(0, y, 0), new Vector3(0, -y, 0), options);
+        this.zAxis = this.drawAxesHelper(new Vector3(0, 0, z), new Vector3(0, 0, -z), options);
     }
 
-    drawAxesHelper(start: Vector3, end: Vector3, options: { color?: string, arrows?: boolean } = {}) {
+    drawAxesHelper(start: Vector3, end: Vector3, options: { color?: string, arrows?: boolean } = {}): Line {
 
         let defaultOptions = {
             color: 'var(--font-color-light)',
@@ -1139,10 +1176,10 @@ export class CoordinateSystem3D {
 
         options = { ...defaultOptions, ...options };
 
-        start.addDependency(this.camera);
-        end.addDependency(this.camera);
+        start.addDependency(this.camera, this.camera.position);
+        end.addDependency(this.camera, this.camera.position);
 
-        let axis = this.plot.frame.line(0, 0, 0, 0);
+        let axis = this.axes.line(0, 0, 0, 0);
         axis.setAttribute('stroke', options.color)
         axis.setAttribute('stroke-width', '1.5px');
         if (options.arrows) {
@@ -1158,8 +1195,8 @@ export class CoordinateSystem3D {
             ];
 
             let axesPoints = [
-                this.plot.viewportToFrame(projectedPoints[0].x, projectedPoints[0].y),
-                this.plot.viewportToFrame(projectedPoints[1].x, projectedPoints[1].y),
+                this.plot.viewportToFrame(projectedPoints[0]),
+                this.plot.viewportToFrame(projectedPoints[1]),
             ];
 
             axis.x1 = axesPoints[0].x;
@@ -1168,6 +1205,7 @@ export class CoordinateSystem3D {
             axis.y2 = axesPoints[1].y;
         }
         axis.update();
+        return axis;
 
 
     }
@@ -1185,7 +1223,7 @@ export class CoordinateSystem3D {
 
     }
 
-    drawPoint(p: Vector3, options: { color?: string, opacity?: number, radius?: number, scale?: boolean, s?: number, colorValue?: StringValue,} = {}) {
+    drawPoint(p: Vector3, options: { color?: string, opacity?: number, radius?: number, scale?: boolean, s?: number, colorValue?: StringValue, } = {}): Circle {
 
         let defaultOptions = {
             color: 'var(--font-color)',
@@ -1220,19 +1258,17 @@ export class CoordinateSystem3D {
             if (options.colorValue) {
                 c.setAttribute('fill', options.colorValue.value)
             }
+            if (q.z === 0) {
+                c.setAttribute('opacity', '0')
+            } else if (isFinite(options.opacity)) {
+                c.setAttribute('opacity', options.opacity.toFixed(2))
+            } else {
+                c.setAttribute('opacity', '1')
+            }
 
         }
         c.update();
-
-        let r = new Point(0, 0);
-        r.addDependency(c);
-        r.update = () => {
-            r.x = c.cx;
-            r.y = c.cy;
-        }
-        r.update();
-
-        return r;
+        return c;
     }
 
 

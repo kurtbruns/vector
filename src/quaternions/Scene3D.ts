@@ -1,7 +1,7 @@
 import { Camera } from "./Camera";
 import { Quaternion } from "./Quaternion";
 import { Vector3 } from "./Vector3";
-import { AnimationFunction, BaseNode, Circle, CoordinateSystem, Group, Line, Player, Point, Tex, Value, interpolateColor } from "..";
+import { AnimationFunction, Circle, CoordinateSystem, Group, Line, Player, Tex } from "..";
 import { StringValue } from "../model/StringValue";
 
 export interface Scene3DConfig {
