@@ -54,10 +54,9 @@ export class Vector3 extends BaseNode {
     }
 
     get animate() {
-        const context : Vector3 = this;
     
         return {
-            moveTo: function (endPoint:{x:number, y:number, z:number}) {
+            moveTo: (endPoint:{x:number, y:number, z:number}) => {
                 let hasStarted = false;
                 let startX;
                 let startY;
@@ -65,15 +64,15 @@ export class Vector3 extends BaseNode {
     
                 return (alpha) => {
                     if (!hasStarted) {
-                        startX = context.x;
-                        startY = context.y;
-                        startZ = context.z;
+                        startX = this.x;
+                        startY = this.y;
+                        startZ = this.z;
                         hasStarted = true;
                     }
-                    context.x = startX + (endPoint.x - startX) * alpha;
-                    context.y = startY + (endPoint.y - startY) * alpha;
-                    context.z = startZ + (endPoint.z - startZ) * alpha;
-                    context.updateDependents();
+                    this.x = startX + (endPoint.x - startX) * alpha;
+                    this.y = startY + (endPoint.y - startY) * alpha;
+                    this.z = startZ + (endPoint.z - startZ) * alpha;
+                    this.updateDependents();
                 };
             },
         };
@@ -95,10 +94,7 @@ export class Vector3 extends BaseNode {
      * @param s The scalar value
      */
     scale(s: number): Vector3 {
-        this.x *= s;
-        this.y *= s;
-        this.z *= s;
-        return this;
+        return new Vector3(this.x*s, this.y*s, this.z*s);
     }
 
     /**
@@ -198,7 +194,7 @@ export class Vector3 extends BaseNode {
         }
     }
 
-    inverse() : Vector3 {
+    negate(): Vector3 {
         return new Vector3(-this.x, -this.y, -this.z);
     }
 
@@ -226,11 +222,15 @@ export class Vector3 extends BaseNode {
         // let rotatedQuaternion = q.multiply(vectorQuaternion).multiply(q.conjugate());
 
         // Update the vector with the rotated values
-        this.x = rotatedQuaternion.b;
-        this.y = rotatedQuaternion.c;
-        this.z = rotatedQuaternion.d;
+        this.x = rotatedQuaternion.x;
+        this.y = rotatedQuaternion.y;
+        this.z = rotatedQuaternion.z;
         
         return this;
+    }
+
+    toFormattedString(format : (number) => string = (n) => { return Number(n).toFixed(2) }) : string {
+        return `[${format(this.x)}, ${format(this.y)}, ${format(this.z)}]`
     }
 
     toConstructor(format : (number) => string = (n) => { return Number(n).toString() }) : string {

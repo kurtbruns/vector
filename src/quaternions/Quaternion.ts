@@ -1,22 +1,32 @@
 import { BaseNode } from "../model";
 import { Vector3 } from "./Vector3";
 
+export enum EulerOrder {
+    XYZ = 'XYZ',
+    XZY = 'XZY',
+    YXZ = 'YXZ',
+    YZX = 'YZX',
+    ZXY = 'ZXY',
+    ZYX = 'ZYX',
+}
+
 export class Quaternion extends BaseNode {
 
-    a: number;
-    b: number;
-    c: number;
-    d: number;
+
+    w: number;
+    x: number;
+    y: number;
+    z: number;
 
     /**
      * Constructs a new Quaternion in the form a + bi + ci + di
      */
     constructor(a: number = 0, b: number = 0, c: number = 0, d: number = 0) {
         super();
-        this.a = a;
-        this.b = b;
-        this.c = c;
-        this.d = d;
+        this.w = a;
+        this.x = b;
+        this.y = c;
+        this.z = d;
     }
 
     /**
@@ -30,7 +40,7 @@ export class Quaternion extends BaseNode {
      * Returns the reference direction (Positve Z Axis)
      */
     static standardForwardDirection(): Vector3 {
-        return new Vector3(0, 0, 1);
+        return new Vector3(0, 0, -1);
     }
 
     /**
@@ -83,6 +93,70 @@ export class Quaternion extends BaseNode {
         }
 
     }
+    
+    static fromEulerAngles(roll: number, pitch: number, yaw: number, order: EulerOrder = EulerOrder.XYZ): Quaternion {
+        const halfX = roll / 2;
+        const halfY = pitch / 2;
+        const halfZ = yaw / 2;
+    
+        const cosX = Math.cos(halfX);
+        const sinX = Math.sin(halfX);
+    
+        const cosY = Math.cos(halfY);
+        const sinY = Math.sin(halfY);
+    
+        const cosZ = Math.cos(halfZ);
+        const sinZ = Math.sin(halfZ);
+    
+        let w, x, y, z;
+    
+        switch (order) {
+            case EulerOrder.XZY:
+                w = cosX * cosY * cosZ + sinX * sinY * sinZ;
+                x = sinX * cosY * cosZ + cosX * sinY * sinZ;
+                y = cosX * sinY * cosZ - sinX * cosY * sinZ;
+                z = cosX * cosY * sinZ - sinX * sinY * cosZ;
+                break;
+    
+            case EulerOrder.YXZ:
+                w = cosX * cosY * cosZ + sinX * sinY * sinZ;
+                x = sinX * cosY * cosZ - cosX * sinY * sinZ;
+                y = cosX * sinY * cosZ + sinX * cosY * sinZ;
+                z = cosX * cosY * sinZ - sinX * sinY * cosZ;
+                break;
+    
+            case EulerOrder.YZX:
+                w = cosX * cosY * cosZ + sinX * sinY * sinZ;
+                x = sinX * cosY * cosZ + cosX * sinY * sinZ;
+                y = cosX * sinY * cosZ - sinX * cosY * sinZ;
+                z = cosX * cosY * sinZ - sinX * sinY * cosZ;
+                break;
+    
+            case EulerOrder.ZXY:
+                w = cosX * cosY * cosZ - sinX * sinY * sinZ;
+                x = sinX * cosY * cosZ + cosX * sinY * sinZ;
+                y = cosX * sinY * cosZ + sinX * cosY * sinZ;
+                z = cosX * cosY * sinZ - sinX * sinY * cosZ;
+                break;
+    
+            case EulerOrder.ZYX:
+                w = cosX * cosY * cosZ + sinX * sinY * sinZ;
+                x = sinX * cosY * cosZ - cosX * sinY * sinZ;
+                y = cosX * sinY * cosZ + sinX * cosY * sinZ;
+                z = cosX * cosY * sinZ - sinX * sinY * cosZ;
+                break;
+    
+            case EulerOrder.XYZ:
+            default:
+                w = cosX * cosY * cosZ - sinX * sinY * sinZ;
+                x = sinX * cosY * cosZ + cosX * sinY * sinZ;
+                y = cosX * sinY * cosZ - sinX * cosY * sinZ;
+                z = cosX * cosY * sinZ + sinX * sinY * cosZ;
+                break;
+        }
+    
+        return new Quaternion(w, x, y, z);
+    }
 
     /**
      * Creates a quaternion representing a rotation around a specified axis by a given angle.
@@ -93,7 +167,7 @@ export class Quaternion extends BaseNode {
      */
     static fromAxisAngle(axis: Vector3, angle: number): Quaternion {
         let normalized = axis;
-        if( axis.length() !== 1) {
+        if (axis.length() !== 1) {
             normalized = axis.normalize();
         }
         let halfAngle = angle / 2;
@@ -108,12 +182,13 @@ export class Quaternion extends BaseNode {
 
     // Factory function to create a SLERP function with pre-computed constants
     static createSlerpFunction(q1: Quaternion, q2: Quaternion, shortestPath: boolean = true) {
-        let cosHalfTheta = q1.d * q2.d + q1.a * q2.a + q1.b * q2.b + q1.c * q2.c;
+
+        let cosHalfTheta = q1.z * q2.z + q1.w * q2.w + q1.x * q2.x + q1.y * q2.y;
         let adjustedQ2 = q2;
 
         // Adjust q2 for the shortest path and recompute cosHalfTheta if needed
         if (cosHalfTheta < 0 && shortestPath) {
-            adjustedQ2 = new Quaternion(-q2.a, -q2.b, -q2.c, -q2.d);
+            adjustedQ2 = new Quaternion(-q2.w, -q2.x, -q2.y, -q2.z);
             cosHalfTheta = -cosHalfTheta;
         }
 
@@ -121,10 +196,10 @@ export class Quaternion extends BaseNode {
             // If the quaternions are essentially the same, return an interpolation of q1
             return (t: number) => {
                 return new Quaternion(
-                    (1 - t) * q1.a + t * q1.a,
-                    (1 - t) * q1.b + t * q1.b,
-                    (1 - t) * q1.c + t * q1.c,
-                    (1 - t) * q1.d + t * q1.d
+                    (1 - t) * q1.w + t * q1.w,
+                    (1 - t) * q1.x + t * q1.x,
+                    (1 - t) * q1.y + t * q1.y,
+                    (1 - t) * q1.z + t * q1.z
                 ).normalize();
             };
         }
@@ -136,28 +211,27 @@ export class Quaternion extends BaseNode {
         return (t: number): Quaternion => {
             if (Math.abs(sinHalfTheta) < 0.001) {
                 return new Quaternion(
-                    (1 - t) * q1.a + t * adjustedQ2.a,
-                    (1 - t) * q1.b + t * adjustedQ2.b,
-                    (1 - t) * q1.c + t * adjustedQ2.c,
-                    (1 - t) * q1.d + t * adjustedQ2.d
-                );
+                    (1 - t) * q1.w + t * adjustedQ2.w,
+                    (1 - t) * q1.x + t * adjustedQ2.x,
+                    (1 - t) * q1.y + t * adjustedQ2.y,
+                    (1 - t) * q1.z + t * adjustedQ2.z
+                ).normalize();
             }
 
             const ratioA = Math.sin((1 - t) * halfTheta) / sinHalfTheta;
             const ratioB = Math.sin(t * halfTheta) / sinHalfTheta;
 
             return new Quaternion(
-                ratioA * q1.a + ratioB * adjustedQ2.a,
-                ratioA * q1.b + ratioB * adjustedQ2.b,
-                ratioA * q1.c + ratioB * adjustedQ2.c,
-                ratioA * q1.d + ratioB * adjustedQ2.d
-            );
+                ratioA * q1.w + ratioB * adjustedQ2.w,
+                ratioA * q1.x + ratioB * adjustedQ2.x,
+                ratioA * q1.y + ratioB * adjustedQ2.y,
+                ratioA * q1.z + ratioB * adjustedQ2.z
+            ).normalize();
         };
     }
 
-
     // Instance method for spherical linear interpolation
-    static slerp(q1: Quaternion, q2: Quaternion, t: number): Quaternion {
+    static slerp(q1: Quaternion, q2: Quaternion, t: number, shortestPath = true): Quaternion {
 
         if (t <= 0) {
             return q1;
@@ -167,11 +241,11 @@ export class Quaternion extends BaseNode {
             return q2;
         }
 
-        let cosHalfTheta = q1.d * q2.d + q1.a * q2.a + q1.b * q2.b + q1.c * q2.c;
+        let cosHalfTheta = q1.z * q2.z + q1.w * q2.w + q1.x * q2.x + q1.y * q2.y;
 
         // Choose the shorter path
-        if (cosHalfTheta < 0) {
-            q2 = new Quaternion(-q2.a, -q2.b, -q2.c, -q2.d);
+        if (cosHalfTheta < 0 && shortestPath) {
+            q2 = new Quaternion(-q2.w, -q2.x, -q2.y, -q2.z);
             cosHalfTheta = -cosHalfTheta;
         }
 
@@ -184,10 +258,10 @@ export class Quaternion extends BaseNode {
 
         if (Math.abs(sinHalfTheta) < 0.001) {
             return new Quaternion(
-                (1 - t) * q1.a + t * q2.a,
-                (1 - t) * q1.b + t * q2.b,
-                (1 - t) * q1.c + t * q2.c,
-                (1 - t) * q1.d + t * q2.d
+                (1 - t) * q1.w + t * q2.w,
+                (1 - t) * q1.x + t * q2.x,
+                (1 - t) * q1.y + t * q2.y,
+                (1 - t) * q1.z + t * q2.z
             ).normalize();
         }
 
@@ -195,10 +269,10 @@ export class Quaternion extends BaseNode {
         const ratioB = Math.sin(t * halfTheta) / sinHalfTheta;
 
         return new Quaternion(
-            ratioA * q1.a + ratioB * q2.a,
-            ratioA * q1.b + ratioB * q2.b,
-            ratioA * q1.c + ratioB * q2.c,
-            ratioA * q1.d + ratioB * q2.d
+            ratioA * q1.w + ratioB * q2.w,
+            ratioA * q1.x + ratioB * q2.x,
+            ratioA * q1.y + ratioB * q2.y,
+            ratioA * q1.z + ratioB * q2.z
         ).normalize();
     }
 
@@ -297,15 +371,15 @@ export class Quaternion extends BaseNode {
     toRotationMatrix(): number[] {
         const matrix = new Array(9);
 
-        const xx = this.b * this.b;
-        const yy = this.c * this.c;
-        const zz = this.d * this.d;
-        const xy = this.b * this.c;
-        const xz = this.b * this.d;
-        const yz = this.c * this.d;
-        const ax = this.a * this.b;
-        const ay = this.a * this.c;
-        const az = this.a * this.d;
+        const xx = this.x * this.x;
+        const yy = this.y * this.y;
+        const zz = this.z * this.z;
+        const xy = this.x * this.y;
+        const xz = this.x * this.z;
+        const yz = this.y * this.z;
+        const ax = this.w * this.x;
+        const ay = this.w * this.y;
+        const az = this.w * this.z;
 
         // Row 1
         matrix[0] = 1 - 2 * (yy + zz);
@@ -325,7 +399,8 @@ export class Quaternion extends BaseNode {
         return matrix;
     }
 
-    static rotationToVector(v:Vector3) : Quaternion {
+    static rotationToVector(v: Vector3): Quaternion {
+
         const normalized = v.normalize();
         const forward = Quaternion.standardForwardDirection();
         const axis = forward.cross(normalized);
@@ -337,18 +412,28 @@ export class Quaternion extends BaseNode {
         }
 
         // Vectors are opposite
-        if( axis.x === 0 && axis.y === 0 && axis.z === 0) {
+        if (axis.x === 0 && axis.y === 0 && axis.z === 0) {
             return new Quaternion(0, 1, 0, 0);
         }
 
         return Quaternion.fromAxisAngle(axis.normalize(), angle);
     }
 
-    set(q: Quaternion  ) {
-        this.a = q.a;
-        this.b = q.b;
-        this.c = q.c;
-        this.d = q.d;
+    transform(v: Vector3) {
+        // Convert the vector to a pure quaternion
+        let vectorQuaternion = new Quaternion(0, v.x, v.y, v.z);
+
+        // Perform the rotation: q * v * q^(-1)
+        let rotatedQuaternion = this.multiply(vectorQuaternion).multiply(this.inverse());
+
+        return new Vector3(rotatedQuaternion.x, rotatedQuaternion.y, rotatedQuaternion.z);
+    }
+
+    set(q: Quaternion) {
+        this.w = q.w;
+        this.x = q.x;
+        this.y = q.y;
+        this.z = q.z;
         this.updateDependents();
     }
 
@@ -364,43 +449,75 @@ export class Quaternion extends BaseNode {
     }
 
     add(q: Quaternion): Quaternion {
-        return new Quaternion(this.a + q.a, this.b + q.b, this.c + q.c, this.d + q.d);
+        return new Quaternion(this.w + q.w, this.x + q.x, this.y + q.y, this.z + q.z);
     }
 
     subtract(q: Quaternion): Quaternion {
-        return new Quaternion(this.a - q.a, this.b - q.b, this.c - q.c, this.d - q.d);
+        return new Quaternion(this.w - q.w, this.x - q.x, this.y - q.y, this.z - q.z);
     }
 
     multiply(q: Quaternion): Quaternion {
         return new Quaternion(
-            this.a * q.a - this.b * q.b - this.c * q.c - this.d * q.d,
-            this.a * q.b + this.b * q.a + this.c * q.d - this.d * q.c,
-            this.a * q.c - this.b * q.d + this.c * q.a + this.d * q.b,
-            this.a * q.d + this.b * q.c - this.c * q.b + this.d * q.a
+            this.w * q.w - this.x * q.x - this.y * q.y - this.z * q.z,
+            this.w * q.x + this.x * q.w + this.y * q.z - this.z * q.y,
+            this.w * q.y - this.x * q.z + this.y * q.w + this.z * q.x,
+            this.w * q.z + this.x * q.y - this.y * q.x + this.z * q.w
         );
     }
 
+    /**
+     * Raises this quaternion to the power of the given exponent.
+     * 
+     * @param exponent The exponent to raise the quaternion to.
+     * @returns A new quaternion representing the result of the exponentiation.
+     */
+    pow(exponent: number): Quaternion {
+        // Compute the norm (magnitude) of the quaternion
+        const norm = this.norm();
+        const normPow = Math.pow(norm, exponent);
+
+        // Compute the angle theta
+        const theta = Math.acos(this.w / norm);
+
+        // Compute the new scalar part
+        const newA = normPow * Math.cos(exponent * theta);
+
+        // If the vector part is zero, return a scalar quaternion
+        const vectorMagnitude = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+        if (vectorMagnitude === 0) {
+            return new Quaternion(newA, 0, 0, 0);
+        }
+
+        // Compute the new vector part
+        const factor = normPow * Math.sin(exponent * theta) / vectorMagnitude;
+        const newB = this.x * factor;
+        const newC = this.y * factor;
+        const newD = this.z * factor;
+
+        return new Quaternion(newA, newB, newC, newD);
+    }
+
     norm(): number {
-        return Math.sqrt(this.a * this.a + this.b * this.b + this.c * this.c + this.d * this.d);
+        return Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
     }
 
     conjugate(): Quaternion {
-        return new Quaternion(this.a, -this.b, -this.c, -this.d);
+        return new Quaternion(this.w, -this.x, -this.y, -this.z);
     }
 
-    negate() : Quaternion {
-        return new Quaternion(-this.a, -this.b, -this.c, -this.d);
+    negate(): Quaternion {
+        return new Quaternion(-this.w, -this.x, -this.y, -this.z);
     }
 
     inverse(): Quaternion {
-        let normSquared = this.a * this.a + this.b * this.b + this.c * this.c + this.d * this.d;
-        return new Quaternion(this.a / normSquared, -this.b / normSquared, -this.c / normSquared, -this.d / normSquared);
+        let normSquared = this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z;
+        return new Quaternion(this.w / normSquared, -this.x / normSquared, -this.y / normSquared, -this.z / normSquared);
     }
 
     rotatePoint(point: Vector3): Vector3 {
         let pointQuaternion = new Quaternion(0, point.x, point.y, point.z);
         let rotatedQuaternion = this.multiply(pointQuaternion).multiply(this.inverse());
-        return new Vector3(rotatedQuaternion.b, rotatedQuaternion.c, rotatedQuaternion.d);
+        return new Vector3(rotatedQuaternion.x, rotatedQuaternion.y, rotatedQuaternion.z);
     }
 
     normalize(): Quaternion {
@@ -408,14 +525,14 @@ export class Quaternion extends BaseNode {
         if (norm === 0) {
             throw new Error("Cannot normalize a quaternion with a norm of 0.");
         }
-        return new Quaternion(this.a / norm, this.b / norm, this.c / norm, this.d / norm);
+        return new Quaternion(this.w / norm, this.x / norm, this.y / norm, this.z / norm);
     }
 
     /**
      * Returns a copy of this quaternion
      */
     copy(): Quaternion {
-        return new Quaternion(this.a, this.b, this.c, this.d)
+        return new Quaternion(this.w, this.x, this.y, this.z)
     }
 
     /**
@@ -426,34 +543,34 @@ export class Quaternion extends BaseNode {
 
         const format = (value: number, isFirst: boolean = false) => {
             if (Math.abs(value) < epsilon) {
-                return isFirst ? (0).toFixed(numDigits) : '+' + (0).toFixed(numDigits) ;
+                return isFirst ? (0).toFixed(numDigits) : '+' + (0).toFixed(numDigits);
             }
             return (value >= 0 ? (isFirst ? '' : '+') : '') + value.toFixed(numDigits);
         };
 
-        return `${format(this.a, true)} ${format(this.b)}i ${format(this.c)}j ${format(this.d)}k`;
+        return `${format(this.w, true)} ${format(this.x)}i ${format(this.y)}j ${format(this.z)}k`;
     }
 
     toString(): string {
-        return `${this.a} + ${this.b}i + ${this.c}j + ${this.d}k`;
+        return `${this.w} + ${this.x}i + ${this.y}j + ${this.z}k`;
     }
 
     toVector3(): Vector3 {
-        return new Vector3(this.b, this.c, this.d);
+        return new Vector3(this.x, this.y, this.z);
     }
 
     /**
      * Ret
      */
-    toConstructor(format: (number) => string = (n) => { return Number(n).toString() }): string {
-        return `new Quaternion(${format(this.a)}, ${format(this.b)}, ${format(this.c)}, ${format(this.d)})`
+    toConstructor(format: (number) => string = (n) => { return Number(n).toFixed(2) }): string {
+        return `new Quaternion(${format(this.w)}, ${format(this.x)}, ${format(this.y)}, ${format(this.z)})`
     }
 
     /**
      * Returns true if this Quaternion is equal to the other quaternion.
      */
     equals(other: Quaternion): boolean {
-        return this.a === other.a && this.b === other.b && this.c === other.c && this.d === other.d;
+        return this.w === other.w && this.x === other.x && this.y === other.y && this.z === other.z;
     }
 
     /**
@@ -474,23 +591,43 @@ export class Quaternion extends BaseNode {
 
                 return (alpha: number) => {
                     if (!hasStarted) {
-                        a = this.a;
-                        b = this.b;
-                        c = this.c;
-                        d = this.d;
+                        a = this.w;
+                        b = this.x;
+                        c = this.y;
+                        d = this.z;
                         hasStarted = true;
                     }
-                    this.a = a + (endPoint.a - a) * alpha;
-                    this.b = b + (endPoint.b - b) * alpha;
-                    this.c = c + (endPoint.c - c) * alpha;
-                    this.d = d + (endPoint.d - d) * alpha;
+                    this.w = a + (endPoint.a - a) * alpha;
+                    this.x = b + (endPoint.b - b) * alpha;
+                    this.y = c + (endPoint.c - c) * alpha;
+                    this.z = d + (endPoint.d - d) * alpha;
                     this.updateDependents();
+                };
+            },
+            rotate: (axis: Vector3, angle: number) => {
+
+                let hasStarted = false;
+                let q : Quaternion;
+                
+                return (alpha: number) => {
+                    if (!hasStarted) {
+                        q = this.copy();
+                        hasStarted = true;
+                    }
+            
+                    const currentRotation = alpha*angle % (2 * Math.PI);                    
+            
+                    // Generate quaternion for the current rotation step
+                    const rotationStep = Quaternion.fromAxisAngle(axis, currentRotation);
+            
+                    // Set the current quaternion to this rotation
+                    this.set(rotationStep.multiply(q));
                 };
             },
             /**
              * Rotates the current quaternion by the rotation represented by r.
              */
-            rotate: (r: Quaternion, shortestPath: boolean = true) => {
+            rotateBy: (r: Quaternion, shortestPath: boolean = true) => {
                 let hasStarted = false;
                 let q: Quaternion;
                 let u: Quaternion;
@@ -525,6 +662,35 @@ export class Quaternion extends BaseNode {
                     this.set(slerp(alpha));
                 };
             },
+            deCasteljau: (quaternions: Quaternion[], shortestPath: boolean = true) => {
+                let hasStarted = false;
+                let initialQuaternions: Quaternion[];
+            
+                return (alpha: number) => {
+                    if (!hasStarted) {
+                        // Copy the initial set of quaternions
+                        initialQuaternions = quaternions.map(q => q.copy());
+                        hasStarted = true;
+                    }
+            
+                    // Recursive helper function to perform De Casteljau's algorithm
+                    const deCasteljauRecursive = (quats: Quaternion[], t: number): Quaternion => {
+                        if (quats.length === 1) {
+                            return quats[0];
+                        }
+            
+                        const nextQuats: Quaternion[] = [];
+                        for (let i = 0; i < quats.length - 1; i++) {
+                            nextQuats.push(Quaternion.slerp(quats[i], quats[i + 1], t, shortestPath));
+                        }
+            
+                        return deCasteljauRecursive(nextQuats, t);
+                    };
+            
+                    // Perform the De Casteljau interpolation with the initial quaternions
+                    this.set(deCasteljauRecursive(initialQuaternions, alpha));
+                };
+            }
         };
     }
 }

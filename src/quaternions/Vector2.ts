@@ -45,4 +45,14 @@ export class Vector2 {
         let length = this.length();
         return new Vector2(this.x / length, this.y / length);
     }
+
+    /**
+     * Computes the dot product of this vector and another vector.
+     * 
+     * @param v The other vector
+     * @returns The dot product of the two vectors.
+     */
+        dot(v: Vector2): number {
+            return this.x * v.x + this.y * v.y;
+        }
 }

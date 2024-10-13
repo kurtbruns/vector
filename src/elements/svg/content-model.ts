@@ -28,20 +28,20 @@ export { BaseElement };
 */
 export interface Descriptive extends BaseElement {
 
-  /**
-  * Creates and appends a description element within this element.
-  */
-  description() : Description;
+    /**
+    * Creates and appends a description element within this element.
+    */
+    description(): Description;
 
-  /**
-  * Creates and appends a metadata element within this element.
-  */
-  metadata() : MetaData;
+    /**
+    * Creates and appends a metadata element within this element.
+    */
+    metadata(): MetaData;
 
-  /**
-  * Creates and appends a title element within this element.
-  */
-  title() : Title;
+    /**
+    * Creates and appends a title element within this element.
+    */
+    title(): Title;
 }
 
 /**
@@ -49,35 +49,35 @@ export interface Descriptive extends BaseElement {
 */
 export interface Shape extends BaseElement {
 
-  /**
-  * Constructs and appends a circle within this element.
-  */
-  circle(cx:number, cy:number, r:number) : Circle;
+    /**
+    * Constructs and appends a circle within this element.
+    */
+    circle(cx: number, cy: number, r: number): Circle;
 
-  /**
-  * Constructs and appends an ellipse within this element.
-  */
-  ellipse(cx:number, cy:number, rx:number, ry:number) : Ellipse;
+    /**
+    * Constructs and appends an ellipse within this element.
+    */
+    ellipse(cx: number, cy: number, rx: number, ry: number): Ellipse;
 
-  /**
-  * Constructs and appends a line within this element.
-  */
-  line(x1:number, y1:number, x2:number, y2:number) : Line;
+    /**
+    * Constructs and appends a line within this element.
+    */
+    line(x1: number, y1: number, x2: number, y2: number): Line;
 
-  /**
-  * Constructs and appends a path within this element.
-  */
-  path(d:string) : Path;
+    /**
+    * Constructs and appends a path within this element.
+    */
+    path(d: string): Path;
 
-  /**
-  * constructs and appends a polygon within this element
-  */
-  polygon(points:string) : Polygon;
+    /**
+    * constructs and appends a polygon within this element
+    */
+    polygon(points: string): Polygon;
 
-  /**
-  * Constructs and appends a rectangle within this element
-  */
-  rectangle(x:number, y:number, width:number, height:number) : Rectangle;
+    /**
+    * Constructs and appends a rectangle within this element
+    */
+    rectangle(x: number, y: number, width: number, height: number): Rectangle;
 }
 
 /**
@@ -85,41 +85,41 @@ export interface Shape extends BaseElement {
 */
 export interface Structural extends BaseElement {
 
-  /**
-  * Creates and appends a defs element within this element.
-  */
-  defs() : Definitions;
+    /**
+    * Creates and appends a defs element within this element.
+    */
+    defs(): Definitions;
 
-  /**
-  * Creates and appends a group element within this element.
-  */
-  group() : Group;
+    /**
+    * Creates and appends a group element within this element.
+    */
+    group(): Group;
 
-  /**
-  * Creates and appends a symbol element within this element.
-  */
-  symbol() : Symbol;
+    /**
+    * Creates and appends a symbol element within this element.
+    */
+    symbol(): Symbol;
 
-  /**
-  * Creates and appends a svg element within this element.
-  */
-  svg(x:number, y:number, width:number, height:number) : SVG ;
+    /**
+    * Creates and appends a svg element within this element.
+    */
+    svg(x: number, y: number, width: number, height: number): SVG;
 
-  /**
-  * Creates and appends a use element within this element.
-  */
-  use(x:number, y:number, width:number, height:number) : Use;
+    /**
+    * Creates and appends a use element within this element.
+    */
+    use(x: number, y: number, width: number, height: number): Use;
 
 }
 
 /**
 * Describes methods for creating textual elements.
 */
-export interface Typography extends BaseElement{
+export interface Typography extends BaseElement {
 
-  /**
-  * Creates and appends a text element within this element.
-  */
-  text( x:number, y:number, str:string ) : Text;
+    /**
+    * Creates and appends a text element within this element.
+    */
+    text(x: number, y: number, str: string): Text;
 
 }
