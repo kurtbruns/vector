@@ -21,6 +21,8 @@ export interface CoordinateSystem3DConfig {
     cameraTrackBallInvert?: boolean;
     cameraTrackBallRadius?: number;
 
+    registerEventListeners?: boolean;
+
     groundGrid?: boolean;
     drawCube?: boolean;
     drawAxes?: boolean;
@@ -68,9 +70,11 @@ export class CoordinateSystem3D {
 
             // cameraOrientation: new Quaternion(-1, 0, 0, 0).multiply(Quaternion.fromAxisAngle(new Vector3(0, 0, 1), Math.PI)),
             cameraOrientation: new Quaternion(1, 0, 0, 0),
-            cameraPosition: new Vector3(0, 0, -20),
+            cameraPosition: new Vector3(0, 0, 20),
             cameraFieldOfView: 60,
             cameraTrackBallRadius: 2,
+
+            registerEventListeners: true,
 
             // // 16x9
             // gridWidth: 0.096,
@@ -144,9 +148,12 @@ export class CoordinateSystem3D {
         let nearPlane = 0.1;
         let farPlane = 1000;
 
+        config.cameraPosition.z = -config.cameraPosition.z;
         this.camera = new Camera(config.cameraPosition, config.cameraOrientation, fov, aspectRatio, nearPlane, farPlane);
 
-        this.registerEventListeners(config.cameraTrackBallRadius, config.cameraTrackBallInvert);
+        if(config.registerEventListeners) {
+            this.registerEventListeners(config.cameraTrackBallRadius, config.cameraTrackBallInvert);
+        }
 
         if (config.groundGrid) {
             this.drawGroundGrid(config.size);
