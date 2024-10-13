@@ -107,6 +107,10 @@ export {
   Player
 } from './Player';
 
+export { 
+  ScenePlayer,
+} from './ScenePlayer';
+
 export {
   Vector2,
   Vector3,
