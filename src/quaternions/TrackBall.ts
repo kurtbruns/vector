@@ -5,7 +5,6 @@ export class TrackBall extends Scene3D {
         super({
             gridWidth:0.032,
             gridHeight: 0.032,
-            distance: 15,
             size: 2,
             tickMarks: false,
             groundGrid: false,

@@ -1,4 +1,5 @@
 import { CoordinateSystem, CoordinateSystemConfig } from "./CoordinateSystem";
+import { Scene3D } from "./quaternions";
 import { Scene, SceneMode } from "./Scene";
 import { ExportTarget, bundle, download, saveAs } from "./util";
 
@@ -95,25 +96,41 @@ export class Player {
 
         this.downloadCallback = Player._defaultDownloadCallback;
 
-        this.scene.setOnDone(() => {
-            // playButton.innerHTML = 'reset';
-        })
+        let active = false;
+
+        this.scene.onDone = () => {
+            active = false;
+        };
 
         playButton.onclick = () => {
-            // TODO: move functionality to scene class?
-            if (this.scene.reset) {
-                this.scene.reset();
+
+            if (active) {
+                console.log("Animation already in progress. (Player)");
+            } else {
+                active = true;
+
+                // Prevent button from becoming focused so enter doesn't fire another play
+                playButton.blur();
+
+                // TODO: move functionality to scene class?
+                if (this.scene.reset) {
+                    this.scene.reset();
+                }
+
+                this.scene.setMode(SceneMode.Live);
+
+                // TODO: not redundant animation already in progress
+                this.scene.start();
+
+                // TODO: change to pause button
+                // TODO: disable double start when pressed twice
+                // TODO: on finish change button to reset
             }
-            this.scene.setMode(SceneMode.Live);
-            this.scene.start();
-            // TODO: change to pause button
-            // TODO: disable double start when pressed twice
-            // TODO: on finish change button to reset
         }
 
         captureButton.onclick = () => {
             let suffix = '';
-            switch(Player.downloadTarget) {
+            switch (Player.downloadTarget) {
                 case ExportTarget.BROWSER:
                     suffix = '.browser.svg'
                     break;
@@ -127,8 +144,8 @@ export class Player {
         }
 
         downloadButton.onclick = () => {
-            if (this.scene.reset) {
-                this.scene.reset();
+            if (this.scene.onStart) {
+                this.scene.onStart();
             }
             this.downloadCallback(this.scene);
         }

@@ -85,12 +85,17 @@ export class Scene {
     /**
      * Function to be called when the scene is done
      */
-    private onDoneCallback?: () => void;
+    private _onDoneCallback?: () => void;
 
     /**
      * Function to call to reset the scene
      */
     private _reset: () => void;
+
+    /**
+     * Function to call to reset the scene
+     */
+    private _onStart: () => void;
 
     /**
      * True if there currently is an animation sequence playing.
@@ -105,7 +110,7 @@ export class Scene {
     /**
      * Rectangle for background.
      */
-    public backgroundRectangle : Rectangle;
+    public backgroundRectangle: Rectangle;
 
     /**
      * Constructs a new scene instance.
@@ -151,7 +156,7 @@ export class Scene {
             this.frame.root.prepend(this.backgroundRectangle.root);
         }
 
-        this.onDoneCallback = () => {
+        this._onDoneCallback = () => {
 
         };
 
@@ -167,7 +172,7 @@ export class Scene {
     /**
      * Returns the frames per second
      */
-    get fps() : number {
+    get fps(): number {
         return this._fps;
     }
 
@@ -185,11 +190,32 @@ export class Scene {
         return this._reset;
     }
 
+    get onStart() : () => void {
+        return this._onStart;
+    }
+
+    set onStart(lambda: () => void) {
+        this._onStart = lambda;
+    }
+
+    animationCount(): number {
+        return this.animations.length;
+    }
+
+    /**
+     * Clears the animations in the scene
+     */
+    clear(): void {
+        this.animations = [];
+        this.currentAnimation = 0;
+        this.currentAnimationFrame = 0;
+    }
+
     /**
      * Sets the onDone callback function.
      */
-    setOnDone(callback: () => void): void {
-        this.onDoneCallback = callback;
+    set onDone(callback: () => void) {
+        this._onDoneCallback = callback;
     }
 
     /**
@@ -199,13 +225,11 @@ export class Scene {
      * and then execute the provided frameCallback.
      * 
      * @param {FrameRequestCallback} callback - The callback to be executed upon receiving a new animation frame.
-     * @param {() => void} [frameCallback] - Optional callback to be executed for manual frame updates in Export mode.
      */
-    private requestFrame(callback: FrameRequestCallback, frameCallback: (isWait:boolean) => void, isWait:boolean) {
+    private requestFrame(callback: FrameRequestCallback) {
         if (this.mode === SceneMode.Live) {
             requestAnimationFrame(callback);
         } else {
-            frameCallback(isWait);
             callback(this.currentAnimationFrame + 1000 / this._fps);
         }
     }
@@ -236,23 +260,26 @@ export class Scene {
 
         this.currentAnimationFrame += elapsed;
 
-        if (this.currentAnimationFrame <= animation.duration) {
-            const alpha = rateFunc(this.currentAnimationFrame / animation.duration);
-            animation.animation(alpha);
-            this.requestFrame(ts => this.runAnimation(ts, timestamp, frameCallback, doneCallback), frameCallback, isWait)
+        const epsilon = 0.000001;
+        if (this.currentAnimationFrame <= animation.duration - epsilon) {
+            animation.animation(rateFunc(this.currentAnimationFrame / animation.duration));
+            frameCallback?.(isWait);
         } else {
             animation.animation(1);
+            frameCallback?.(isWait);
+
             this.currentAnimationFrame = 0;
             this.currentAnimation++;
-
-            if (this.currentAnimation < this.animations.length) {
-                this.requestFrame(ts => this.runAnimation(ts, timestamp, frameCallback, doneCallback), frameCallback, isWait)
-            } else {
-                if (doneCallback) {
+            if (this.currentAnimation === this.animations.length) {
+                if(doneCallback) {
                     doneCallback();
                 }
+                return;
             }
         }
+
+        this.requestFrame(ts => this.runAnimation(ts, timestamp, frameCallback, doneCallback))
+
     }
 
     /**
@@ -284,11 +311,17 @@ export class Scene {
         } else if (this.active) {
             console.log("Animation already in progress.");
         } else {
-            // this.runAnimation(0); d
+
+            if (this.onStart) {
+                this.onStart();
+            }
+
+            let frameCallback = () => {};
+
             this.active = true;
             this.currentAnimation = 0;
-            this.runAnimation(0, undefined, undefined, () => {
-                this.onDoneCallback();
+            this.runAnimation(0, undefined, frameCallback, () => {
+                this._onDoneCallback();
                 this.active = false;
             });
         }

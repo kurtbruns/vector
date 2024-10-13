@@ -112,6 +112,10 @@ export class Tex extends Group {
         }
     }
 
+    setBackgroundOpacity(x:number) {
+        this.background.setAttribute('opacity', x.toFixed(2));
+    }
+
     replace(s:string, backgroundColor = this._backgroundColor) : Tex {
 
         let output = MathJax.tex2svg(s, {});

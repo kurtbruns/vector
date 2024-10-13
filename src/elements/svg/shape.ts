@@ -24,24 +24,27 @@ export abstract class Shape extends BaseElement {
         super(root);
     }
 
-    get animate() : any {
-        const context : Shape = this;
+    setOpacity(opacity:number) {
+        this.setAttribute('opacity', opacity.toString()) 
+    }
+
+    get animate() {
 
         return {
-            setOpacity: function (value:number) {
+            setOpacity: (value:number) => {
                 let hasStarted = false;
                 let startValue;
     
-                return (alpha) => {
+                return (alpha : number) => {
                     if (!hasStarted) {
-                        startValue = parseFloat(context.getAttribute('opacity'));
+                        startValue = parseFloat(this.getAttribute('opacity'));
                         if(isNaN(startValue)) {
                             startValue = 1;
                         }
                         hasStarted = true;
                     }
                     const opacity = startValue + (value - startValue)*alpha;
-                    context.setAttribute('opacity', opacity.toString()) 
+                    this.setAttribute('opacity', opacity.toString()) 
                 };
             },
         };

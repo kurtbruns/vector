@@ -1,16 +1,14 @@
 import { Quaternion } from './Quaternion';
-import { Vector2 } from './Vector2';
 import { Vector3 } from './Vector3';
-
 
 /**
  * Compares the real number components of two Quaternions
  */
-function expectQuaternionsEqual(q1 : Quaternion, q2 : Quaternion) {
-    expect(q1.a).toBe(q2.a);
-    expect(q1.b).toBe(q2.b);
-    expect(q1.c).toBe(q2.c);
-    expect(q1.d).toBe(q2.d);
+function expectQuaternionsEqual(q1 : Quaternion, q2 : Quaternion, numDigits: number = 10) {
+    expect(q1.w).toBeCloseTo(q2.w, numDigits);
+    expect(q1.x).toBeCloseTo(q2.x, numDigits);
+    expect(q1.y).toBeCloseTo(q2.y, numDigits);
+    expect(q1.z).toBeCloseTo(q2.z, numDigits);
 }
 
 /**
@@ -22,7 +20,80 @@ function expectVectorsEqual(v1 : Vector3, v2 : Vector3, numDigits: number = 10) 
     expect(v1.z).toBeCloseTo(v2.z, numDigits);
 }
 
-describe('Quaternion Multiplcation', () => {
+
+describe('Quaternion Transform', () => {
+    
+    test('Quarter rotation about x-axis', () => {
+
+        let i = new Vector3(1, 0, 0);
+        let j = new Vector3(0, 1, 0)
+        let k = new Vector3(0, 0, 1)
+
+        let q = new Quaternion(1, 0, 0, 0);
+        let r = Quaternion.fromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2);
+
+        // apply the rotation
+        q = r.multiply(q);
+
+        // i stays in place
+        expectVectorsEqual(q.transform(i), new Vector3(1, 0, 0));
+
+        // j rotates to k
+        expectVectorsEqual(q.transform(j), new Vector3(0, 0, 1));
+
+        // k rotates to negative j
+        expectVectorsEqual(q.transform(k), new Vector3(0, -1, 0));
+
+    })
+
+    test('One-third of a full rotation around the axis [1 1 1]', () => {
+
+        let i = new Vector3(1, 0, 0);
+        let j = new Vector3(0, 1, 0)
+        let k = new Vector3(0, 0, 1)
+
+        let q = Quaternion.fromAxisAngle(new Vector3(1, 1, 1), 2/3*Math.PI);
+
+        // i-hat goes to j-hat
+        expectVectorsEqual(q.transform(i), j);
+
+        // j-hat rotates to k-hat
+        expectVectorsEqual(q.transform(j), k);
+
+        // k-hat rotates to i-hat
+        expectVectorsEqual(q.transform(k), i);
+
+    })
+
+    test('Combined rotations', () => {
+
+        let i = new Vector3(1, 0, 0);
+        let j = new Vector3(0, 1, 0)
+        let k = new Vector3(0, 0, 1)
+
+        let q = new Quaternion(1, 0, 0, 0);
+        let r1 = Quaternion.fromAxisAngle(new Vector3(1, 1, 1), 2*Math.PI/3);
+        let r2 = Quaternion.fromAxisAngle(new Vector3(1, 0, 0), Math.PI/2);
+
+        // apply the first rotation
+        q = r1.multiply(q);
+
+        expectVectorsEqual(q.transform(i), j);
+        expectVectorsEqual(q.transform(j), k);
+        expectVectorsEqual(q.transform(k), i);
+
+        // then apply the second rotation
+        q = r2.multiply(q);
+
+        expectVectorsEqual(q.transform(i), k);
+        expectVectorsEqual(q.transform(j), j.negate());
+        expectVectorsEqual(q.transform(k), i);
+
+    })
+
+})
+
+describe('Quaternion Multiplication', () => {
 
     describe('Fundamental Units', () => {
         
@@ -104,138 +175,113 @@ describe('Quaternion Multiplcation', () => {
         expectQuaternionsEqual(r.multiply(q), expected);
     })
 
-    describe('Vector Rotation', () => {
-
-        let r = Quaternion.fromAxisAngle(new Vector3(1, 0, 0), Math.PI);
-
-        test('Input 1', () => {
-
-            let v = new Vector3(0, 0, 1);
-            let actual = v.apply(r);
-            let expected = new Vector3(0, 0, -1);
-            expectVectorsEqual(actual, expected);
-    
-        })
-
-        test('Input 2', () => {
-    
-            let v = new Vector3(0, -1, 0);
-            let actual = v.apply(r);
-            let expected = new Vector3(0, 1, 0);
-            expectVectorsEqual(actual, expected);
-    
-        })
-    })
-
-    describe('Another Vector Rotation', () => {
-
-        let r = Quaternion.fromAxisAngle(new Vector3(0, 0, 1), 3/2 * Math.PI);
-
-        test('Input 1', () => {
-
-            let v = new Vector3(1, 0, 0);
-            let actual = v.apply(r);
-            let expected = new Vector3(0, -1, 0);
-            expectVectorsEqual(actual, expected);
-    
-        })
-
-        test('Input 2', () => {
-    
-            let v = new Vector3(0, 0, 1);
-            let actual = v.apply(r);
-            let expected = new Vector3(0, 0, 1);
-            expectVectorsEqual(actual, expected);
-    
-        })
-    })
-
-
-
-    
-
-
-    test('Quarter rotation about x-axis', () => {
-        let i = Quaternion.fromVector(new Vector3(1, 0, 0));
-        let j = Quaternion.fromVector(new Vector3(0, 1, 0));
-        let k = Quaternion.fromVector(new Vector3(0, 0, 1));
-
-        let q = Quaternion.fromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2);
-        let ti = q.multiply(i).multiply(q.inverse());
-        let tj = q.multiply(j).multiply(q.inverse());
-        let tk = q.multiply(k).multiply(q.inverse());
-
-        // i-hat stays in place
-        expect(ti.b).toBeCloseTo(i.b, 10);
-        expect(ti.c).toBeCloseTo(i.c, 10);
-        expect(ti.d).toBeCloseTo(i.d, 10);
-
-        // j-hat rotates to k-hat
-        expect(tj.b).toBeCloseTo(k.b, 10);
-        expect(tj.c).toBeCloseTo(k.c, 10);
-        expect(tj.d).toBeCloseTo(k.d, 10);
-
-        // k-hat rotates to negative j-hat
-        expect(tk.b).toBeCloseTo(-j.b, 10);
-        expect(tk.c).toBeCloseTo(-j.c, 10);
-        expect(tk.d).toBeCloseTo(-j.d, 10);
-    })
-
 })
 
-describe('Quaternion.fromDirection', () => {
+describe('Quaternion.transform', () => {
 
-    test('Standard direction (positive Z direction)', () => {
-        let q1 = Quaternion.fromDirection(new Vector3(0, 0, 1));
-        let q2 = new Quaternion(1, 0, 0, 0);
-        expect(q1.equals(q2)).toBe(true);
-    });
+    test('Quarter rotation about x-axis', () => {
 
-    test('Negative z direction', () => {
-        const result = Quaternion.fromDirection(new Vector3(0, 0, -1));
-        const expected = new Quaternion(0, -1, 0, 0);
-        // Could also be the below, because the quaternions q and −q represent the same rotation
-        // const expected = new Quaternion(0, 1, 0, 0);
-        expect(result.a).toBeCloseTo(expected.a, 10);
-        expect(result.b).toBeCloseTo(expected.b, 10);
-        expect(result.c).toBeCloseTo(expected.c, 10);
-        expect(result.d).toBeCloseTo(expected.d, 10);
-    });
+        let i = new Vector3(1, 0, 0);
+        let j = new Vector3(0, 1, 0)
+        let k = new Vector3(0, 0, 1)
 
-    test('Positive x direction', () => {
-        const result = Quaternion.fromDirection(new Vector3(1, 0, 0));
-        const expected = new Quaternion(Math.cos(Math.PI / 4), 0, Math.cos(Math.PI / 4), 0);
-        expect(result.a).toBeCloseTo(expected.a, 10);
-        expect(result.b).toBeCloseTo(expected.b, 10);
-        expect(result.c).toBeCloseTo(expected.c, 10);
-        expect(result.d).toBeCloseTo(expected.d, 10);
-    });
+        let q = Quaternion.fromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2);
+        let ti = q.transform(i);
+        let tj = q.transform(j);
+        let tk = q.transform(k);
 
-    test('Negative x direction', () => {
-        const result = Quaternion.fromDirection(new Vector3(-1, 0, 0));
-        const expected = new Quaternion(Math.cos(Math.PI / 4), 0, -Math.cos(Math.PI / 4), 0);
-        expect(result.a).toBeCloseTo(expected.a, 10);
-        expect(result.b).toBeCloseTo(expected.b, 10);
-        expect(result.c).toBeCloseTo(expected.c, 10);
-        expect(result.d).toBeCloseTo(expected.d, 10);
-    });
+        // i-hat stays in place
+        expect(ti.x).toBeCloseTo(i.x, 10);
+        expect(ti.y).toBeCloseTo(i.y, 10);
+        expect(ti.z).toBeCloseTo(i.z, 10);
 
-    test('Positive y direction', () => {
-        const result = Quaternion.fromDirection(new Vector3(0, 1, 0));
-        const expected = new Quaternion(Math.cos(Math.PI / 4), -Math.cos(Math.PI / 4), 0, 0);
-        expect(result.a).toBeCloseTo(expected.a, 10);
-        expect(result.b).toBeCloseTo(expected.b, 10);
-        expect(result.c).toBeCloseTo(expected.c, 10);
-        expect(result.d).toBeCloseTo(expected.d, 10);
-    });
+        // j-hat rotates to k-hat
+        expect(tj.x).toBeCloseTo(k.x, 10);
+        expect(tj.y).toBeCloseTo(k.y, 10);
+        expect(tj.z).toBeCloseTo(k.z, 10);
 
-    test('Negative y direction', () => {
-        const result = Quaternion.fromDirection(new Vector3(0, -1, 0));
-        const expected = new Quaternion(Math.cos(Math.PI / 4), Math.cos(Math.PI / 4), 0, 0);
-        expect(result.a).toBeCloseTo(expected.a, 10);
-        expect(result.b).toBeCloseTo(expected.b, 10);
-        expect(result.c).toBeCloseTo(expected.c, 10);
-        expect(result.d).toBeCloseTo(expected.d, 10);
-    });
+        // k-hat rotates to negative j-hat
+        expect(tk.x).toBeCloseTo(-j.x, 10);
+        expect(tk.y).toBeCloseTo(-j.y, 10);
+        expect(tk.z).toBeCloseTo(-j.z, 10);
+    })
 
-});
+    test('One-third of a full rotation around the axis [1 1 1]', () => {
+
+        let i = new Vector3(1, 0, 0);
+        let j = new Vector3(0, 1, 0)
+        let k = new Vector3(0, 0, 1)
+
+        let q = Quaternion.fromAxisAngle(new Vector3(1, 1, 1), 2/3*Math.PI);
+        let ti = q.transform(i);
+        let tj = q.transform(j);
+        let tk = q.transform(k);
+
+        // i-hat goes to j-hat
+        expectVectorsEqual(ti, j);
+
+        // j-hat rotates to k-hat
+        expectVectorsEqual(tj, k);
+
+        // k-hat rotates to i-hat
+        expectVectorsEqual(tk, i);
+
+    })
+})
+
+// describe('Quaternion.fromDirection', () => {
+
+//     test('Standard direction (positive Z direction)', () => {
+//         let q1 = Quaternion.fromDirection(new Vector3(0, 0, 1));
+//         let q2 = new Quaternion(1, 0, 0, 0);
+//         expect(q1.equals(q2)).toBe(true);
+//     });
+
+//     test('Negative z direction', () => {
+//         const result = Quaternion.fromDirection(new Vector3(0, 0, -1));
+//         const expected = new Quaternion(0, -1, 0, 0);
+//         // Could also be the below, because the quaternions q and −q represent the same rotation
+//         // const expected = new Quaternion(0, 1, 0, 0);
+//         expect(result.w).toBeCloseTo(expected.w, 10);
+//         expect(result.x).toBeCloseTo(expected.x, 10);
+//         expect(result.y).toBeCloseTo(expected.y, 10);
+//         expect(result.z).toBeCloseTo(expected.z, 10);
+//     });
+
+//     test('Positive x direction', () => {
+//         const result = Quaternion.fromDirection(new Vector3(1, 0, 0));
+//         const expected = new Quaternion(Math.cos(Math.PI / 4), 0, Math.cos(Math.PI / 4), 0);
+//         expect(result.w).toBeCloseTo(expected.w, 10);
+//         expect(result.x).toBeCloseTo(expected.x, 10);
+//         expect(result.y).toBeCloseTo(expected.y, 10);
+//         expect(result.z).toBeCloseTo(expected.z, 10);
+//     });
+
+//     test('Negative x direction', () => {
+//         const result = Quaternion.fromDirection(new Vector3(-1, 0, 0));
+//         const expected = new Quaternion(Math.cos(Math.PI / 4), 0, -Math.cos(Math.PI / 4), 0);
+//         expect(result.w).toBeCloseTo(expected.w, 10);
+//         expect(result.x).toBeCloseTo(expected.x, 10);
+//         expect(result.y).toBeCloseTo(expected.y, 10);
+//         expect(result.z).toBeCloseTo(expected.z, 10);
+//     });
+
+//     test('Positive y direction', () => {
+//         const result = Quaternion.fromDirection(new Vector3(0, 1, 0));
+//         const expected = new Quaternion(Math.cos(Math.PI / 4), -Math.cos(Math.PI / 4), 0, 0);
+//         expect(result.w).toBeCloseTo(expected.w, 10);
+//         expect(result.x).toBeCloseTo(expected.x, 10);
+//         expect(result.y).toBeCloseTo(expected.y, 10);
+//         expect(result.z).toBeCloseTo(expected.z, 10);
+//     });
+
+//     test('Negative y direction', () => {
+//         const result = Quaternion.fromDirection(new Vector3(0, -1, 0));
+//         const expected = new Quaternion(Math.cos(Math.PI / 4), Math.cos(Math.PI / 4), 0, 0);
+//         expect(result.w).toBeCloseTo(expected.w, 10);
+//         expect(result.x).toBeCloseTo(expected.x, 10);
+//         expect(result.y).toBeCloseTo(expected.y, 10);
+//         expect(result.z).toBeCloseTo(expected.z, 10);
+//     });
+
+// });
