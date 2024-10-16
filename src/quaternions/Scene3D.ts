@@ -126,12 +126,12 @@ export class Scene3D {
 
         // this.viewPort.frame.root.style.overflow = 'visible';
 
-        let id = this.constructor.name + (config.suffix ? config.suffix : '');
-        this.viewPort.frame.setAttribute('id', id);
+        let name = this.constructor.name + (config.suffix ? config.suffix : '');
+        this.viewPort.frame.setAttribute('id', name);
         if (config.player) {
             new Player({
                 scene: this.viewPort,
-                id: id
+                name: name
             });
         }
 

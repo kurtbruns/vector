@@ -2,6 +2,7 @@ import { Definitions, Frame, Group, Player, PlotGridBased, Point, Scene } from "
 import { SceneConfig } from "../../vector/src/Scene";
 
 export interface ScenePlayerConfig extends SceneConfig {
+    name?: string;
     suffix?: string;
     width?: number;
     height?: number;
@@ -40,9 +41,17 @@ export class ScenePlayer extends Scene {
         this.width = config.width;
         this.height = config.height;
 
+        let name;
+        if( config.name ) {
+            name = config.name;
+        } else {
+            name = this.constructor.name;
+        }
+        
+
         this.player = new Player({
             scene: this,
-            id: this.constructor.name + (config.suffix ? config.suffix : '')
+            name: name
         });
 
     }

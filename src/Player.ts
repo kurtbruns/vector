@@ -4,7 +4,7 @@ import { Scene, SceneMode } from "./Scene";
 import { ExportTarget, bundle, download, saveAs } from "./util";
 
 export interface PlayerConfig {
-    id?: string;
+    name?: string;
     root?: HTMLElement;
     scene?: Scene
 }
@@ -12,6 +12,8 @@ export interface PlayerConfig {
 export class Player {
 
     scene: Scene;
+
+    private _name:string;
 
     static downloadTarget: ExportTarget = ExportTarget.FIGMA;
 
@@ -29,12 +31,13 @@ export class Player {
     constructor(config: PlayerConfig = {}) {
 
         let defaultConfig: PlayerConfig = {
-            id: '',
+            name: '',
         };
 
         config = { ...defaultConfig, ...config };
 
         this.scene = config.scene;
+        this.name = config.name;
 
         let container = document.createElement('div');
         container.classList.add('player');
@@ -86,7 +89,7 @@ export class Player {
 
         right.append(captureButton, downloadButton);
 
-        middle.innerHTML = config.id === '' ? this.scene.constructor.name : config.id;
+        middle.innerHTML = config.name === '' ? this.scene.constructor.name : config.name;
 
         this.container = container;
         this.controls = controls;
@@ -140,7 +143,7 @@ export class Player {
                 default:
                     break;
             }
-            download(this.scene.frame.root, this.scene.frame.root.id + suffix, Player.downloadTarget);
+            download(this.scene.frame.root, this.name, Player.downloadTarget);
         }
 
         downloadButton.onclick = () => {
@@ -162,6 +165,14 @@ export class Player {
 
     get downloadCallback(): (scene: Scene) => void {
         return this._downloadCallback;
+    }
+
+    get name() : string {
+        return this._name;
+    }
+    
+    set name(s:string) {
+        this._name = s;
     }
 
 }

@@ -116,7 +116,7 @@ export class PlotContainer extends Scene {
         new Player({
 
             scene: this,
-            id: this.constructor.name + (config.suffix ? config.suffix : '')
+            name: this.constructor.name + (config.suffix ? config.suffix : '')
         });
 
         let xAxis = plot.getHorizontalValues('small');

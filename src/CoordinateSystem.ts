@@ -141,7 +141,7 @@ export class CoordinateSystem extends Scene {
         if (config.player) {
             new Player({
                 scene: this,
-                id: this.constructor.name + (config.suffix ? config.suffix : '')
+                name: this.constructor.name + (config.suffix ? config.suffix : '')
             });
         }
 
