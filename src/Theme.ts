@@ -25,6 +25,9 @@ export class Theme {
     private lightRule: CSSRule;
     private darkRule: CSSRule;
 
+    // Temporary storage for clearing and restoring rules
+    private tempLightRule: CSSRule | null = null;
+    private tempDarkRule: CSSRule | null = null;
 
     /**
      * Private constructor to prevent direct class instantiation
@@ -33,7 +36,54 @@ export class Theme {
     private constructor() {
 
         // Light theme variables
-        let lightVariables: { [key: string]: string } = {
+        let lightVariables: { [key: string]: string } = this.getLightVariables()
+
+        // Dark theme variables
+        let darkVariables: { [key: string]: string } = this.getDarkVariables();
+
+        const uniqueTime = () => {
+            const now = new Date();
+            const highResTime = performance.now();
+            return `${now.getTime()}.${Math.floor(highResTime)}`;
+        };
+
+        this.id = `vector-${this.hash(uniqueTime(), 7)}`;
+
+        let style;
+        if (style = document.querySelector(`#${this.id}`)) {
+            this.style = style;
+        } else {
+            this.style = document.createElement('style');
+            this.style.id = this.id;
+            document.head.appendChild(this.style);
+
+            // Construct dark mode CSS rule
+            let darkRuleString = `${this.getSelector()} { ${Object.entries(darkVariables).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
+
+            // Construct light mode CSS rule separately
+            let lightRuleString = `${this.getSelector()} { ${Object.entries(lightVariables).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
+
+            // Insert the dark rule first, and then the media query for light
+            let darkIndex = this.style.sheet.insertRule(darkRuleString, this.style.sheet.cssRules.length);
+
+            this.darkRule = this.style.sheet.cssRules[darkIndex];
+
+            // Insert light rule inside a media query
+            const lightMediaQuery = `@media (prefers-color-scheme: light) { ${lightRuleString} }`;
+            const lightRuleIndex = this.style.sheet.insertRule(lightMediaQuery, this.style.sheet.cssRules.length);
+
+            // Retrieve the media query rule
+            const mediaRule = this.style.sheet.cssRules[lightRuleIndex];
+
+            // Retrieve the actual CSSStyleRule inside the media query and store it in this.lightRule
+            if (mediaRule instanceof CSSMediaRule) {
+                this.lightRule = mediaRule.cssRules[0]; // Assuming the light rule is the first and only rule in the media query
+            }
+        }
+    }
+
+    private getLightVariables() {
+        return {
             '--background': '#ffffff',
             '--background-darker': '#f8f8f8',
             '--background-lighter': '#f4f4f4',
@@ -65,12 +115,11 @@ export class Theme {
             '--yellow': '#1aa59b',
             '--purple': '#a452ce',
             '--orange': '#ff9f4c',
-
-
         };
+    }
 
-        // Dark theme variables
-        let darkVariables: { [key: string]: string } = {
+    private getDarkVariables() {
+        return {
             // '--background': '#181818',
             '--background': '#000000',
             // '--background': '#101010',
@@ -114,49 +163,8 @@ export class Theme {
 
             '--purple': '#db94ff',
             '--orange': '#ff9f4c',
-
-
         }
 
-        const uniqueTime = () => {
-            const now = new Date();
-            const highResTime = performance.now();
-            return `${now.getTime()}.${Math.floor(highResTime)}`;
-        };
-
-        this.id = `vector-${this.hash(uniqueTime(), 7)}`;
-
-        let style;
-        if (style = document.querySelector(`#${this.id}`)) {
-            this.style = style;
-        } else {
-            this.style = document.createElement('style');
-            this.style.id = this.id;
-            document.head.appendChild(this.style);
-
-            // Construct dark mode CSS rule
-            let darkRuleString = `${this.getSelector()} { ${Object.entries(darkVariables).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
-
-            // Construct light mode CSS rule separately
-            let lightRuleString = `${this.getSelector()} { ${Object.entries(lightVariables).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
-
-            // Insert the dark rule first, and then the media query for light
-            let darkIndex = this.style.sheet.insertRule(darkRuleString, this.style.sheet.cssRules.length);
-
-            this.darkRule = this.style.sheet.cssRules[darkIndex];
-
-            // Insert light rule inside a media query
-            const lightMediaQuery = `@media (prefers-color-scheme: light) { ${lightRuleString} }`;
-            const lightRuleIndex = this.style.sheet.insertRule(lightMediaQuery, this.style.sheet.cssRules.length);
-
-            // Retrieve the media query rule
-            const mediaRule = this.style.sheet.cssRules[lightRuleIndex];
-
-            // Retrieve the actual CSSStyleRule inside the media query and store it in this.lightRule
-            if (mediaRule instanceof CSSMediaRule) {
-                this.lightRule = mediaRule.cssRules[0]; // Assuming the light rule is the first and only rule in the media query
-            }
-        }
     }
 
     /**
@@ -207,13 +215,106 @@ export class Theme {
         return hashStr;
     }
 
-
     /**
       * Applies the current theme to the specified frame by adding CSS variables.
       * @param frame The frame element to apply the theme to.
       */
     applyTheme(frame: Frame) {
         frame.classList.add(this.id);
+    }
+
+    /**
+ * Temporarily removes the light or dark rule and allows forcing the opposite theme.
+ * @param mode The theme mode to force ('light' or 'dark').
+ */
+    public forceMode(mode: 'light' | 'dark') {
+        if (mode === 'light') {
+            this.clearDarkRule();
+            this.applyForcedLightMode();
+        } else {
+            this.clearLightRule();
+            this.applyForcedDarkMode();
+        }
+    }
+
+    /**
+     * Restores the original light or dark rule if it was cleared.
+     */
+    public restoreMode() {
+        if (this.tempLightRule) {
+            this.restoreLightRule();
+        }
+        if (this.tempDarkRule) {
+            this.restoreDarkRule();
+        }
+    }
+
+    private clearLightRule() {
+        if (this.lightRule && this.style.sheet) {
+            // Store the current light rule temporarily
+            this.tempLightRule = this.lightRule;
+
+            // Delete the light rule from the stylesheet
+            for (let i = 0; i < this.style.sheet.cssRules.length; i++) {
+                if (this.style.sheet.cssRules[i] === this.lightRule) {
+                    this.style.sheet.deleteRule(i);
+                    break;
+                }
+            }
+
+            this.lightRule = null;
+        }
+    }
+
+    private clearDarkRule() {
+        if (this.darkRule && this.style.sheet) {
+            // Store the current dark rule temporarily
+            this.tempDarkRule = this.darkRule;
+
+            // Delete the dark rule from the stylesheet
+            for (let i = 0; i < this.style.sheet.cssRules.length; i++) {
+                if (this.style.sheet.cssRules[i] === this.darkRule) {
+                    this.style.sheet.deleteRule(i);
+                    break;
+                }
+            }
+
+            this.darkRule = null;
+        }
+    }
+
+    private restoreLightRule() {
+        if (this.tempLightRule && this.style.sheet) {
+            // Reinsert the temporarily stored light rule
+            const lightRuleString = this.tempLightRule.cssText;
+            this.style.sheet.insertRule(lightRuleString, this.style.sheet.cssRules.length);
+
+            // Restore the light rule and clear the temporary storage
+            this.lightRule = this.tempLightRule;
+            this.tempLightRule = null;
+        }
+    }
+
+    private restoreDarkRule() {
+        if (this.tempDarkRule && this.style.sheet) {
+            // Reinsert the temporarily stored dark rule
+            const darkRuleString = this.tempDarkRule.cssText;
+            this.style.sheet.insertRule(darkRuleString, this.style.sheet.cssRules.length);
+
+            // Restore the dark rule and clear the temporary storage
+            this.darkRule = this.tempDarkRule;
+            this.tempDarkRule = null;
+        }
+    }
+
+    private applyForcedLightMode() {
+        const lightRuleString = `${this.getSelector()} { ${Object.entries(this.getLightVariables()).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
+        this.style.sheet.insertRule(lightRuleString, this.style.sheet.cssRules.length);
+    }
+
+    private applyForcedDarkMode() {
+        const darkRuleString = `${this.getSelector()} { ${Object.entries(this.getDarkVariables()).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
+        this.style.sheet.insertRule(darkRuleString, this.style.sheet.cssRules.length);
     }
 
     /**

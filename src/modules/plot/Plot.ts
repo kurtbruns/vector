@@ -751,7 +751,7 @@ export class Plot {
         if (isFinite(output)) {
             return output;
         } else {
-            return 0;
+            return NaN;
         }
     }
 
@@ -1155,8 +1155,9 @@ export class Plot {
             };
 
             let d: string = '';
+            let hasStarted = false;
             let t = this.SVGToRelative(output.x, output.y);
-            if (!this.outsideRange(output.y)) {
+            if (isFinite(output.y) && !this.outsideRange(output.y)) {
                 d = `M ${t.x} ${t.y}`
             }
 
@@ -1164,7 +1165,7 @@ export class Plot {
             let maxY = this.getSVGMaxY();
 
             // Loop through each pixel
-            for (let x = x1; x <= x2; x++) {
+            for (let x = x1; x <= x2; x+= 0.5) {
 
                 point.x = x;
                 let p = point.matrixTransform(inverse);
@@ -1173,11 +1174,17 @@ export class Plot {
                     y: this.call(fn, p.x)
                 };
 
+                if(!isFinite(output.y)) {
+                    continue;
+                }
+
                 let constrain = {
-                    c: 'L',
+                    c: hasStarted ? 'L' : 'M',
                     x: output.x,
                     y: output.y
                 };
+
+                hasStarted = true;
 
                 const outsideCurrent = this.outsideRange(output.y);
                 const outsidePrevious = this.outsideRange(previous.y);
@@ -1330,7 +1337,7 @@ export class Plot {
 
     }
 
-    displayPoint(p: Point, color: string = 'var(--font-color)', radius: number = 4.5): Circle {
+    displayPoint(p: Point, color: string = 'var(--font-color)', radius: number = 4): Circle {
 
         let c = this.frame.circle(0, 0, radius);
         c.setAttribute('fill', color);
