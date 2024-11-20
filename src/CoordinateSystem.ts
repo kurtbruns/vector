@@ -894,7 +894,6 @@ export class CoordinateSystem extends Scene {
         return line;
     }
 
-
     findRayIntersectionWithRectangle(
         v: Point,
     ): PointTuple | null {

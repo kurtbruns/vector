@@ -159,11 +159,6 @@ export class Plot {
             width: 600,
             height: 300,
 
-            // viewport dimensions
-            viewportX: -300,
-            viewportY: -150,
-            viewportWidth: 600,
-            viewportHeight: 300,
         }
 
         // choose users config over default
@@ -177,10 +172,10 @@ export class Plot {
         this.frame = new Frame(this.root.root, config);
 
         // convert to internal coordinates
-        let svgX = config.viewportX;
-        let svgY = -config.viewportY - config.viewportHeight;
-        let svgWidth = config.viewportWidth;
-        let svgHeight = config.viewportHeight;
+        let svgX = isFinite(config.viewportX) ? config.viewportX : -config.width / 2;
+        let svgY = isFinite(config.viewportY) ? config.viewportY : -config.height / 2;
+        let svgWidth = isFinite(config.viewportWidth) ? config.viewportWidth : config.width;
+        let svgHeight = isFinite(config.viewportHeight) ? config.viewportHeight : config.height;
 
         let svg = this.frame.appendChild(new SVG());
         svg.classList.add('ignore-on-export')
@@ -281,6 +276,23 @@ export class Plot {
         this.bbox = null;
     }
 
+
+    get minX() : number {
+        return this.getSVGMinX();
+    }
+
+    get maxX() : number {
+        return this.getSVGMaxX();
+    }
+
+    get minY() : number {
+        return -this.getSVGMaxY();
+    }
+
+    get maxY() : number {
+        return -this.getSVGMinY();
+    }
+
     /**
      * 
      * @returns The smallest y-value of the SVG
@@ -334,16 +346,24 @@ export class Plot {
     /**
      * Converts a point in the screen's coordinate system into the SVG's coordinate system
      */
-    screenToViewport(screenX: number, screenY: number): DOMPoint {
+    screenToViewport(screenX: number, screenY: number): DOMPoint;
+    screenToViewport(point: { x: number, y: number }): DOMPoint;
+    screenToViewport(screenXOrPoint: number | { x: number, y: number }, screenY?: number): DOMPoint {
+        // Determine if the first argument is a point object or a number
+        const screenPoint = typeof screenXOrPoint === 'number'
+            ? { x: screenXOrPoint, y: screenY }
+            : screenXOrPoint;
 
-        let svg = this.internalSVG.root;
-        let p = svg.createSVGPoint();
-        p.x = screenX;
-        p.y = screenY;
+        const svg = this.internalSVG.root;
+        const p = svg.createSVGPoint();
+        p.x = screenPoint.x;
+        p.y = screenPoint.y;
 
-        let point = p.matrixTransform(this.getInverse())
-        point.y = - point.y;
-        return point;
+        // Transform the point using the inverse matrix and adjust the y-axis
+        const transformedPoint = p.matrixTransform(this.getInverse());
+        transformedPoint.y = -transformedPoint.y;
+
+        return transformedPoint;
     }
 
     relativeToViewport(relativeX: number, relativeY: number): DOMPoint;
@@ -1166,7 +1186,7 @@ export class Plot {
             let maxY = this.getSVGMaxY();
 
             // Loop through each pixel
-            for (let x = x1; x <= x2; x+= 0.5) {
+            for (let x = x1; x <= x2; x += 0.5) {
 
                 point.x = x;
                 let p = point.matrixTransform(inverse);
@@ -1175,7 +1195,7 @@ export class Plot {
                     y: this.call(fn, p.x)
                 };
 
-                if(!isFinite(output.y)) {
+                if (!isFinite(output.y)) {
                     continue;
                 }
 
@@ -1227,7 +1247,7 @@ export class Plot {
         }
     }
 
-    line(p1: Point, p2: Point, color: string = 'var(--font-color)'): Line {
+    displayLine(p1: Point, p2: Point, color: string = 'var(--font-color)'): Line {
 
         let v = this.foreground.line(0, 0, 0, 0);
         v.setAttribute('stroke-width', '1.5');
@@ -1248,7 +1268,7 @@ export class Plot {
         return v;
     }
 
-    tex(s: string, x: number = 0, y: number = 0, background: boolean = true, backgroundColor = 'var(--background)'): Tex {
+    displayTex(s: string, x: number = 0, y: number = 0, background: boolean = true, backgroundColor = 'var(--background)'): Tex {
         let tex = this.foreground.appendChild(new Tex(s, x, y));
         tex.setAttribute('id', s);
 
@@ -1260,9 +1280,35 @@ export class Plot {
         return tex;
     }
 
+    displayTipLabel(point: Point, tex: string, color?: string, offset: number = 0, r = 24): Tex {
+
+        let t = this.displayTex(tex);
+
+        t.addDependency(point);
+        t.update = () => {
+
+            let x = point.x;
+            let y = point.y;
+
+            // Rest of your original method implementation
+            let angle = Math.atan2(y, x) + offset;
+
+            t.moveTo(this.viewportToFrame(new Point(x, y)))
+                .alignCenter()
+                .shift(r * Math.cos(angle), -r * Math.sin(angle));
+        }
+        t.update();
+
+        if (color) {
+            t.setAttribute('color', color);
+        }
+
+        return t;
+    }
+
     gridBrace(p1: Point, p2: Point, spacing: number = 0) {
 
-        let sizes =  Brace.sizes;
+        let sizes = Brace.sizes;
 
         let group = this.foreground.group();
 
@@ -1304,12 +1350,12 @@ export class Plot {
         return group;
     }
 
-    displayBrace(p1: Point, p2: Point, label: string, options : {
+    displayBrace(p1: Point, p2: Point, label: string, options: {
         reverse?: Boolean,
         space?: number,
         color?: string,
         buff?: number,
-        group?: Group 
+        group?: Group
     } = {}): Tex {
 
         let defaultOptions = {
@@ -1328,7 +1374,7 @@ export class Plot {
             g.appendChild(this.gridBrace(p2, p1, options.space));
         }
 
-        let l = this.tex(label, 0, 0)
+        let l = this.displayTex(label, 0, 0)
             .alignCenter();
 
         g.appendChild(l);
@@ -1340,13 +1386,76 @@ export class Plot {
 
             const a = Math.atan2(p2.y - p1.y, p2.x - p1.x) + TAU / 4 + (options.reverse ? 0 : TAU / 2);
 
-            l.moveTo( this.viewportToFrame(mx,my))
-            .shift(
-                - options.buff * Math.cos(a),
-                options.buff * Math.sin(a)
-            );
+            l.moveTo(this.viewportToFrame(mx, my))
+                .shift(
+                    - options.buff * Math.cos(a),
+                    options.buff * Math.sin(a)
+                );
         };
         l.update();
+
+        return l;
+
+    }
+
+
+    private getEncompassingBoundingClientRectangle(elements: SVGElement[]): DOMRect {
+
+        // Initialize variables to track the min and max x and y coordinates
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        // Iterate over all elements to find their bounding client rectangles
+        elements.forEach(element => {
+            let bbox = element.getBoundingClientRect();
+            minX = Math.min(minX, bbox.left);
+            minY = Math.min(minY, bbox.top);
+            maxX = Math.max(maxX, bbox.right);
+            maxY = Math.max(maxY, bbox.bottom);
+        });
+
+        // Create a new bounding client rectangle that includes all elements
+        return new DOMRect(minX, minY, maxX - minX, maxY - minY);
+
+    }
+
+    displayBraceLabel(texParts: SVGElement[], label: string, options: {
+        above?: boolean,
+        space?: number,
+        color?: string,
+        buff?: number,
+        group?: Group,
+    } = {}): Tex {
+
+        let defaultOptions = {
+            above: true,
+            color: 'var(--primary)',
+            space: 4,
+            buff: 36
+        }
+
+        options = { ...defaultOptions, ...options };
+
+        let bbox = this.getEncompassingBoundingClientRectangle(texParts);
+
+        // Determine whether to use the top or bottom of the bounding box based on the 'above' flag
+        const domPoint1 = options.above
+            ? this.screenToViewport(new Point(bbox.left, bbox.top))
+            : this.screenToViewport(new Point(bbox.left, bbox.bottom));
+
+        const domPoint2 = options.above
+            ? this.screenToViewport(new Point(bbox.right, bbox.top))
+            : this.screenToViewport(new Point(bbox.right, bbox.bottom));
+
+        let p1 = new Point(domPoint1.x, domPoint1.y);
+        let p2 = new Point(domPoint2.x, domPoint2.y);
+
+        let g = options.group ? options.group : this.frame.group();
+        let l = this.displayBrace(p2, p1, label, {
+            space: options.space,
+            reverse: options.above,
+            buff: options.buff,
+        })
+        g.appendChild(l);
 
         return l;
 
@@ -1370,9 +1479,9 @@ export class Plot {
         return this.foreground.appendChild(c);
     }
 
-    displayTex(p:Point, s:string) : Tex {
-        let t = this.tex(s)
-        .alignCenter()
+    displayTexAtPoint(p: Point, s: string): Tex {
+        let t = this.displayTex(s)
+            .alignCenter()
 
         t.addDependency(p);
         t.update = () => {
@@ -1384,7 +1493,7 @@ export class Plot {
     }
 
     displayVector(p: Point, color: string = 'var(--font-color)'): Line {
-        let o = new Point(0,0)
+        let o = new Point(0, 0)
         let v = this.frame.line(0, 0, 0, 0);
         v.setAttribute('stroke-width', '1.5');
         v.setAttribute('stroke', color);
@@ -1404,7 +1513,77 @@ export class Plot {
         return v;
     }
 
-    displayAngle(p0: Point, p1: Point, p2: Point, r = 24, fullRotation = true): Path {
+    displayArrow(p1: Point, p2: Point, color: string = 'var(--font-color)'): Line {
+        let v = this.frame.line(0, 0, 0, 0);
+        v.setAttribute('stroke-width', '1.5');
+        v.setAttribute('stroke', color);
+        let m = v.attatchArrow(this.frame.definitions, false, color);
+        v.update = () => {
+
+            let fp1 = this.viewportToFrame(p1.x, p1.y);
+            let fp2 = this.viewportToFrame(p2.x, p2.y);
+
+            v.x1 = fp1.x;
+            v.y1 = fp1.y;
+            v.x2 = fp2.x;
+            v.y2 = fp2.y;
+        };
+        v.addDependency(p1, p2);
+        v.update();
+        return v;
+    }
+
+    displayPathArrow(path: Path, color: string = 'var(--font-color)'): Group {
+
+        const refX = 6;
+        const refY = 5;
+        let scale = 1.5;
+        let strokeWidth;
+        if (strokeWidth = path.getAttribute('stroke-width')) {
+            scale = Number(strokeWidth.replace(/px$/, ''));
+        }
+
+        let g = this.frame.group();
+        g.appendChild(path);
+        let a = g.path(``);
+        a.setAttribute('stroke', color);
+        a.setAttribute('stroke-linecap', 'round');
+
+        a.addDependency(path);
+        a.update = () => {
+            const length = path.getTotalLength();
+            const p1 = path.getPointAtLength(length - refX)
+            const p2 = path.getPointAtLength(length - 1)
+
+            if (length < 10) {
+                const minScale = 0.1; // Minimum scale when length is 0
+                const maxScale = 1.5; // Maximum scale when length is 5 or more
+
+                // Interpolate scale based on the length
+                scale = (length / 10) * (maxScale - minScale) + minScale;
+            } else {
+                scale = 1.5;
+            }
+
+            const x = p2.x;
+            const y = p2.y;
+            const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+
+            const adjustedX = x - (refX * scale) * Math.cos(angle) + (refY * scale) * Math.sin(angle);
+            const adjustedY = y - (refX * scale) * Math.sin(angle) - (refY * scale) * Math.cos(angle);
+
+            a.d = `M 0 0.5 L 6 5 L 0 9.5 `;
+            a.setAttribute('transform', `translate(${adjustedX},${adjustedY}) rotate(${angle * (180 / Math.PI)}) scale(${scale})`);
+        };
+        a.update();
+
+
+
+        return g;
+
+    }
+
+    displayAngle(p0: Point, p1: Point, p2: Point, r = 24, fullRotation = true, close = true): Path {
 
         let path = this.foreground.path('');
         path.setAttribute('stroke', 'var(--font-color)');
@@ -1428,17 +1607,17 @@ export class Plot {
                 angle = 2 * Math.PI + angle;
             }
 
-            let arcFlag : boolean;
-            let sweepFlag : boolean;
+            let arcFlag: boolean;
+            let sweepFlag: boolean;
 
-            if(fullRotation) {
+            if (fullRotation) {
                 arcFlag = (angle > Math.PI) ? false : true;
                 sweepFlag = false;
             } else {
                 arcFlag = false;
                 sweepFlag = (angle > Math.PI) ? false : true;
             }
- 
+
             let x1 = r * Math.cos(a1) + fp0.x;
             let y1 = r * Math.sin(a1) + fp0.y;
             let x2 = r * Math.cos(a2) + fp0.x;
@@ -1448,7 +1627,7 @@ export class Plot {
               M ${fp0.x} ${fp0.y}
               L ${x1} ${y1}
               A ${r} ${r} 0 ${+arcFlag} ${+sweepFlag} ${x2} ${y2}
-              Z`;
+              ${close ? 'Z' : ''}`;
         };
 
         path.update();
