@@ -237,19 +237,19 @@ export class Control extends Input {
     get animate() {
 
         return {
-            setOpacity: (value:number)  => {
+            setOpacity: (value: number) => {
                 let hasStarted = false;
-                let startValue;    
+                let startValue;
                 return (alpha) => {
                     if (!hasStarted) {
                         startValue = parseFloat(this.getAttribute('opacity'));
-                        if(isNaN(startValue)) {
+                        if (isNaN(startValue)) {
                             startValue = 1;
                         }
                         hasStarted = true;
                     }
-                    const opacity = startValue + (value - startValue)*alpha;
-                    this.setAttribute('opacity', opacity.toString()) 
+                    const opacity = startValue + (value - startValue) * alpha;
+                    this.setAttribute('opacity', opacity.toString())
                 };
             },
             moveTo: function (endPoint: Point) {
@@ -374,6 +374,14 @@ export class Control extends Input {
      */
     conjugate(): Point {
         return new Point(this.x, -this.y);
+    }
+
+    /**
+     * Projects the other point onto this point's line.
+     */
+    project(other: Point) {
+        let scalarProjection = other.dot(this) / this.dot(this);
+        return this.copy().scale(scalarProjection);
     }
 
     /**
@@ -503,7 +511,6 @@ export class Control extends Input {
         return (Math.atan2(this.y, this.x) + TAU) % TAU;
 
     }
-
 
 
     /**
