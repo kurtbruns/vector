@@ -164,11 +164,6 @@ export class Plot {
             width: 600,
             height: 300,
 
-            // viewport dimensions
-            viewportX: -300,
-            viewportY: -150,
-            viewportWidth: 600,
-            viewportHeight: 300,
         }
 
         // choose users config over default
@@ -182,10 +177,10 @@ export class Plot {
         this.frame = new Frame(this.root.root, config);
 
         // convert to internal coordinates
-        let svgX = config.viewportX;
-        let svgY = -config.viewportY - config.viewportHeight;
-        let svgWidth = config.viewportWidth;
-        let svgHeight = config.viewportHeight;
+        let svgX = isFinite(config.viewportX) ? config.viewportX : -config.width / 2;
+        let svgY = isFinite(config.viewportY) ? config.viewportY : -config.height / 2;
+        let svgWidth = isFinite(config.viewportWidth) ? config.viewportWidth : config.width;
+        let svgHeight = isFinite(config.viewportHeight) ? config.viewportHeight : config.height;
 
         let svg = this.frame.appendChild(new SVG());
         svg.classList.add('ignore-on-export')
@@ -286,6 +281,23 @@ export class Plot {
         this.bbox = null;
     }
 
+
+    get minX() : number {
+        return this.getSVGMinX();
+    }
+
+    get maxX() : number {
+        return this.getSVGMaxX();
+    }
+
+    get minY() : number {
+        return -this.getSVGMaxY();
+    }
+
+    get maxY() : number {
+        return -this.getSVGMinY();
+    }
+
     /**
      * 
      * @returns The smallest y-value of the SVG
@@ -339,16 +351,24 @@ export class Plot {
     /**
      * Converts a point in the screen's coordinate system into the SVG's coordinate system
      */
-    screenToViewport(screenX: number, screenY: number): DOMPoint {
+    screenToViewport(screenX: number, screenY: number): DOMPoint;
+    screenToViewport(point: { x: number, y: number }): DOMPoint;
+    screenToViewport(screenXOrPoint: number | { x: number, y: number }, screenY?: number): DOMPoint {
+        // Determine if the first argument is a point object or a number
+        const screenPoint = typeof screenXOrPoint === 'number'
+            ? { x: screenXOrPoint, y: screenY }
+            : screenXOrPoint;
 
-        let svg = this.internalSVG.root;
-        let p = svg.createSVGPoint();
-        p.x = screenX;
-        p.y = screenY;
+        const svg = this.internalSVG.root;
+        const p = svg.createSVGPoint();
+        p.x = screenPoint.x;
+        p.y = screenPoint.y;
 
-        let point = p.matrixTransform(this.getInverse())
-        point.y = - point.y;
-        return point;
+        // Transform the point using the inverse matrix and adjust the y-axis
+        const transformedPoint = p.matrixTransform(this.getInverse());
+        transformedPoint.y = -transformedPoint.y;
+
+        return transformedPoint;
     }
 
     relativeToViewport(relativeX: number, relativeY: number): DOMPoint;
@@ -1339,6 +1359,18 @@ export class Plot {
         return sortedPoints.slice(0, 2);
     }
 
+    tex(s: string, x: number = 0, y: number = 0, background: boolean = true, backgroundColor = 'var(--background)'): Tex {
+        let tex = this.foreground.appendChild(new Tex(s, x, y));
+        tex.setAttribute('id', s);
+
+        let r = tex.drawBackground(false, backgroundColor);
+        if (!background) {
+            r.setAttribute('fill', 'transparent')
+        }
+
+        return tex;
+    }
+
     displayLine(p1: Point, p2: Point, color: string = 'var(--font-color)'): Line {
 
         let v = this.foreground.line(0, 0, 0, 0);
@@ -1360,16 +1392,43 @@ export class Plot {
         return v;
     }
 
-    tex(s: string, x: number = 0, y: number = 0, background: boolean = true, backgroundColor = 'var(--background)'): Tex {
-        let tex = this.foreground.appendChild(new Tex(s, x, y));
-        tex.setAttribute('id', s);
+    displayTex(p: Point, s: string): Tex {
+        let t = this.tex(s)
+            .alignCenter()
 
-        let r = tex.drawBackground(false, backgroundColor);
-        if (!background) {
-            r.setAttribute('fill', 'transparent')
+        t.addDependency(p);
+        t.update = () => {
+            t.moveTo(this.viewportToFrame(p))
+        }
+        t.update();
+
+        return t;
+    }
+
+    displayTipLabel(point: Point, tex: string, color?: string, offset: number = 0, r = 24): Tex {
+
+        let t = this.tex(tex);
+
+        t.addDependency(point);
+        t.update = () => {
+
+            let x = point.x;
+            let y = point.y;
+
+            // Rest of your original method implementation
+            let angle = Math.atan2(y, x) + offset;
+
+            t.moveTo(this.viewportToFrame(new Point(x, y)))
+                .alignCenter()
+                .shift(r * Math.cos(angle), -r * Math.sin(angle));
+        }
+        t.update();
+
+        if (color) {
+            t.setAttribute('color', color);
         }
 
-        return tex;
+        return t;
     }
 
     gridBrace(p1: Point, p2: Point, spacing: number = 0) {
@@ -1464,6 +1523,69 @@ export class Plot {
 
     }
 
+
+    private getEncompassingBoundingClientRectangle(elements: SVGElement[]): DOMRect {
+
+        // Initialize variables to track the min and max x and y coordinates
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        // Iterate over all elements to find their bounding client rectangles
+        elements.forEach(element => {
+            let bbox = element.getBoundingClientRect();
+            minX = Math.min(minX, bbox.left);
+            minY = Math.min(minY, bbox.top);
+            maxX = Math.max(maxX, bbox.right);
+            maxY = Math.max(maxY, bbox.bottom);
+        });
+
+        // Create a new bounding client rectangle that includes all elements
+        return new DOMRect(minX, minY, maxX - minX, maxY - minY);
+
+    }
+
+    displayBraceLabel(texParts: SVGElement[], label: string, options: {
+        above?: boolean,
+        space?: number,
+        color?: string,
+        buff?: number,
+        group?: Group,
+    } = {}): Tex {
+
+        let defaultOptions = {
+            above: true,
+            color: 'var(--primary)',
+            space: 4,
+            buff: 36
+        }
+
+        options = { ...defaultOptions, ...options };
+
+        let bbox = this.getEncompassingBoundingClientRectangle(texParts);
+
+        // Determine whether to use the top or bottom of the bounding box based on the 'above' flag
+        const domPoint1 = options.above
+            ? this.screenToViewport(new Point(bbox.left, bbox.top))
+            : this.screenToViewport(new Point(bbox.left, bbox.bottom));
+
+        const domPoint2 = options.above
+            ? this.screenToViewport(new Point(bbox.right, bbox.top))
+            : this.screenToViewport(new Point(bbox.right, bbox.bottom));
+
+        let p1 = new Point(domPoint1.x, domPoint1.y);
+        let p2 = new Point(domPoint2.x, domPoint2.y);
+
+        let g = options.group ? options.group : this.frame.group();
+        let l = this.displayBrace(p2, p1, label, {
+            space: options.space,
+            reverse: options.above,
+            buff: options.buff,
+        })
+        g.appendChild(l);
+
+        return l;
+
+    }
+
     displayPoint(p: Point, color: string = 'var(--font-color)', radius: number = 4): Circle {
 
         let c = this.frame.circle(0, 0, radius);
@@ -1480,19 +1602,6 @@ export class Plot {
 
 
         return this.foreground.appendChild(c);
-    }
-
-    displayTex(p: Point, s: string): Tex {
-        let t = this.tex(s)
-            .alignCenter()
-
-        t.addDependency(p);
-        t.update = () => {
-            t.moveTo(this.viewportToFrame(p))
-        }
-        t.update();
-
-        return t;
     }
 
     displayVectorLabel(
@@ -1597,6 +1706,26 @@ export class Plot {
         }
         line.update();
         return line;
+    }
+
+    displayArrow(p1: Point, p2: Point, color: string = 'var(--font-color)'): Line {
+        let v = this.frame.line(0, 0, 0, 0);
+        v.setAttribute('stroke-width', '1.5');
+        v.setAttribute('stroke', color);
+        let m = v.attatchArrow(this.frame.definitions, false, color);
+        v.update = () => {
+
+            let fp1 = this.viewportToFrame(p1.x, p1.y);
+            let fp2 = this.viewportToFrame(p2.x, p2.y);
+
+            v.x1 = fp1.x;
+            v.y1 = fp1.y;
+            v.x2 = fp2.x;
+            v.y2 = fp2.y;
+        };
+        v.addDependency(p1, p2);
+        v.update();
+        return v;
     }
 
     displayAngle(p0: Point, p1: Point, p2: Point, r = 24, fullRotation = true, close = true): Path {

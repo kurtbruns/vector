@@ -111,6 +111,10 @@ export {
   ScenePlayer,
 } from './ScenePlayer';
 
+export { 
+  TransformationPlot,
+} from './TransformationPlot';
+
 export {
   Vector2,
   Vector3,
