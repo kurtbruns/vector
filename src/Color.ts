@@ -1,4 +1,4 @@
-import { Theme } from "./Theme";
+import { Theme } from './Theme';
 
 export type Color = [number, number, number];
 
@@ -25,8 +25,7 @@ export function parseColor(color: string): Color {
 }
 
 export function interpolateColor(color1: string, color2: string, factor: number = 0.5): string {
-
-    let theme = Theme.getInstance();
+    const theme = Theme.getInstance();
 
     // Regex to match the pattern 'var(--some-variable)'
     const varRegex = /^var\((--[^)]+)\)$/;
@@ -44,14 +43,10 @@ export function interpolateColor(color1: string, color2: string, factor: number 
     const rgb2 = parseColor(color2);
 
     // Calculate the interpolated color
-    const interpolate = (start: number, end: number) => {
-        return Math.round(start + factor * (end - start));
-    };
+    const interpolate = (start: number, end: number) => Math.round(start + factor * (end - start));
 
-    const result = rgb1.map((component, index) => {
-        return interpolate(component, rgb2[index]);
-    });
+    const result = rgb1.map((component, index) => interpolate(component, rgb2[index]));
 
     // Convert interpolated rgb back to hex
-    return `#${result.map(x => x.toString(16).padStart(2, '0')).join('')}`;
+    return `#${result.map((x) => x.toString(16).padStart(2, '0')).join('')}`;
 }
