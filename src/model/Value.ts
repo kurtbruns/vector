@@ -43,5 +43,10 @@ export class Value extends BaseNode {
     public set value(v: number)  {
         this.v = v;
     }
+
+    set(v: number) {
+        this.v = v;
+        this.updateDependents();
+    }
     
 }

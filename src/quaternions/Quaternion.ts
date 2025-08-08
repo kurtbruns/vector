@@ -465,6 +465,10 @@ export class Quaternion extends BaseNode {
         );
     }
 
+    scale(s: number): Quaternion {
+        return new Quaternion(this.w * s, this.x * s, this.y * s, this.z * s);
+    }
+
     /**
      * Raises this quaternion to the power of the given exponent.
      * 
@@ -511,7 +515,12 @@ export class Quaternion extends BaseNode {
 
     inverse(): Quaternion {
         let normSquared = this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z;
-        return new Quaternion(this.w / normSquared, -this.x / normSquared, -this.y / normSquared, -this.z / normSquared);
+        return new Quaternion(
+            this.w / normSquared, 
+            -this.x / normSquared, 
+            -this.y / normSquared, 
+            -this.z / normSquared
+        );
     }
 
     rotatePoint(point: Vector3): Vector3 {
@@ -562,8 +571,17 @@ export class Quaternion extends BaseNode {
     /**
      * Ret
      */
-    toConstructor(format: (number) => string = (n) => { return Number(n).toFixed(2) }): string {
+    toConstructor(format: (number) => string = (n) => { return Number(n).toFixed(4) }): string {
         return `new Quaternion(${format(this.w)}, ${format(this.x)}, ${format(this.y)}, ${format(this.z)})`
+    }
+
+    toAxisAngle() : [Vector3, number] {
+
+        let axis = new Vector3(this.x, this.y, this.z).normalize();
+
+        let angle = 2*Math.acos(this.w);
+
+        return [axis, angle];
     }
 
     /**
@@ -602,6 +620,20 @@ export class Quaternion extends BaseNode {
                     this.y = c + (endPoint.c - c) * alpha;
                     this.z = d + (endPoint.d - d) * alpha;
                     this.updateDependents();
+                };
+            },
+            doubleRotate: (q1: Quaternion, q2: Quaternion) => {
+                let hasStarted = false;
+                let q: Quaternion;
+
+                return (alpha: number) => {
+                    if (!hasStarted) {
+                        q = this.copy();
+                        hasStarted = true;
+                    }
+                    let s1 = q1.pow(alpha);
+                    let s2 = q2.pow(alpha);
+                    this.set(s1.multiply(s2).multiply(q));
                 };
             },
             rotate: (axis: Vector3, angle: number) => {

@@ -263,6 +263,25 @@ function createInlineStyledSvg(originalSvg: SVGElement, target: ExportTarget): S
                 background.setAttribute('width', (width*s).toFixed(3));
                 background.setAttribute('height', (height*s*s).toFixed(3));
             }
+            
+            // Hack to fix text rendering size for export targets
+            // Apply scaling to the inner group that contains the rendered MathJax content
+            if (element.firstElementChild && element.firstElementChild.nextElementSibling) {
+                const innerGroup = element.firstElementChild.nextElementSibling;
+                const currentTransform = innerGroup.getAttribute('transform') || '';
+                
+                // Get current font size to calculate appropriate scaling
+                const currentFontSize = elementStyles.getPropertyValue('font-size');
+                const fontSizePx = parseFloat(currentFontSize);
+                
+                // Calculate scaling factor based on font size
+                // Adjust this formula based on your specific needs
+                const scaleFactor = 1.09;
+                
+                // Apply the scaling transform
+                innerGroup.setAttribute('transform', `${currentTransform} scale(${scaleFactor.toFixed(3)})`);
+            }
+
         }
     }
 
@@ -328,4 +347,28 @@ export function parseSVG(svg: string): SVGElement {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svg, 'image/svg+xml');
     return doc.documentElement as unknown as SVGElement;
+}
+
+/**
+ * Gets the encompassing bounding client rectangle for an array of SVG elements.
+ * This calculates the smallest rectangle that contains all the provided elements.
+ * 
+ * @param elements - Array of SVG elements to calculate the bounding rectangle for
+ * @returns DOMRect representing the encompassing bounding rectangle
+ */
+export function getEncompassingBoundingClientRectangle(elements: SVGElement[]): DOMRect {
+    // Initialize variables to track the min and max x and y coordinates
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    // Iterate over all elements to find their bounding client rectangles
+    elements.forEach(element => {
+        let bbox = element.getBoundingClientRect();
+        minX = Math.min(minX, bbox.left);
+        minY = Math.min(minY, bbox.top);
+        maxX = Math.max(maxX, bbox.right);
+        maxY = Math.max(maxY, bbox.bottom);
+    });
+
+    // Create a new bounding client rectangle that includes all elements
+    return new DOMRect(minX, minY, maxX - minX, maxY - minY);
 }

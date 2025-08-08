@@ -27,7 +27,7 @@ import {
 import { Label } from './visual/Label'
 import { Tex } from './Tex';
 
-import { PlotGridBased, Point, TAU, Theme } from '..';
+import { Path, PlotGridBased, Point, TAU, Theme } from '..';
 
 export type alignment = 'left' | 'center' | 'right';
 
@@ -229,6 +229,79 @@ export class Frame extends SVG {
     */
     control(x: number, y: number): Control {
         return this.appendChild(new Control(x, y));
+    }
+
+    controlPath(): Path {
+        let c0 = this.control(this.width / 2, this.height / 2);
+        let c1 = this.control(this.width / 2 + 100, this.height / 2);
+        let c2 = this.control(this.width / 2 + 100, this.height / 2 + 100);
+        (c2.root.firstChild as SVGElement).style.fill = 'none';
+        (c2.root.children[1] as SVGElement).setAttribute('stroke-opacity', '0.5');
+
+        let p = this.path(``);
+        p.addDependency(c0, c1, c2);
+        p.update = () => {
+            p.d = `M ${c0.x} ${c0.y} Q ${c1.x} ${c1.y} ${c2.x} ${c2.y}`;
+        };
+        p.update();
+
+        p.setAttribute('stroke', 'var(--main)')
+        p.setAttribute('stroke-width', '1.5')
+        this.pathArrow(p)
+        return p;
+    }
+
+    pathArrow(path: Path, color: string = 'var(--font-color)', maxScale?: number): Group {
+
+        const refX = 6;
+        const refY = 5;
+        let scale = 1.5;
+        let strokeWidth;
+        if (strokeWidth = path.getAttribute('stroke-width')) {
+            scale = Number(strokeWidth.replace(/px$/, ''));
+        }
+
+        // Use the provided maxScale, stroke-width value, or default to 1.5
+        const effectiveMaxScale = maxScale || scale || 1.5;
+
+        let g = this.group();
+        g.appendChild(path);
+        let a = g.path(``);
+        a.setAttribute('stroke', color);
+        a.setAttribute('stroke-linecap', 'round');
+
+        a.addDependency(path);
+        a.update = () => {
+            const length = path.getTotalLength();
+            const p1 = path.getPointAtLength(length - refX*1.5)
+            const p2 = path.getPointAtLength(length - 1)
+
+            if (length < 10) {
+                const minScale = 0.1; // Minimum scale when length is 0
+                const maxScale = effectiveMaxScale; // Use the effective max scale
+        
+                // Interpolate scale based on the length
+                scale = (length / 10) * (maxScale - minScale) + minScale;
+            } else {
+                scale = effectiveMaxScale;
+            }
+
+            const x = p2.x;
+            const y = p2.y;
+            const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+
+            const adjustedX = x - (refX * scale) * Math.cos(angle) + (refY * scale) * Math.sin(angle);
+            const adjustedY = y - (refX * scale) * Math.sin(angle) - (refY * scale) * Math.cos(angle);
+            
+            a.d = `M 0 0.5 L 6 5 L 0 9.5 `;
+            a.setAttribute('transform', `translate(${adjustedX},${adjustedY}) rotate(${angle * (180 / Math.PI)}) scale(${scale})`);
+        };
+        a.update();
+
+
+
+        return g;
+
     }
 
     gridPoint(plot: PlotGridBased, p: Point, color: string = 'var(--font-color)', radius: number = 3.5): Circle {

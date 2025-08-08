@@ -7,6 +7,23 @@ export function hexToRGB(hex: string): Color {
     return [(rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff];
 }
 
+export function parseRGB(rgbString: string): Color {
+    const match = rgbString.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+    if (match) {
+        return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+    }
+    throw new Error(`Invalid RGB format: ${rgbString}`);
+}
+
+export function parseColor(color: string): Color {
+    // Check if it's an RGB format
+    if (color.startsWith('rgb(')) {
+        return parseRGB(color);
+    }
+    // Assume it's a hex color
+    return hexToRGB(color);
+}
+
 export function interpolateColor(color1: string, color2: string, factor: number = 0.5): string {
 
     let theme = Theme.getInstance();
@@ -23,8 +40,8 @@ export function interpolateColor(color1: string, color2: string, factor: number 
     color1 = getColorValue(color1);
     color2 = getColorValue(color2);
 
-    const rgb1 = hexToRGB(color1);
-    const rgb2 = hexToRGB(color2);
+    const rgb1 = parseColor(color1);
+    const rgb2 = parseColor(color2);
 
     // Calculate the interpolated color
     const interpolate = (start: number, end: number) => {

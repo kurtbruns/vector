@@ -20,6 +20,8 @@ export interface PlotContainerConfig extends SceneConfig {
     big?: boolean;
     half?: boolean;
     root?: HTMLElement;
+    margin?: number;
+    labelAxes?: boolean;
 }
 
 export class PlotContainer extends Scene {
@@ -56,6 +58,8 @@ export class PlotContainer extends Scene {
             drawGrid: true,
             big: false,
             half: false,
+            margin: 50,
+            labelAxes: true,
         };
 
         config = { ...defaultConfig, ...config };
@@ -70,7 +74,7 @@ export class PlotContainer extends Scene {
 
         config.root = config.root === undefined ? document.querySelector('#root') : config.root;
 
-        let margin = 50;
+        let margin = config.margin;
         let width = config.width + margin * 2;
         let height = config.height + margin * 2;
 
@@ -119,6 +123,7 @@ export class PlotContainer extends Scene {
             name: this.constructor.name + (config.suffix ? config.suffix : '')
         });
 
+        if (config.labelAxes) {
         let xAxis = plot.getHorizontalValues('small');
         let yAxis = plot.getVerticalValues('small');
 
@@ -141,7 +146,7 @@ export class PlotContainer extends Scene {
             let label = this.frame.tex(key)
             label.alignCenter()
             label.moveTo(0.5 * margin, point.y + margin)
-        });
-
+            });
+        }
     }
 }

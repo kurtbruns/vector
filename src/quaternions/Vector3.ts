@@ -85,6 +85,7 @@ export class Vector3 extends BaseNode {
         this.x = v.x;
         this.y = v.y;
         this.z = v.z;
+        this.updateDependents();
     }
 
     /**

@@ -30,7 +30,7 @@ export class QObject {
         this.coordinateSystem = coordinateSystem;
         this.camera = coordinateSystem.camera;
 
-        this.q = new Quaternion(1, 0, 0, 0);
+        this.q = config.q;
         this.root = coordinateSystem.foreground.group();
         this.background = this.root.group();
         this.foreground = this.root.group();
@@ -80,7 +80,6 @@ export class QObject {
         // Mouse down handler
         const handleMouseDown = (event: MouseEvent) => {
 
-            console.log(event.target,this.coordinateSystem.plot.frame.root )
             if (this.coordinateSystem.plot.root.root.contains(event.target as HTMLElement)) {
                 isDragging = true;
                 bbox = this.coordinateSystem.plot.frame.root.getBoundingClientRect();

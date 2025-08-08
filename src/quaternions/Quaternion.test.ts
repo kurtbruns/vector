@@ -23,6 +23,21 @@ function expectVectorsEqual(v1 : Vector3, v2 : Vector3, numDigits: number = 10) 
 
 describe('Quaternion Transform', () => {
     
+    test('Identity', () => {
+
+        let i = new Vector3(1, 0, 0);
+        let j = new Vector3(0, 1, 0)
+        let k = new Vector3(0, 0, 1)
+
+        let q = new Quaternion(1, 0, 0, 0);
+
+        // standard position
+        expectVectorsEqual(q.transform(i), i);
+        expectVectorsEqual(q.transform(j), j);
+        expectVectorsEqual(q.transform(k), k);
+
+    })
+
     test('Quarter rotation about x-axis', () => {
 
         let i = new Vector3(1, 0, 0);
@@ -35,33 +50,27 @@ describe('Quaternion Transform', () => {
         // apply the rotation
         q = r.multiply(q);
 
-        // i stays in place
         expectVectorsEqual(q.transform(i), new Vector3(1, 0, 0));
-
-        // j rotates to k
         expectVectorsEqual(q.transform(j), new Vector3(0, 0, 1));
-
-        // k rotates to negative j
         expectVectorsEqual(q.transform(k), new Vector3(0, -1, 0));
 
     })
 
-    test('One-third of a full rotation around the axis [1 1 1]', () => {
+    test('Rotate -2π/3 radians around the axis [1 1 1]', () => {
 
         let i = new Vector3(1, 0, 0);
         let j = new Vector3(0, 1, 0)
         let k = new Vector3(0, 0, 1)
 
-        let q = Quaternion.fromAxisAngle(new Vector3(1, 1, 1), 2/3*Math.PI);
+        let q = new Quaternion(1, 0, 0, 0);
+        let r = Quaternion.fromAxisAngle(new Vector3(1, 1, 1), -2/3*Math.PI);
 
-        // i-hat goes to j-hat
-        expectVectorsEqual(q.transform(i), j);
+        // apply the rotation
+        q = r.multiply(q);
 
-        // j-hat rotates to k-hat
-        expectVectorsEqual(q.transform(j), k);
-
-        // k-hat rotates to i-hat
-        expectVectorsEqual(q.transform(k), i);
+        expectVectorsEqual(q.transform(i), new Vector3(0, 0, 1));
+        expectVectorsEqual(q.transform(j), new Vector3(1, 0, 0));
+        expectVectorsEqual(q.transform(k), new Vector3(0, 1, 0));
 
     })
 
@@ -72,24 +81,52 @@ describe('Quaternion Transform', () => {
         let k = new Vector3(0, 0, 1)
 
         let q = new Quaternion(1, 0, 0, 0);
-        let r1 = Quaternion.fromAxisAngle(new Vector3(1, 1, 1), 2*Math.PI/3);
+        let r1 = Quaternion.fromAxisAngle(new Vector3(1, 0, 0), Math.PI/2);
+        let r2 = Quaternion.fromAxisAngle(new Vector3(1, 1, 1), -2*Math.PI/3);
+
+        // apply the first rotation
+        q = r1.multiply(q);
+
+        expectVectorsEqual(q.transform(i), new Vector3(1, 0, 0));
+        expectVectorsEqual(q.transform(j), new Vector3(0, 0, 1));
+        expectVectorsEqual(q.transform(k), new Vector3(0, -1, 0));
+
+        // then apply the second rotation
+        q = r2.multiply(q);
+
+        expectVectorsEqual(q.transform(i), new Vector3(0, 0, 1));
+        expectVectorsEqual(q.transform(j), new Vector3(0, 1, 0));
+        expectVectorsEqual(q.transform(k), new Vector3(-1, 0, 0));
+
+    })
+
+    test('Combined rotations other way', () => {
+
+        let i = new Vector3(1, 0, 0);
+        let j = new Vector3(0, 1, 0)
+        let k = new Vector3(0, 0, 1)
+
+        let q = new Quaternion(1, 0, 0, 0);
+        let r1 = Quaternion.fromAxisAngle(new Vector3(1, 1, 1), -2*Math.PI/3);
         let r2 = Quaternion.fromAxisAngle(new Vector3(1, 0, 0), Math.PI/2);
 
         // apply the first rotation
         q = r1.multiply(q);
 
-        expectVectorsEqual(q.transform(i), j);
-        expectVectorsEqual(q.transform(j), k);
-        expectVectorsEqual(q.transform(k), i);
+        expectVectorsEqual(q.transform(i), new Vector3(0, 0, 1));
+        expectVectorsEqual(q.transform(j), new Vector3(1, 0, 0));
+        expectVectorsEqual(q.transform(k), new Vector3(0, 1, 0));
 
         // then apply the second rotation
         q = r2.multiply(q);
 
-        expectVectorsEqual(q.transform(i), k);
-        expectVectorsEqual(q.transform(j), j.negate());
-        expectVectorsEqual(q.transform(k), i);
+        expectVectorsEqual(q.transform(i), new Vector3(0, -1, 0));
+        expectVectorsEqual(q.transform(j), new Vector3(1, 0, 0));
+        expectVectorsEqual(q.transform(k), new Vector3(0, 0, 1));
 
     })
+
+
 
 })
 

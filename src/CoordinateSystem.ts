@@ -1,6 +1,7 @@
 import { Definitions, Group, Line, Path, PlotGridBased, Point, TAU, Tex } from "./index";
 import { Player } from "./Player";
 import { Scene, SceneConfig } from "./Scene";
+import { getEncompassingBoundingClientRectangle } from "./util";
 
 type PointTuple = [number, number]; // Define a tuple type for a point
 
@@ -684,24 +685,7 @@ export class CoordinateSystem extends Scene {
 
     }
 
-    private getEncompassingBoundingClientRectangle(elements: SVGElement[]): DOMRect {
 
-        // Initialize variables to track the min and max x and y coordinates
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-        // Iterate over all elements to find their bounding client rectangles
-        elements.forEach(element => {
-            let bbox = element.getBoundingClientRect();
-            minX = Math.min(minX, bbox.left);
-            minY = Math.min(minY, bbox.top);
-            maxX = Math.max(maxX, bbox.right);
-            maxY = Math.max(maxY, bbox.bottom);
-        });
-
-        // Create a new bounding client rectangle that includes all elements
-        return new DOMRect(minX, minY, maxX - minX, maxY - minY);
-
-    }
 
     braceLabelAbove(texParts: SVGElement[], label: string, options: { reverse?: Boolean, space?: number, color?: string, buff?: number, group?: Group } = {}) {
 
@@ -714,7 +698,7 @@ export class CoordinateSystem extends Scene {
 
         options = { ...defaultOptions, ...options };
 
-        let bbox = this.getEncompassingBoundingClientRectangle(texParts);
+        let bbox = getEncompassingBoundingClientRectangle(texParts);
 
         let domPoint1 = this.plot.absoluteToSVG(new Point(bbox.left, bbox.top));
         let domPoint2 = this.plot.absoluteToSVG(new Point(bbox.right, bbox.top));
@@ -764,7 +748,7 @@ export class CoordinateSystem extends Scene {
 
         options = { ...defaultOptions, ...options };
 
-        let bbox = this.getEncompassingBoundingClientRectangle(texParts);
+        let bbox = getEncompassingBoundingClientRectangle(texParts);
 
         let domPoint1 = this.plot.absoluteToSVG(new Point(bbox.left, bbox.bottom));
         let domPoint2 = this.plot.absoluteToSVG(new Point(bbox.right, bbox.bottom));

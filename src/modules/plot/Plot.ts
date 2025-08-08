@@ -2,6 +2,7 @@ import { Circle, TAU } from "../.."
 import { Frame, Tex } from "../../elements"
 import { Group, Line, Path, Rectangle, SVG } from "../../elements/svg"
 import { Point } from "../../model"
+import { getEncompassingBoundingClientRectangle } from "../../util"
 import { Brace } from "./Brace";
 
 /**
@@ -1352,6 +1353,84 @@ export class Plot {
 
     }
 
+    /**
+     * Creates a brace label for tex parts (SVG elements) similar to CoordinateSystem.braceLabelAbove
+     */
+    braceLabel(texParts: SVGElement[], label: string, options: { 
+        reverse?: Boolean, 
+        space?: number, 
+        color?: string, 
+        buff?: number, 
+        group?: Group,
+        position?: 'above' | 'below'
+    } = {}): Tex {
+
+        let defaultOptions: {
+            reverse: boolean,
+            color: string,
+            space: number,
+            buff: number,
+            position: 'above' | 'below'
+        } = {
+            reverse: true,
+            color: 'var(--primary)',
+            space: 6,
+            buff: 42,
+            position: 'above'
+        }
+
+        options = { ...defaultOptions, ...options };
+
+        let bbox = getEncompassingBoundingClientRectangle(texParts);
+        
+        let domPoint1: DOMPoint, domPoint2: DOMPoint;
+        
+        if (options.position === 'above') {
+            domPoint1 = this.screenToViewport(bbox.left, bbox.top);
+            domPoint2 = this.screenToViewport(bbox.right, bbox.top);
+        } else {
+            domPoint1 = this.screenToViewport(bbox.left, bbox.bottom);
+            domPoint2 = this.screenToViewport(bbox.right, bbox.bottom);
+        }
+
+        let p1 = new Point(domPoint1.x, domPoint1.y);
+        let p2 = new Point(domPoint2.x, domPoint2.y);
+
+        let g = options.group ? options.group : this.foreground.group();
+        if (options.reverse) {
+            g.appendChild(this.gridBrace(p2, p1, options.space));
+        } else {
+            g.appendChild(this.gridBrace(p1, p2, options.space));
+        }
+
+        if (options.color) {
+            g.setAttribute('fill', options.color);
+        }
+
+        let l = this.tex(label, 0, 0)
+            .alignCenter();
+
+        g.appendChild(l);
+
+        l.addDependency(p1, p2);
+        l.update = () => {
+            let mx = p1.x + (p2.x - p1.x) / 2;
+            let my = p1.y + (p2.y - p1.y) / 2;
+
+            const a = Math.atan2(p2.y - p1.y, p2.x - p1.x) + TAU / 4 + (options.reverse ? TAU / 2 : 0);
+            l.moveTo(this.viewportToFrame(mx, my))
+                .shift(
+                    -options.buff * Math.cos(a),
+                    options.buff * Math.sin(a)
+                );
+        };
+        l.update();
+
+        return l;
+    }
+
+
+
     displayPoint(p: Point, color: string = 'var(--font-color)', radius: number = 4): Circle {
 
         let c = this.frame.circle(0, 0, radius);
@@ -1400,6 +1479,24 @@ export class Plot {
             v.y2 = fp2.y;
         };
         v.addDependency(o, p);
+        v.update();
+        return v;
+    }
+
+    displayArrow(p1: Point, p2: Point, color: string = 'var(--font-color)'): Line {
+        let v = this.frame.line(0, 0, 0, 0);
+        v.attatchArrow(this.frame.definitions, false, color);
+        v.setAttribute('stroke-width', '1.5');
+        v.setAttribute('stroke', color);
+        v.addDependency(p1, p2);
+        v.update = () => {
+            let fp1 = this.viewportToFrame(p1.x, p1.y);
+            let fp2 = this.viewportToFrame(p2.x, p2.y);
+            v.x1 = fp1.x;
+            v.y1 = fp1.y;
+            v.x2 = fp2.x;
+            v.y2 = fp2.y;
+        }
         v.update();
         return v;
     }

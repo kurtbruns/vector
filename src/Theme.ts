@@ -111,8 +111,10 @@ export class Theme {
             '--teal': '#1aa59b',
             '--cyan': '#1aa59b',
             // '--pink': '#db32c6',
-            '--pink': '#D64DC5',
-            '--yellow': '#1aa59b',
+            // '--pink': '#D64DC5',
+            '--pink': '#FF89E7',
+            
+            '--yellow': '#CBA615',
             '--purple': '#a452ce',
             '--orange': '#ff9f4c',
         };

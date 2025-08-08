@@ -3,7 +3,8 @@ export {
   download,
   embedMarkers,
   ExportTarget,
-  flattenSVG
+  flattenSVG,
+  getEncompassingBoundingClientRectangle
 } from './svg';
 
 export {

@@ -1,5 +1,10 @@
 import { flattenSVG } from "../util";
+import { interpolateColor } from "../Color";
 import { Group, Rectangle, SVG } from "./svg";
+import { CoreAttributes, PresentationAttributes } from "./svg/base-element";
+import { GroupAttributes } from "./svg/group";
+
+type TexAttributes = 'font-size';
 
 /**
  * TeX class represents a mathematical expression rendered as SVG using MathJax
@@ -50,45 +55,70 @@ export class Tex extends Group {
     }
 
     /**
-     * Aligns t2 to t1
+     * Moves t1 to t2
      */
-    static alignBy(t1:Tex, t2:Tex, s1:string, s2?:string) {
+    static moveTo (t1:Tex, t2:Tex) {
 
-        if(!s2) {
-            s2 = s1;
-        }
+        let t1_bbox = t1.rendered.getBoundingClientRect();
+        let t2_bbox = t2.rendered.getBoundingClientRect();
 
-        let t_eq_tex = t1.getPartsByTex(s1)[0].getBoundingClientRect();
-        let r_teq_tex = t2.getPartsByTex(s2)[0].getBoundingClientRect();
+        // Calculate the center positions
+        let t1_center_x = t1_bbox.x + t1_bbox.width / 2;
+        let t1_center_y = t1_bbox.y + t1_bbox.height / 2;
+        let t2_center_x = t2_bbox.x + t2_bbox.width / 2;
+        let t2_center_y = t2_bbox.y + t2_bbox.height / 2;
 
-        t2.shift(t_eq_tex.x - r_teq_tex.x, t_eq_tex.y - r_teq_tex.y);
+        // Move t1 so its center aligns with t2's center
+        t1.shift(t2_center_x - t1_center_x, t2_center_y - t1_center_y);
+
     }
 
-    static alignVerticallyBy(t1:Tex, t2:Tex, s1:string, s2?:string) {
+    /**
+     * Aligns t2 to t1
+     */
+    static alignBy(t1:Tex, t2:Tex, s1:string, s2?:string, occurrence: number = 0) {
 
         if(!s2) {
             s2 = s1;
         }
 
-        let t_eq_tex = t1.getPartsByTex(s1)[0].getBoundingClientRect();
-        let r_teq_tex = t2.getPartsByTex(s2)[0].getBoundingClientRect();
+        let t_eq_tex = t1.getPartsByTex(s1, occurrence)[0].getBoundingClientRect();
+        let r_teq_tex = t2.getPartsByTex(s2, occurrence)[0].getBoundingClientRect();
+
+        let shiftX = t_eq_tex.x - r_teq_tex.x;
+        let shiftY = t_eq_tex.y - r_teq_tex.y;
+
+        t2.shift(shiftX, shiftY);
+    }
+
+    static alignVerticallyBy(t1:Tex, t2:Tex, s1:string, s2?:string, occurrence: number = 0) {
+
+        if(!s2) {
+            s2 = s1;
+        }
+
+        let t_eq_tex = t1.getPartsByTex(s1, occurrence)[0].getBoundingClientRect();
+        let r_teq_tex = t2.getPartsByTex(s2, occurrence)[0].getBoundingClientRect();
 
         t2.shift(0, t_eq_tex.y - r_teq_tex.y);
     }
 
-    static alignHorizontallyBy(t1:Tex, t2:Tex, s1:string, s2?:string) {
+    static alignHorizontallyBy(t1:Tex, t2:Tex, s1:string, s2?:string, occurrence: number = 0) {
 
         if(!s2) {
             s2 = s1;
         }
 
-        let t_eq_tex = t1.getPartsByTex(s1)[0].getBoundingClientRect();
-        let r_teq_tex = t2.getPartsByTex(s2)[0].getBoundingClientRect();
+        let t_eq_tex = t1.getPartsByTex(s1, occurrence)[0].getBoundingClientRect();
+        let r_teq_tex = t2.getPartsByTex(s2, occurrence)[0].getBoundingClientRect();
 
         t2.shift(t_eq_tex.x - r_teq_tex.x, 0);
     }
 
     static setOpacityOfTex = (t:SVGElement[], value:number) => {
+
+        console.warn('This method is deprecated. Please use this.animate.setOpacityOfParts instead.');
+
         let hasStarted = false;
         let startValue : number;    
         return (alpha : number) => {
@@ -110,6 +140,47 @@ export class Tex extends Group {
         for(let i = 0; i < t.length; i++) {
             t[i].setAttribute('opacity', value.toString());
         }
+    }
+
+    setOpacityOfParts(tex: string, value:number) {
+        let parts = this.getMatchesByTex(tex);
+        if (parts && parts.length > 0) {
+            for(let i = 0; i < parts.length; i++) {
+                parts[i].forEach(node => {
+                    (node as SVGSVGElement).setAttribute('opacity', value.toString());
+                });
+            }
+        }
+    }
+
+    /**
+     * Aligns this Tex object to another Tex object by matching specific text
+     */
+    alignTo(other: Tex, s: string, occurrence: number = 0): Tex {
+        Tex.alignBy(other, this, s, s, occurrence);
+        return this;
+    }
+
+    /**
+     * Aligns this Tex object horizontally to another Tex object by matching specific text
+     */
+    alignHorizontallyTo(other: Tex, s: string, occurrence: number = 0): Tex {
+        Tex.alignHorizontallyBy(other, this, s, s, occurrence);
+        return this;
+    }
+
+    /**
+     * Aligns this Tex object vertically to another Tex object by matching specific text
+     */
+    alignVerticallyTo(other: Tex, s: string, occurrence: number = 0): Tex {
+        Tex.alignVerticallyBy(other, this, s, s, occurrence);
+        return this;
+    }
+
+    // comment inherited from base class
+    setAttribute(name: TexAttributes | GroupAttributes | CoreAttributes | PresentationAttributes, value: string): Group {
+        this.root.setAttribute(name, value);
+        return this;
     }
 
     setBackgroundOpacity(x:number) {
@@ -278,7 +349,7 @@ export class Tex extends Group {
      * @param str The TeX string to be matched in the rendered document.
      * @returns An array of SVG elements corresponding to the TeX string, or null if none are found.
      */
-    getPartsByTex(str: string): SVGElement[] | null {
+    getPartsByTex(str: string, occurrence: number = 0): SVGElement[] | null {
 
         // Render the sub-expression
         let output = MathJax.tex2svg(str, {});
@@ -300,6 +371,13 @@ export class Tex extends Group {
             Array.from(this.rendered.querySelectorAll(selector) as NodeListOf<SVGElement>)
         );
 
+        // Group elements by occurrence
+        const matches = this.getMatchesByTex(str);
+        if (matches && matches.length > occurrence) {
+            return matches[occurrence];
+        }
+
+        // Fallback to old behavior if no matches found
         return mainContentElements;
     }
 
@@ -316,11 +394,15 @@ export class Tex extends Group {
         return this;
     }
 
-    drawBackground(replace:boolean = false, backgroundColor = 'var(--background)') {
-        let top = 3;
-        let bottom = 3;
-        let left = 4;
-        let right = 4;
+    removeBackground() {
+        this.background.setAttribute('opacity', '0');
+    }
+
+    drawBackground(replace:boolean = false, backgroundColor = 'var(--background)', increaseSize:number = 0) {
+        let top = 3 + increaseSize;
+        let bottom = 3 + increaseSize;
+        let left = 4 + increaseSize;
+        let right = 4 + increaseSize;
         let groupBbox = this.rendered.getBoundingClientRect();
         let rectangle = new Rectangle(
             0,
@@ -419,13 +501,37 @@ export class Tex extends Group {
                     this.setAttribute('opacity', opacity.toString()) 
                 };
             },
-            alignParts: (other: Tex, s: string) => {
-                let t_eq_tex = this.getPartsByTex(s)[0].getBoundingClientRect();
-                let r_teq_tex = other.getPartsByTex(s)[0].getBoundingClientRect();
+            setOpacityOfParts: (tex: string, value:number) => {
+                let parts = this.getFirstMatch(tex);
+                let hasStarted = false;
+                let startValue : number;    
+                return (alpha : number) => {
+                    if (!hasStarted) {
+                        if (parts && parts.length > 0) {
+                            startValue = parseFloat(parts[0].getAttribute('opacity'));
+                            if(isNaN(startValue)) {
+                                startValue = 1;
+                            }
+                        } else {
+                            startValue = 1;
+                        }
+                        hasStarted = true;
+                    }
+                    const opacity = startValue + (value - startValue)*alpha;
+                    if (parts) {
+                        for(let i = 0; i < parts.length; i++) {
+                            parts[i].setAttribute('opacity', opacity.toString());
+                        }
+                    }
+                };
+            },
+            alignParts: (other: Tex, s: string, occurrence: number = 0) => {
+                let t_eq_tex = this.getPartsByTex(s, occurrence)[0].getBoundingClientRect();
+                let r_teq_tex = other.getPartsByTex(s, occurrence)[0].getBoundingClientRect();
         
                 let shiftX = t_eq_tex.x - r_teq_tex.x;
                 let shiftY = t_eq_tex.y - r_teq_tex.y;
-
+                
                 let hasStarted = false;
                 let startX : number;
                 let startY : number;
@@ -434,6 +540,7 @@ export class Tex extends Group {
                     if (!hasStarted) {
                         startX = this._x;
                         startY = this._y;
+                        
                         hasStarted = true;
                     }
 
@@ -475,6 +582,37 @@ export class Tex extends Group {
                     this.moveTo(newX, newY);
                     this.updateDependents();
                 }
+            },
+            setColorAll: (tex: string, color: string) => {
+                let hasStarted = false;
+                let matchedNodes: SVGElement[][] = [];
+                let startColors: string[] = [];
+
+                return (alpha: number) => {
+                    if (!hasStarted) {
+                        matchedNodes = this.getMatchesByTex(tex) || [];
+                        // Store the current color of each matched element
+                        startColors = [];
+                        matchedNodes.forEach(matchedNode => {
+                            matchedNode.forEach(node => {
+                                const currentColor = (node as SVGSVGElement).style.fill || 'var(--font-color)';
+                                startColors.push(currentColor);
+                            });
+                        });
+                        hasStarted = true;
+                    }
+
+                    let colorIndex = 0;
+                    matchedNodes.forEach(matchedNode => {
+                        matchedNode.forEach(node => {
+                            // Interpolate from the stored start color to target color
+                            const startColor = startColors[colorIndex];
+                            const interpolatedColor = interpolateColor(startColor, color, alpha);
+                            (node as SVGSVGElement).style.fill = interpolatedColor;
+                            colorIndex++;
+                        });
+                    });
+                };
             },
         };
     }

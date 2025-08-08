@@ -1,4 +1,4 @@
-import { Group, Line, Path, Tex } from "..";
+import { Circle, Group, Line, Path, Tex } from "..";
 import { CoordinateSystem3D } from "./CoordinateSystem3D";
 import { QObject } from "./QObject";
 import { Quaternion } from "./Quaternion";
@@ -25,6 +25,7 @@ export class Sphere extends QObject {
 
     showQuaternionTex(q: Quaternion, center = false, prefix = 'q=') {
         this.displayTex = this.coordinateSystem.plot.frame.tex('');
+        this.displayTex.setAttribute('font-size', '18px');
 
         if (center) {
             this.displayTex.moveTo(this.coordinateSystem.plot.frame.width / 2, 50)
@@ -41,7 +42,7 @@ export class Sphere extends QObject {
         };
         this.displayTex.update();
     }
-
+    
     drawCircle(radius: number, r: Quaternion = Quaternion.identity(), pos: Vector3 = new Vector3(0, 0, 0)) {
 
         let longs = this.generateCircle(72, radius);
@@ -138,7 +139,7 @@ export class Sphere extends QObject {
         return points;
     }
 
-    drawSphere(r: number = 1, opacity: number = 0.2, drawBackground = true, backgroundColor = 'var(--background)'): Group {
+    drawSphere(r: number = 1, opacity: number = 0.2, drawBackground = true, backgroundColor = 'var(--background-lighter)'): Group {
 
         let group = this.background.group();
         let lineGroup = group.group();
@@ -265,30 +266,31 @@ export class Sphere extends QObject {
         w.update();
         // this.vector(this.origin, w, 'var(--yellow)')
 
-        // if (drawBackground) {
-        //     this.sphereBackground = group.circle(0, 0, 0);
-        //     this.sphereBackground.setAttribute('stroke', 'none')
-        //     this.sphereBackground.setAttribute('fill', backgroundColor)
-        //     this.sphereBackground.setAttribute('opacity', '0.75')
-        //     this.sphereBackground.addDependency(this.origin, this.camera.position, w);
-        //     this.sphereBackground.update = () => {
+        if (drawBackground) {
+            let background = group.circle(0, 0, 0);
+            background = group.circle(0, 0, 0);
+            background.setAttribute('stroke', 'none')
+            background.setAttribute('fill', backgroundColor)
+            background.setAttribute('opacity', '0.75')
+            background.addDependency(this.coordinateSystem.origin, this.camera.position, w);
+            background.update = () => {
 
-        //         let d = this.camera.position.length();
+                let d = this.camera.position.length();
 
-        //         // https://stackoverflow.com/questions/21648630/radius-of-projected-sphere-in-screen-space#:~:text=Let%20the%20sphere%20have%20radius,can%20be%20written%20as%20f%20.
-        //         let s = d * 1 / Math.sqrt(d * d - 1);
-        //         // let s = 1;
+                // https://stackoverflow.com/questions/21648630/radius-of-projected-sphere-in-screen-space#:~:text=Let%20the%20sphere%20have%20radius,can%20be%20written%20as%20f%20.
+                let s = d * 1 / Math.sqrt(d * d - 1);
+                // let s = 1;
 
-        //         let center = this.coordinateSystem.plot.viewportToFrame(this.camera.projectPoint(this.origin));
-        //         let x = this.coordinateSystem.plot.viewportToFrame(this.camera.projectPoint(w.copy().scale(s)));
+                let center = this.coordinateSystem.plot.viewportToFrame(this.camera.projectPoint(this.coordinateSystem.origin));
+                let x = this.coordinateSystem.plot.viewportToFrame(this.camera.projectPoint(w.copy().scale(s)));
 
-        //         this.sphereBackground.cx = center.x;
-        //         this.sphereBackground.cy = center.y;
-        //         this.sphereBackground.r = Math.hypot(x.y - center.y, x.x - center.x);
-        //     }
-        //     this.sphereBackground.update();
-        //     group.prependChild(this.sphereBackground);
-        // }
+                background.cx = center.x;
+                background.cy = center.y;
+                background.r = Math.hypot(x.y - center.y, x.x - center.x);
+            }
+            background.update();
+            group.prependChild(background);
+        }
 
 
         let outline = group.circle(0, 0, 0);
@@ -527,10 +529,10 @@ export class Sphere extends QObject {
     drawIJKOutOfSphere() {
 
         // Vector I
-        let i = this.drawDependentVectorOnSphere(new Vector3(1, 0, 0), 1, 1.5, 'var(--green)');
+        let i = this.drawDependentVectorOnSphere(new Vector3(1, 0, 0), 1, 1.5, 'var(--red)');
 
         // Vector J
-        let j = this.drawDependentVectorOnSphere(new Vector3(0, 1, 0), 1, 1.5, 'var(--red)');
+        let j = this.drawDependentVectorOnSphere(new Vector3(0, 1, 0), 1, 1.5, 'var(--green)');
 
         // Vector K
         let k = this.drawDependentVectorOnSphere(new Vector3(0, 0, 1), 1, 1.5, 'var(--blue)');
@@ -556,14 +558,14 @@ export class Sphere extends QObject {
 
 
         let positiveXCircle = this.drawDisappearingCircle(r, Quaternion.identity(), positiveX.scale(t));
-        positiveXCircle.setAttribute('fill', 'var(--green)');
+        positiveXCircle.setAttribute('fill', 'var(--red)');
         positiveXCircle.setAttribute('fill-opacity', '0.4');
-        positiveXCircle.setAttribute('stroke', 'var(--green)');
+        positiveXCircle.setAttribute('stroke', 'var(--red)');
 
         let positiveYCircle = this.drawDisappearingCircle(r, Quaternion.identity(), positiveY.scale(t));
-        positiveYCircle.setAttribute('fill', 'var(--red)');
+        positiveYCircle.setAttribute('fill', 'var(--green)');
         positiveYCircle.setAttribute('fill-opacity', '0.4');
-        positiveYCircle.setAttribute('stroke', 'var(--red)');
+        positiveYCircle.setAttribute('stroke', 'var(--green)');
 
         let positiveZCircle = this.drawDisappearingCircle(r, Quaternion.identity(), positiveZ.scale(t));
         positiveZCircle.setAttribute('fill', 'var(--blue)');
@@ -601,14 +603,14 @@ export class Sphere extends QObject {
 
 
         let positiveXCircle = this.drawDisappearingCircle(r, Quaternion.identity(), positiveX.scale(t));
-        positiveXCircle.setAttribute('fill', 'var(--green)');
+        positiveXCircle.setAttribute('fill', 'var(--red)');
         positiveXCircle.setAttribute('fill-opacity', '0.2');
-        positiveXCircle.setAttribute('stroke', 'var(--green)');
+        positiveXCircle.setAttribute('stroke', 'var(--red)');
 
         let positiveYCircle = this.drawDisappearingCircle(r, Quaternion.identity(), positiveY.scale(t));
-        positiveYCircle.setAttribute('fill', 'var(--red)');
+        positiveYCircle.setAttribute('fill', 'var(--green)');
         positiveYCircle.setAttribute('fill-opacity', '0.2');
-        positiveYCircle.setAttribute('stroke', 'var(--red)');
+        positiveYCircle.setAttribute('stroke', 'var(--green)');
 
         let positiveZCircle = this.drawDisappearingCircle(r, Quaternion.identity(), positiveZ.scale(t));
         positiveZCircle.setAttribute('fill', 'var(--blue)');
@@ -618,19 +620,18 @@ export class Sphere extends QObject {
         let negativeXCircle = this.drawDisappearingCircle(r, Quaternion.identity(), negativeX.scale(t));
         negativeXCircle.setAttribute('fill', 'var(--medium)');
         negativeXCircle.setAttribute('fill-opacity', '0.1');
-        negativeXCircle.setAttribute('stroke', 'var(--green)');
+        negativeXCircle.setAttribute('stroke', 'var(--red)');
 
         let negativeYCircle = this.drawDisappearingCircle(r, Quaternion.identity(), negativeY.scale(t));
         negativeYCircle.setAttribute('fill', 'var(--medium)');
         negativeYCircle.setAttribute('fill-opacity', '0.1');
-        negativeYCircle.setAttribute('stroke', 'var(--red)');
+        negativeYCircle.setAttribute('stroke', 'var(--green)');
 
         let negativeZCircle = this.drawDisappearingCircle(r, Quaternion.identity(), negativeZ.scale(t));
         // negativeZCircle.setAttribute('fill', 'var(--blue)');
         // negativeZCircle.setAttribute('fill-opacity', '0.05');
         negativeZCircle.setAttribute('fill', 'var(--medium)');
         negativeZCircle.setAttribute('fill-opacity', '0.1');
-
         negativeZCircle.setAttribute('stroke', 'var(--blue)');
     }
 
@@ -1023,6 +1024,55 @@ export class Sphere extends QObject {
         };
     }
 
+    sphereLabel(v: Vector3, s: string, scale: number = 1.4, fade: boolean = true): Tex {
+        let t = this.coordinateSystem.tex(v, s);
+        t.addDependency(v, this.normal);
+        t.update = () => {
+            let p = this.camera.projectPoint(v.scale(scale));
+            let q = this.coordinateSystem.plot.viewportToFrame(p.x, p.y);
+            t.moveTo(q);
+
+            let dot = this.normal.dot(v.normalize());
+            if (fade && dot < 0) {
+                t.setAttribute('opacity', Math.max(1 + 2 * dot, 0).toFixed(2));
+            } else {
+                t.setAttribute('opacity', '1')
+            }
+        }
+        t.update();
+
+        return t;
+    }
+
+    labelBasisVectors() {
+        let basisLabels = this.foreground.group();
+
+        let si = new Vector3(1, 0, 0).scale(1.25);
+        let sj = new Vector3(0, 1, 0).scale(1.25);
+        let sk = new Vector3(0, 0, 1).scale(1.25);
+        
+        this.orientPoint(si, this.q);
+        this.orientPoint(sj, this.q);
+        this.orientPoint(sk, this.q);
+    
+        let iLabel = this.sphereLabel(si, '\\hat{\\imath}').setColor('\\hat{\\imath}','var(--red)');
+        let jLabel = this.sphereLabel(sj, '\\hat{\\jmath}').setColor('\\hat{\\jmath}','var(--green)');
+        let kLabel = this.sphereLabel(sk, '\\hat{k}').setColor('\\hat{k}','var(--blue)');
+
+        iLabel.setAttribute('font-size', '20px');
+        jLabel.setAttribute('font-size', '20px');
+        kLabel.setAttribute('font-size', '20px');
+
+        iLabel.drawBackground(true);
+        jLabel.drawBackground(true);
+        kLabel.drawBackground(true);
+
+        basisLabels.appendChild(iLabel);
+        basisLabels.appendChild(jLabel);
+        basisLabels.appendChild(kLabel);
+
+        return basisLabels;
+    }
 
     orientPoint = (v: Vector3, q: Quaternion) => {
         let v_copy = v.copy();

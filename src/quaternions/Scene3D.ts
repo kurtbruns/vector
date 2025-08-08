@@ -180,7 +180,11 @@ export class Scene3D {
         }
 
         if (config.labelAxes) {
-            this.labelAxes(config.size, { color: config.labelAxesColor });
+            this.labelAxes(config.size, { 
+                color: config.labelAxesColor, 
+                a: config.size >= 2.5 ? 0.5 : 0.25 
+            });
+            // this.labelAxes(config.size, { color: config.labelAxesColor });
         }
 
         if (config.tickMarks) {
@@ -741,6 +745,10 @@ export class Scene3D {
         this.xAxisLabel = this.tex(this.positiveX.copy().scale(c + options.a), 'x')
         this.yAxisLabel = this.tex(this.positiveY.copy().scale(c + options.a), 'y')
         this.zAxisLabel = this.tex(this.positiveZ.copy().scale(c + options.a), 'z')
+
+        this.xAxisLabel.setAttribute('font-size', '18px');
+        this.yAxisLabel.setAttribute('font-size', '18px');
+        this.zAxisLabel.setAttribute('font-size', '18px');
 
         if (options.color) {
             this.xAxisLabel.setColorAll('x', 'var(--green)');

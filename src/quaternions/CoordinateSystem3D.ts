@@ -1248,15 +1248,16 @@ export class CoordinateSystem3D {
             q = this.camera.projectPoint(p);
         }
 
-        let vbox = this.plot.frame.viewBox.split(/[\s,]+/).map(Number)
         let c = this.plot.frame.circle(0, 0, 3);
         c.setAttribute('fill', options.color);
         c.setAttribute('opacity', `${options.opacity}`);
         c.addDependency(q, options.colorValue)
         c.update = () => {
+
+            // TODO: note, removed adding viewbox left and right values?
             let relativePoint = this.plot.viewportToFrame(q.x, q.y);
-            c.cx = relativePoint.x + vbox[0];
-            c.cy = relativePoint.y + vbox[1];
+            c.cx = relativePoint.x;
+            c.cy = relativePoint.y;
             if (options.scale) {
                 c.r = options.s / (q.z * q.z);
             } else {

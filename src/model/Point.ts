@@ -31,6 +31,7 @@ export class Point extends BaseNode {
     set(other:Point): Point {
         this.x = other.x;
         this.y = other.y;
+        this.updateDependents();
         return this;
     }
 
@@ -173,6 +174,8 @@ export class Point extends BaseNode {
 
         return {
             moveTo: function (endPoint: { x: number, y: number }) {
+
+                
                 let hasStarted = false;
                 let startX;
                 let startY;

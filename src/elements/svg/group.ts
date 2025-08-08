@@ -18,7 +18,7 @@ import { Use } from './use'
 import { Description } from './description'
 import { MetaData } from './meta-data'
 
-type GroupAttributes = 'clip-path' | 'transform';
+export type GroupAttributes = 'clip-path' | 'transform';
 
 /**
 * A group is a structural element that allows for elements to be grouped
@@ -26,6 +26,7 @@ type GroupAttributes = 'clip-path' | 'transform';
 * group.
 */
 export class Group extends BaseElement implements Descriptive, Shape, Structural {
+
 
     // make the type of the root to be more specific
     declare root: SVGGElement;
@@ -52,7 +53,7 @@ export class Group extends BaseElement implements Descriptive, Shape, Structural
                         hasStarted = true;
                     }
                     const opacity = startValue + (value - startValue)*alpha;
-                    this.setAttribute('opacity', opacity.toString()) 
+                    this.setAttribute('opacity', opacity.toFixed(3)) 
                 };
             },
         };
@@ -121,6 +122,14 @@ export class Group extends BaseElement implements Descriptive, Shape, Structural
     }
 
     // other methods
+
+    /**
+     * Set the opacity of the group
+     * @param value - The opacity value to set (0-1)
+     */
+    setOpacity(value: number) {
+        this.root.setAttribute('opacity', value.toString());
+    }
 
     /**
     * Constructs and appends a text element within this element.
