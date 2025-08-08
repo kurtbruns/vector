@@ -39,10 +39,7 @@ export class Point extends BaseNode {
      * Multiplies this point by a scalar and returns a new point.
      */
     scale(s: number): Point {
-        this.x *= s;
-        this.y *= s;
-        this.updateDependents();
-        return this;
+        return new Point(s*this.x, s*this.y);
     }
 
     /**
@@ -123,6 +120,14 @@ export class Point extends BaseNode {
      */
     conjugate(): Point {
         return new Point(this.x, -this.y);
+    }
+
+    /**
+     * Projects the other point onto this point's line.
+     */
+    project(other:Point) {
+        let scalarProjection = other.dot(this) / this.dot(this);
+        return this.copy().scale(scalarProjection);
     }
 
     /**

@@ -95,7 +95,7 @@ export class Theme {
             '--font-color': '#404040',
             '--border-color': '#e0e0e0',
 
-            '--grid-primary': '#c0c0c0',
+            '--grid-primary': '#b0b0b0',
             '--grid-secondary': '#d0d0d0',
             '--grid-tertiary': '#f0f0f0',
             '--grid-quaternary': '#f4f4f4',
@@ -116,7 +116,7 @@ export class Theme {
             
             '--yellow': '#CBA615',
             '--purple': '#a452ce',
-            '--orange': '#ff9f4c',
+            '--orange': '#D48037',
         };
     }
 

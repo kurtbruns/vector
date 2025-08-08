@@ -50,7 +50,6 @@ export class Quaternion extends BaseNode {
         return new Quaternion(0, vector.x, vector.y, vector.z);
     }
 
-
     static orientationBetween(from: Vector3, to: Vector3): Quaternion {
 
         // Calculate the direction from the camera to the target
@@ -367,6 +366,26 @@ export class Quaternion extends BaseNode {
         return new Quaternion(w, x, y, z);
     }
 
+    static rotationToVector(v: Vector3): Quaternion {
+
+        const normalized = v.normalize();
+        const forward = Quaternion.standardForwardDirection();
+        const axis = forward.cross(normalized);
+        const angle = Math.acos(forward.dot(normalized));
+
+        // No rotation needed
+        if (angle === 0) {
+            return new Quaternion(1, 0, 0, 0);
+        }
+
+        // Vectors are opposite
+        if (axis.x === 0 && axis.y === 0 && axis.z === 0) {
+            return new Quaternion(0, 1, 0, 0);
+        }
+
+        return Quaternion.fromAxisAngle(axis.normalize(), angle);
+    }
+
     // Converts the quaternion to a 3x3 rotation matrix represented as a flat array
     toRotationMatrix(): number[] {
         const matrix = new Array(9);
@@ -399,24 +418,16 @@ export class Quaternion extends BaseNode {
         return matrix;
     }
 
-    static rotationToVector(v: Vector3): Quaternion {
+    set(q: Quaternion) {
+        this.w = q.w;
+        this.x = q.x;
+        this.y = q.y;
+        this.z = q.z;
+        this.updateDependents();
+    }
 
-        const normalized = v.normalize();
-        const forward = Quaternion.standardForwardDirection();
-        const axis = forward.cross(normalized);
-        const angle = Math.acos(forward.dot(normalized));
-
-        // No rotation needed
-        if (angle === 0) {
-            return new Quaternion(1, 0, 0, 0);
-        }
-
-        // Vectors are opposite
-        if (axis.x === 0 && axis.y === 0 && axis.z === 0) {
-            return new Quaternion(0, 1, 0, 0);
-        }
-
-        return Quaternion.fromAxisAngle(axis.normalize(), angle);
+    scale(s: number): Quaternion {
+        return new Quaternion(this.w * s, this.x * s, this.y * s, this.z * s);
     }
 
     transform(v: Vector3) {
@@ -427,14 +438,6 @@ export class Quaternion extends BaseNode {
         let rotatedQuaternion = this.multiply(vectorQuaternion).multiply(this.inverse());
 
         return new Vector3(rotatedQuaternion.x, rotatedQuaternion.y, rotatedQuaternion.z);
-    }
-
-    set(q: Quaternion) {
-        this.w = q.w;
-        this.x = q.x;
-        this.y = q.y;
-        this.z = q.z;
-        this.updateDependents();
     }
 
     getUpAxis(): Vector3 {
@@ -463,10 +466,6 @@ export class Quaternion extends BaseNode {
             this.w * q.y - this.x * q.z + this.y * q.w + this.z * q.x,
             this.w * q.z + this.x * q.y - this.y * q.x + this.z * q.w
         );
-    }
-
-    scale(s: number): Quaternion {
-        return new Quaternion(this.w * s, this.x * s, this.y * s, this.z * s);
     }
 
     /**
@@ -620,20 +619,6 @@ export class Quaternion extends BaseNode {
                     this.y = c + (endPoint.c - c) * alpha;
                     this.z = d + (endPoint.d - d) * alpha;
                     this.updateDependents();
-                };
-            },
-            doubleRotate: (q1: Quaternion, q2: Quaternion) => {
-                let hasStarted = false;
-                let q: Quaternion;
-
-                return (alpha: number) => {
-                    if (!hasStarted) {
-                        q = this.copy();
-                        hasStarted = true;
-                    }
-                    let s1 = q1.pow(alpha);
-                    let s2 = q2.pow(alpha);
-                    this.set(s1.multiply(s2).multiply(q));
                 };
             },
             rotate: (axis: Vector3, angle: number) => {

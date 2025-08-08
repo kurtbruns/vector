@@ -378,6 +378,14 @@ export class GridPoint extends Input {
     }
 
     /**
+     * Projects the other point onto this point's line.
+     */
+    project(other:Point) {
+        let scalarProjection = other.dot(this) / this.dot(this);
+        return this.copy().scale(scalarProjection);
+    }
+
+    /**
      * Method to convert the point to a string.
      */
     toString(): string {

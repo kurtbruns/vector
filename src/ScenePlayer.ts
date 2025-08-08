@@ -1,5 +1,5 @@
-import { Definitions, Frame, Group, Player, PlotGridBased, Point, Scene } from "../../vector/src";
-import { SceneConfig } from "../../vector/src/Scene";
+import { Player } from "./Player";
+import { Scene, SceneConfig } from "./Scene";
 
 export interface ScenePlayerConfig extends SceneConfig {
     name?: string;
@@ -23,6 +23,7 @@ export class ScenePlayer extends Scene {
             width: 500,
             height: 400,
             background: true,
+            suffix: ""
         };
 
         config = { ...defaultConfig, ...config };
@@ -51,7 +52,7 @@ export class ScenePlayer extends Scene {
 
         this.player = new Player({
             scene: this,
-            name: name
+            name: name + config.suffix
         });
 
     }
