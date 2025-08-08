@@ -63,20 +63,20 @@ describe('add dependency', () => {
 
   test('add circular dependency', () => {
     let dg = new DependencyGraph<string>();
-    expect(() => { dg.addDependency('a', 'a'); }).toThrowError('circular dependency');
+    expect(() => { dg.addDependency('a', 'a'); }).toThrow('circular dependency');
   });
 
   test('add circular dependency', () => {
     let dg = new DependencyGraph<string>();
     dg.addDependency('a', 'b')
-    expect(() => { dg.addDependency('b', 'a'); }).toThrowError('circular dependency');
+    expect(() => { dg.addDependency('b', 'a'); }).toThrow('circular dependency');
   });
 
   test('add circular dependency', () => {
     let dg = new DependencyGraph<string>();
     dg.addDependency('a', 'b')
     dg.addDependency('b', 'c')
-    expect(() => { dg.addDependency('c', 'a'); }).toThrowError('circular dependency');
+    expect(() => { dg.addDependency('c', 'a'); }).toThrow('circular dependency');
   });
 });
 
