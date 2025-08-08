@@ -95,6 +95,7 @@ export {
   Animation,
   AnimationFunction,
   Scene,
+  SceneConfig,
   SceneMode,
 } from './Scene';
 
@@ -104,7 +105,8 @@ export {
 } from './CoordinateSystem';
 
 export {
-  Player
+  Player,
+  PlayerConfig,
 } from './Player';
 
 export { 
