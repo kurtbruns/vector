@@ -9,7 +9,7 @@ const EASING_FUNCTIONS = {
     'easeInOut': (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
     'easeIn': (t: number) => t * t,
     'easeOut': (t: number) => t * (2 - t),
-    // ... add other easing functions as needed
+    // ... add other easing functions as needed 
 };
 
 /**
@@ -164,40 +164,53 @@ export class Scene {
 
     /**
      * Sets the mode for the scene.
+     * @param mode - The SceneMode to set (Live or Export)
      */
     setMode(mode: SceneMode): void {
         this.mode = mode;
     }
 
     /**
-     * Returns the frames per second
+     * Returns the frames per second of the scene animation.
      */
     get fps(): number {
         return this._fps;
     }
 
     /**
-     * Sets the reset function
+     * Sets the reset function for the scene.
+     * @param fn - The function to be called when resetting the scene
      */
     set reset(fn: () => void) {
         this._reset = fn;
     }
 
     /**
-     * Resets the scene
+     * Returns the reset function for the scene.
      */
     get reset(): () => void {
         return this._reset;
     }
 
+    /**
+     * Returns the function to be called when the scene starts.
+     */
     get onStart() : () => void {
         return this._onStart;
     }
 
+    /**
+     * Sets the function to be called when the scene starts.
+     * @param lambda - The function to be called at scene start
+     */
     set onStart(lambda: () => void) {
         this._onStart = lambda;
     }
 
+    /**
+     * Returns the total number of animations in the scene.
+     * @returns The number of animations
+     */
     animationCount(): number {
         return this.animations.length;
     }

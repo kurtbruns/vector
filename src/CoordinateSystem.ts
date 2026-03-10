@@ -875,6 +875,7 @@ export class CoordinateSystem extends Scene {
         }
         line.update();
         line.setAttribute('stroke', 'var(--font-color)')
+        line.setAttribute('stroke-width', '1.5');
         return line;
     }
 

@@ -1,6 +1,7 @@
 import { CoordinateSystem, CoordinateSystemConfig } from "./CoordinateSystem";
 import { Scene3D } from "./quaternions";
 import { Scene, SceneMode } from "./Scene";
+import { Theme } from "./Theme";
 import { ExportTarget, bundle, download, saveAs } from "./util";
 
 export interface PlayerConfig {
@@ -132,18 +133,20 @@ export class Player {
         }
 
         captureButton.onclick = () => {
-            let suffix = '';
-            switch (Player.downloadTarget) {
-                case ExportTarget.BROWSER:
-                    suffix = '.browser.svg'
-                    break;
-                case ExportTarget.ILLUSTRATOR:
-                    suffix = '.illustrator.svg'
-                    break;
-                default:
-                    break;
-            }
-            download(this.scene.frame.root, this.name, Player.downloadTarget);
+            let theme = Theme.getInstance();
+            let currentMode = theme.getMode();
+            Player.downloadTarget = ExportTarget.FIGMA;
+            
+            let filename = this.name || this.scene.frame.root.getAttribute('id') || 'capture';
+            
+            theme.forceMode("light");
+            download(this.scene.frame.root, `${filename}-light.svg`, Player.downloadTarget);
+            
+            theme.forceMode("dark");
+            download(this.scene.frame.root, `${filename}-dark.svg`, Player.downloadTarget);
+            
+            theme.forceMode(currentMode as "light" | "dark");
+            // theme.restoreMode();
         }
 
         downloadButton.onclick = () => {

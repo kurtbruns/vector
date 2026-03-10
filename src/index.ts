@@ -66,6 +66,7 @@ export {
   factorial,
   floor,
   isPrime,
+  linearSpace,
   nextPrime,
   pointWhereTwoLinesIntersect,
   trapezoidalWave
@@ -123,5 +124,11 @@ export {
   Quaternion,
   Camera,
   Scene3D,
+  CoordinateSystem3D,
+  Sphere,
 } from './quaternions'
+
+export {
+  FrameImage,
+} from './Image'
 

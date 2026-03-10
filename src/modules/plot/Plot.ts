@@ -60,10 +60,19 @@ export interface PlotConfig {
 type FunctionType = (x: number) => number;
 
 /**
- * A plot for drawing the curves formed by functions
+ * A class for creating and managing mathematical plots.
+ * Provides functionality for drawing coordinate systems, functions, vectors,
+ * and other mathematical visualizations.
  * 
- * TODO: the frame vs. viewport vs. internal coordiantes
+ * The plot consists of multiple layers:
+ * - frame: The main viewport/coordinate system
+ * - grid: Contains grid lines
+ * - axes: Contains coordinate axes
+ * - fnGroup: Contains function plots
+ * - labels: Contains text labels and annotations
+ * - foreground: Top layer for additional elements
  */
+
 export class Plot {
 
     /**
@@ -241,6 +250,9 @@ export class Plot {
         this.getCTM();
     }
 
+    /**
+     * Releases the current transformation matrix.
+     */ 
     releaseCTM() {
         this.ctm = null;
         this.inverse = null;
@@ -278,6 +290,9 @@ export class Plot {
         this.getFrameBoundingRect();
     }
 
+    /**
+     * Releases the bounding rectangle of the frame.
+     */ 
     releaseBoundingRect() {
         this.bbox = null;
     }
@@ -372,6 +387,9 @@ export class Plot {
         return transformedPoint;
     }
 
+    /**
+     * Converts a point from relative screen coordinates to the viewports's coordinate system.
+     */ 
     relativeToViewport(relativeX: number, relativeY: number): DOMPoint;
     relativeToViewport(point: { x: number, y: number }): DOMPoint;
     relativeToViewport(relativeXOrPoint: number | { x: number, y: number }, relativeY?: number) {
@@ -877,7 +895,7 @@ export class Plot {
     /**
      * Draws the parametric plot of the function for a range of t-values.
      */
-    drawParametric(fn: { x: (t: number) => number, y: (t: number) => number }, tMin = -10, tMax = 10, tStep = 0.01) {
+    drawParametric(fn: { x: (t: number) => number, y: (t: number) => number }, tMin = -10, tMax = 10, tStep = 0.01, n = 3) {
 
         let p = this.internalSVG.root.createSVGPoint();
 
@@ -960,12 +978,12 @@ export class Plot {
                     p.x = xEntry;
                     p.y = yEntry;
                     let rEntry = this.SVGToRelative(p);
-                    d += `M ${rEntry.x} ${rEntry.y}`;  // Move to the entry point without drawing
+                    d += `M ${rEntry.x.toFixed(n)} ${rEntry.y.toFixed(n)}`;  // Move to the entry point without drawing
                     hasStarted = true
                 }
 
                 // Draw the current point
-                d += `${hasStarted ? 'L' : 'M'} ${r.x} ${r.y}`;
+                d += `${hasStarted ? 'L' : 'M'} ${r.x.toFixed(n)} ${r.y.toFixed(n)}`;
                 hasStarted = true;
             } else {
                 // If the point was inside before and now it's outside, interpolate to the exit point
@@ -976,7 +994,7 @@ export class Plot {
                     p.x = xExit;
                     p.y = yExit;
                     let rExit = this.SVGToRelative(p);
-                    d += `L ${rExit.x} ${rExit.y}`;  // Draw to the exit point
+                    d += `L ${rExit.x.toFixed(n)} ${rExit.y.toFixed(n)}`;  // Draw to the exit point
                 }
             }
 
@@ -1159,16 +1177,23 @@ export class Plot {
         return y < y1 || y > y2;
     }
 
-
     /**
     * Draws the plot of the function for all x-values in the view ports range 
     */
-    draw() {
+    draw(x1?: number, x2?: number) {
 
         let spacing = 0;
         let bbox = this.backgroundRectangle.root.getBoundingClientRect();
-        let x1 = Math.floor(bbox.x + spacing);
-        let x2 = Math.ceil(bbox.x + bbox.width - spacing);
+        if (x1 === undefined) {
+            x1 = Math.floor(bbox.x + spacing);
+        } else {
+            x1 = this.SVGToScreen(x1, 0).x;
+        }
+        if (x2 === undefined) {
+            x2 = Math.ceil(bbox.x + bbox.width - spacing);
+        } else {
+            x2 = this.SVGToScreen(x2, 0).x;
+        }
         let ctm = this.getCTM();
         let inverse = ctm.inverse();
         let point = this.internalSVG.root.createSVGPoint();
@@ -1600,7 +1625,7 @@ export class Plot {
         return l;
     }
 
-    displayPoint(p: Point, color: string = 'var(--font-color)', radius: number = 4): Circle {
+    displayPoint(p: Point, color: string = 'var(--font-color)', radius: number = 4.5): Circle {
 
         let c = this.frame.circle(0, 0, radius);
         c.setAttribute('fill', color);
@@ -1748,9 +1773,8 @@ export class Plot {
         path.setAttribute('stroke-width', '1.5');
         if (close) {
             path.setAttribute('fill', 'var(--font-color)');
-            path.setAttribute('fill-opacity', '0.2');
+            path.setAttribute('fill-opacity', '0.25');
         }
-
 
         path.addDependency(p0, p1, p2);
         path.update = () => {
@@ -1772,11 +1796,11 @@ export class Plot {
             let sweepFlag: boolean;
 
             if (fullRotation) {
-                arcFlag = (angle > Math.PI) ? false : true;
+                arcFlag = (angle >= Math.PI) ? false : true;
                 sweepFlag = false;
             } else {
                 arcFlag = false;
-                sweepFlag = (angle > Math.PI) ? false : true;
+                sweepFlag = (angle >= Math.PI) ? false : true;
             }
 
             let x1 = r * Math.cos(a1) + fp0.x;
@@ -1794,7 +1818,7 @@ export class Plot {
         return path;
     }
 
-    displayPathArrow(path: Path, color: string = 'var(--font-color)'): Group {
+    displayPathArrow(path: Path | Line, color: string = 'var(--font-color)'): Group {
 
         const refX = 6;
         const refY = 5;
@@ -1844,7 +1868,7 @@ export class Plot {
 
     }
 
-    displayPathArrow2(path: Path, color: string = 'var(--font-color)', refX = 8.5): Group {
+    displayPathArrow2(path: Path | Line, color: string = 'var(--font-color)', refX = 8.5, ): Group {
 
         const refY = 5;
         let scale = 1.5;
@@ -1853,7 +1877,7 @@ export class Plot {
             scale = Number(strokeWidth.replace(/px$/, ''));
         }
 
-        let g = this.frame.group();
+        let g = this.midground.group();
         g.appendChild(path);
         let a = g.path(``);
         a.setAttribute('fill', color);

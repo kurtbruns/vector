@@ -1,13 +1,8 @@
-/*
-* Author: Kurt Bruns
-* Date: 2020 12 05
-*/
-
 import { LinkedList } from './LinkedList'
 
 /**
-A dependency graph models relationships between nodes. The graph is directed and asyclic, throwing 
-* a circular dependency exception if circular dependencies are added.
+* A dependency graph that models relationships between nodes. 
+* The graph is directed and acyclic, throwing a circular dependency exception if circular dependencies are added.
 */
 export class DependencyGraph<T> {
 
@@ -26,8 +21,9 @@ export class DependencyGraph<T> {
     }
 
     /**
-    * Adds a node into the dependency graph. If the node already exists within the graph, does
-    * nothing.
+    * Adds a node into the dependency graph.
+    * @param node The node to add
+    * @returns void
     */
     add(node: T): void {
         if (!this.contains(node)) {
@@ -37,14 +33,18 @@ export class DependencyGraph<T> {
     }
 
     /**
-    Returns true if the node exists within the dependency graph.
+    * Returns true if the node exists within the dependency graph.
+    * @param node The node to check
+    * @returns boolean
     */
     contains(node: T): boolean {
         return this.relationships.has(node);
     }
 
     /**
-    Removes the node from the dependency graph. If the node does not exist does nothing.
+    * Removes the node from the dependency graph.
+    * @param node The node to remove
+    * @returns void
     */
     remove(node: T): void {
         if (this.relationships.delete(node)) {
@@ -53,14 +53,19 @@ export class DependencyGraph<T> {
     }
 
     /**
-    Returns the number of vertices in the dependency graph.
+    * Returns the number of vertices in the dependency graph.
+    * @returns number
     */
     size(): number {
         return this._size;
     }
 
     /**
-    Adds a dependency between two nodes.
+    * Adds a dependency between two nodes.
+    * @param from Source node
+    * @param to Target node
+    * @throws Error if adding this dependency creates a circular reference
+    * @returns void
     */
     addDependency(from: T, to: T): void {
         // Make sure the nodes exist
@@ -75,7 +80,10 @@ export class DependencyGraph<T> {
     }
 
     /**
-    Remove a dependency between two nodes.
+    * Removes a dependency between two nodes.
+    * @param from Source node
+    * @param to Target node
+    * @returns void
     */
     removeDependency(from: T, to: T): void {
 
@@ -89,8 +97,12 @@ export class DependencyGraph<T> {
     }
 
     /**
-    Traverses the graph structuring checking for circular dependecies. If a circular dependency is 
-    * added, throws an error.
+    * Traverses the graph structure checking for circular dependencies.
+    * @param current The current node being checked
+    * @param node The original node to compare against
+    * @param visited Set of already visited nodes
+    * @throws Error if a circular dependency is detected
+    * @returns void
     */
     private traverse(current: T, node: T, visited: Set<T> = new Set<T>()): void {
         // Mark this node as visited
@@ -112,7 +124,9 @@ export class DependencyGraph<T> {
     }
 
     /**
-    Returns true if a node has dependents.
+    * Returns true if a node has dependents.
+    * @param node The node to check
+    * @returns boolean
     */
     hasDependents(node: T): boolean {
         return this.contains(node) && this.relationships.get(node).size != 0;
@@ -120,6 +134,8 @@ export class DependencyGraph<T> {
 
     /**
     * Returns the adjacent dependent nodes.
+    * @param node The node to get adjacents for
+    * @returns Set<T>
     */
     getAdjacentNodes(node: T): Set<T> {
         return this.relationships.get(node);
@@ -127,6 +143,9 @@ export class DependencyGraph<T> {
 
     /**
     * Returns an iterator to the dependents of the node.
+    * @param node The node to get dependents for
+    * @param shallow If true, returns only direct dependents. If false, returns all dependents
+    * @returns Iterable<T>
     */
     getDependents(node: T, shallow: boolean = false): Iterable<T> {
         // If the node does not exist return an empty iterable
@@ -148,7 +167,8 @@ export class DependencyGraph<T> {
     }
 
     /**
-    * Returns a topological sort of this dependency
+    * Returns a topological sort of this dependency graph.
+    * @returns LinkedList<T>
     */
     getTopologicalSort(): LinkedList<T> {
 
@@ -164,7 +184,11 @@ export class DependencyGraph<T> {
     }
 
     /**
-    Returns a list of the arguent node and all of its dependents in topological order.
+    * Returns a list of the argument node and all of its dependents in topological order.
+    * @param node The starting node
+    * @param visited Set of already visited nodes
+    * @param list The list to build the result in
+    * @returns LinkedList<T>
     */
     private getTopologicalDependents(node: T, visited: Set<T> = new Set<T>(), list: LinkedList<T> = new LinkedList<T>()): LinkedList<T> {
         // Mark this node as visited
@@ -184,14 +208,16 @@ export class DependencyGraph<T> {
     }
 
     /**
-    Returns the nodes within this dependency graph.
+    * Returns the nodes within this dependency graph.
+    * @returns Iterable<T>
     */
     getNodes(): Iterable<T> {
         return this.relationships.keys();
     }
 
     /**
-    Returns a string representation of this dependency graph.
+    * Returns a string representation of this dependency graph.
+    * @returns string
     */
     toString(): string {
         // Build a string of dependencies in the form of from->to
@@ -205,7 +231,9 @@ export class DependencyGraph<T> {
     }
 
     /**
-    Generates a DependenyGraph object from a string representation.
+    * Generates a DependencyGraph object from a string representation.
+    * @param str The string representation to parse
+    * @returns DependencyGraph<string>
     */
     static Generate(str: string): DependencyGraph<string> {
         let graph = new DependencyGraph<string>();

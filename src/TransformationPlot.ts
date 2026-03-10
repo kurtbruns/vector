@@ -1,12 +1,15 @@
+import { Tex } from ".";
 import { Group, Line } from "./elements/svg";
 import { Point } from "./model";
 import { Plot } from "./modules/plot";
 import { ScenePlayer } from "./ScenePlayer";
 
 export interface TransformationPlotConfig {
+    drawBasislabels?: boolean;
     drawBasisVectors?: boolean;
     player?: boolean;
     drawGrid?: boolean;
+    drawGridAxes?: boolean;
     drawTransformedGrid?: boolean;
     suffix?: string;
     viewportWidth?: number;
@@ -19,6 +22,8 @@ export class TransformationPlot extends ScenePlayer {
     j: Point;
     iArrow: Line;
     jArrow: Line;
+    iLabel: Tex;
+    jLabel: Tex;
 
     plot: Plot;
 
@@ -26,8 +31,10 @@ export class TransformationPlot extends ScenePlayer {
 
         let aspectRatio = 16 / 9;
         let defaultConfig: TransformationPlotConfig = {
+            drawBasislabels: true,
             drawBasisVectors: true,
             drawGrid: true,
+            drawGridAxes: true,
             drawTransformedGrid: true,
             viewportWidth: 40,
             player: true,
@@ -59,8 +66,7 @@ export class TransformationPlot extends ScenePlayer {
         this.j = new Point(0, 1);
 
         if (config.drawGrid) {
-            this.plot.drawBorder()
-            this.plot.drawAxes()
+            // this.plot.drawBorder()
             this.plot.drawGrid(
                 [
                     this.plot.generateHorizontalValues('small'),
@@ -74,26 +80,51 @@ export class TransformationPlot extends ScenePlayer {
             )
         }
 
+        if(config.drawGridAxes) {
+            this.plot.drawAxes({axesColor:'var(--font-color-subtle'})
+        }
+
         if (config.drawBasisVectors) {
             this.iArrow = this.plot.displayVector(this.i, 'var(--green)');
             this.jArrow = this.plot.displayVector(this.j, 'var(--red)');
         }
 
+        if(config.drawBasislabels) {
+            this.iLabel = this.plot.displayVectorLabel(this.i, '\\hat{\\imath}', {scale:0.5})
+            this.iLabel.setAttribute('color', 'var(--green)')
+
+            this.jLabel = this.plot.displayVectorLabel(this.j, '\\hat{\\jmath}', {scale:0.5})
+            this.jLabel.setAttribute('color', 'var(--red)')
+        }
+
         if (config.drawTransformedGrid) {
-            this.drawTransformedGrid(
-                [
-                    this.plot.generateValues([this.plot.minX, this.plot.maxX], 'small')
-                ],
-                [
-                    this.plot.generateValues([this.plot.minY, this.plot.maxY], 'small')
-                ]
-            );
+            // let plotWidth = this.plot.maxX - this.plot.minX;
+            // let plotHeight = this.plot.maxY - this.plot.minY;
+            // this.drawTransformedGrid(
+            //     [
+            //         this.plot.generateValues([this.plot.minX - plotWidth, this.plot.maxX + plotWidth], 'small'),
+            //         this.plot.generateValues([this.plot.minX - plotWidth, this.plot.maxX + plotWidth], 'half'),
+            //         this.plot.generateValues([this.plot.minX - plotWidth, this.plot.maxX + plotWidth], 'big'),
+            //     ],
+            //     [
+            //         this.plot.generateValues([this.plot.minY - plotHeight, this.plot.maxY + plotHeight], 'small'),
+            //         this.plot.generateValues([this.plot.minY - plotHeight, this.plot.maxY + plotHeight], 'half'),
+            //         this.plot.generateValues([this.plot.minY - plotHeight, this.plot.maxY + plotHeight], 'big'),
+            //     ]
+            // );
+            this.drawTransformedGridOversized();
         }
 
 
 
     }
 
+    /**
+     * Transforms a vector by applying the current linear transformation defined by the basis vectors i and j.
+     * Creates a dependency relationship so the vector updates when basis vectors change.
+     * @param v The vector point to transform
+     * @returns The transformed vector point
+     */
 
     transformVector(v: Point) {
         let i = this.i;
@@ -183,20 +214,16 @@ export class TransformationPlot extends ScenePlayer {
 
     drawTransformedGrid(horizontalValues: number[][], verticalValues: number[][]) {
 
-        // Note: the vertical values are negated from their true values, but since
-        // SVGToRelative is called this isn't an issue.
-
         let gridGroup = this.plot.grid.group();
         gridGroup.classList.add('non-scaling-stroke');
         gridGroup.setAttribute('stroke', 'var(--grid-primary)');
         gridGroup.setAttribute('stroke-width', '1.5px');
 
-        let x1 = this.plot.getSVGMinX();
-        let x2 = this.plot.getSVGMaxX();
+        let x1 = this.plot.minX;
+        let x2 = this.plot.maxX
 
-        let y1 = -this.plot.getSVGMaxY();
-        let y2 = -this.plot.getSVGMinY();
-
+        let y1 = this.plot.minY;
+        let y2 = this.plot.maxY;
 
         // horizontal grid lines
         let horizontalLines: Set<number> = new Set()
@@ -273,9 +300,147 @@ export class TransformationPlot extends ScenePlayer {
         }
 
         let mapping = [
-            1.0,
-            0.8,
             0.5,
+            0.7,
+            1.0,
+        ]
+
+        let xValues: number[];
+        let yValues: number[];
+        let opacity: number;
+        do {
+            xValues = horizontalValues.pop();
+            yValues = verticalValues.pop();
+            opacity = mapping.pop();
+
+            if (xValues !== undefined) {
+                let group = new Group();
+                group.setAttribute('stroke', 'var(--blue)')
+                group.setAttribute('opacity', opacity.toString())
+                xValues.map(drawHorizontal(group));
+                gridGroup.prependChild(group);
+            }
+
+            if (yValues !== undefined) {
+                let group = new Group();
+                group.setAttribute('stroke', 'var(--blue)')
+                group.setAttribute('opacity', opacity.toString())
+                yValues.map(drawVertical(group));
+                gridGroup.prependChild(group);
+            }
+
+        } while (xValues !== undefined || yValues !== undefined)
+
+    }
+
+    drawTransformedGridOversized() {
+
+        let plotWidth = this.plot.maxX - this.plot.minX;
+        let plotHeight = this.plot.maxY - this.plot.minY;
+
+        let horizontalValues = [
+            this.plot.generateValues([this.plot.minX - plotWidth, this.plot.maxX + plotWidth], 'small'),
+            this.plot.generateValues([this.plot.minX - plotWidth, this.plot.maxX + plotWidth], 'half'),
+            this.plot.generateValues([this.plot.minX - plotWidth, this.plot.maxX + plotWidth], 'big'),
+        ];
+
+        let verticalValues = [
+            this.plot.generateValues([this.plot.minY - plotHeight, this.plot.maxY + plotHeight], 'small'),
+            this.plot.generateValues([this.plot.minY - plotHeight, this.plot.maxY + plotHeight], 'half'),
+            this.plot.generateValues([this.plot.minY - plotHeight, this.plot.maxY + plotHeight], 'big'),
+        ];
+
+        let gridGroup = this.plot.grid.group();
+        gridGroup.classList.add('non-scaling-stroke');
+        gridGroup.setAttribute('stroke', 'var(--grid-primary)');
+        gridGroup.setAttribute('stroke-width', '1.5px');
+
+        let x1 = this.plot.minX - plotWidth;
+        let x2 = this.plot.maxX + plotWidth;
+
+        let y1 = this.plot.minY - plotHeight;
+        let y2 = this.plot.maxY + plotHeight;
+
+        // horizontal grid lines
+        let horizontalLines: Set<number> = new Set()
+        let drawHorizontal = (g: Group) => {
+            return (x: number) => {
+                if (!horizontalLines.has(x)) {
+                    let p1 = this.transformVector(new Point(x, y1));
+                    let p2 = this.transformVector(new Point(x, y2));
+                    let l = g.line(0, 0, 0, 0);
+                    l.addDependency(p1, p2);
+                    l.update = () => {
+
+                        // let t = this.findIntersection(p1, p2);
+                        let t =[p1, p2];
+
+                        if (t !== null) {
+
+                            let t1 = this.plot.viewportToFrame(t[0]);
+                            let t2 = this.plot.viewportToFrame(t[1]);
+
+                            l.x1 = t1.x;
+                            l.y1 = t1.y;
+                            l.x2 = t2.x;
+                            l.y2 = t2.y;
+                        } else {
+                            l.x1 = 0;
+                            l.y1 = 0;
+                            l.x2 = 0;
+                            l.y2 = 0;
+                        }
+
+
+                    }
+                    l.update();
+                    horizontalLines.add(x)
+                }
+            }
+        }
+
+        // vertical lines
+        let verticalLines: Set<number> = new Set()
+        let drawVertical = (g: Group) => {
+            return (y: number) => {
+                if (!verticalLines.has(y)) {
+                    let p1 = this.transformVector(new Point(x1, y));
+                    let p2 = this.transformVector(new Point(x2, y));
+                    let l = g.line(0, 0, 0, 0);
+                    l.addDependency(p1, p2);
+                    l.update = () => {
+
+                        // let t = this.findIntersection(p1, p2);
+                        let t =[p1, p2];
+
+                        if (t !== null) {
+
+                            let t1 = this.plot.viewportToFrame(t[0]);
+                            let t2 = this.plot.viewportToFrame(t[1]);
+
+                            l.x1 = t1.x;
+                            l.y1 = t1.y;
+                            l.x2 = t2.x;
+                            l.y2 = t2.y;
+                        } else {
+                            l.x1 = 0;
+                            l.y1 = 0;
+                            l.x2 = 0;
+                            l.y2 = 0;
+                        }
+
+
+                    }
+                    l.update();
+                    verticalLines.add(y)
+                }
+            }
+        }
+
+        let mapping = [
+            0.5,
+            0.7,
+            1.0,
         ]
 
         let xValues: number[];

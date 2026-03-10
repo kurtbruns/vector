@@ -244,10 +244,13 @@ function createInlineStyledSvg(originalSvg: SVGElement, target: ExportTarget): S
 
         // Handle Figma specific styles.
         if (target === ExportTarget.FIGMA && element.classList.contains('mathjax')) {
+            let fontSize = element.getAttribute('font-size') || '12px';
             element.setAttribute('font-size', '12px');
+            let fontSizePx = parseFloat(fontSize.replace('px', ''));
+
             if(element.firstElementChild.nextElementSibling) {
                 const currentTransform = element.firstElementChild.nextElementSibling.getAttribute('transform') || '';
-                element.firstElementChild.nextElementSibling.setAttribute('transform', `${currentTransform} scale(1.45)`);
+                element.firstElementChild.nextElementSibling.setAttribute('transform', `${currentTransform} scale(${1.1*fontSizePx / 12})`);
             }
         }
 

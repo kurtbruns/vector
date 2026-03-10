@@ -6,6 +6,7 @@ import { BaseNode } from '../model';
  */
 export class Vector3 extends BaseNode {
 
+
     x: number;
     y: number;
     z: number;
@@ -82,6 +83,18 @@ export class Vector3 extends BaseNode {
     * Sets this vector equal to the provided vector.
     */
     set(v: Vector3) {
+        this.x = v.x;
+        this.y = v.y;
+        this.z = v.z;
+        this.updateDependents();
+    }
+
+    /**
+     * Moves this vector to the position specified by another vector and updates any dependent objects.
+     * 
+     * @param v The vector specifying the new position
+     */
+    moveTo(v: Vector3) {
         this.x = v.x;
         this.y = v.y;
         this.z = v.z;

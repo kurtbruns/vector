@@ -22,7 +22,14 @@ export class Theme {
      */
     private style: HTMLStyleElement;
 
+    /**
+     * The light rule for this theme.
+     */
     private lightRule: CSSRule;
+
+    /**
+     * The dark rule for this theme.
+     */
     private darkRule: CSSRule;
 
     // Temporary storage for clearing and restoring rules
@@ -82,17 +89,22 @@ export class Theme {
         }
     }
 
+    /**
+     * Returns the light theme variables.
+     */ 
     private getLightVariables() {
         return {
             '--background': '#ffffff',
             '--background-darker': '#f8f8f8',
             '--background-lighter': '#f4f4f4',
 
+            '--test-color': '#404040',
             '--main': '#404040',
             '--medium': '#808080',
             '--faint': '#e6e6e6',
 
             '--font-color': '#404040',
+            '--font-color-subtle': '#606060',
             '--border-color': '#e0e0e0',
 
             '--grid-primary': '#b0b0b0',
@@ -120,20 +132,25 @@ export class Theme {
         };
     }
 
+    /**
+     * Returns the dark theme variables.
+     */ 
     private getDarkVariables() {
         return {
             // '--background': '#181818',
-            '--background': '#000000',
+            '--background': '#202020',
             // '--background': '#101010',
             '--background-darker': '#181818',
             '--background-lighter': '#181818',
 
+            '--test-color': '#f0f0f0',
             '--main': '#f0f0f0',
             '--medium': '#808080',
             '--faint': '#404040',
 
             '--font-color': '#f0f0f0',
             '--font-color-light': '#a0a0a0',
+            '--font-color-subtle': '#c0c0c0',
             '--border-color': '#404040',
             '--primary': '#fee9af',
 
@@ -218,17 +235,17 @@ export class Theme {
     }
 
     /**
-      * Applies the current theme to the specified frame by adding CSS variables.
-      * @param frame The frame element to apply the theme to.
-      */
+     * Applies the current theme to the specified frame by adding CSS variables.
+     * @param frame The frame element to apply the theme to.
+     */
     applyTheme(frame: Frame) {
         frame.classList.add(this.id);
     }
 
     /**
- * Temporarily removes the light or dark rule and allows forcing the opposite theme.
- * @param mode The theme mode to force ('light' or 'dark').
- */
+     * Temporarily removes the light or dark rule and allows forcing the opposite theme.
+     * @param mode The theme mode to force ('light' or 'dark').
+     */
     public forceMode(mode: 'light' | 'dark') {
         if (mode === 'light') {
             this.clearDarkRule();
@@ -251,6 +268,9 @@ export class Theme {
         }
     }
 
+    /**
+     * Clears the light rule.
+     */
     private clearLightRule() {
         if (this.lightRule && this.style.sheet) {
             // Store the current light rule temporarily
@@ -268,6 +288,9 @@ export class Theme {
         }
     }
 
+    /**
+     * Clears the dark rule.
+     */ 
     private clearDarkRule() {
         if (this.darkRule && this.style.sheet) {
             // Store the current dark rule temporarily
@@ -285,6 +308,9 @@ export class Theme {
         }
     }
 
+    /**
+     * Restores the light rule.
+     */
     private restoreLightRule() {
         if (this.tempLightRule && this.style.sheet) {
             // Reinsert the temporarily stored light rule
@@ -297,6 +323,9 @@ export class Theme {
         }
     }
 
+    /**
+     * Restores the dark rule.
+     */
     private restoreDarkRule() {
         if (this.tempDarkRule && this.style.sheet) {
             // Reinsert the temporarily stored dark rule
@@ -309,13 +338,23 @@ export class Theme {
         }
     }
 
-    private applyForcedLightMode() {
-        const lightRuleString = `${this.getSelector()} { ${Object.entries(this.getLightVariables()).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
+    /**
+     * Applies the light rule.
+     * @param overrides Optional object containing CSS variable overrides
+     */
+    private applyForcedLightMode(overrides?: { [key: string]: string }) {
+        const variables = { ...this.getLightVariables(), ...overrides };
+        const lightRuleString = `${this.getSelector()} { ${Object.entries(variables).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
         this.style.sheet.insertRule(lightRuleString, this.style.sheet.cssRules.length);
     }
 
-    private applyForcedDarkMode() {
-        const darkRuleString = `${this.getSelector()} { ${Object.entries(this.getDarkVariables()).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
+    /**
+     * Applies the dark rule.
+     * @param overrides Optional object containing CSS variable overrides
+     */
+    private applyForcedDarkMode(overrides?: { [key: string]: string }) {
+        const variables = { ...this.getDarkVariables(), ...overrides };
+        const darkRuleString = `${this.getSelector()} { ${Object.entries(variables).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
         this.style.sheet.insertRule(darkRuleString, this.style.sheet.cssRules.length);
     }
 

@@ -70,7 +70,7 @@ export class CoordinateSystem3D {
 
             // cameraOrientation: new Quaternion(-1, 0, 0, 0).multiply(Quaternion.fromAxisAngle(new Vector3(0, 0, 1), Math.PI)),
             cameraOrientation: new Quaternion(1, 0, 0, 0),
-            cameraPosition: new Vector3(0, 0, 20),
+            cameraPosition: new Vector3(0, 0,-20),
             cameraFieldOfView: 60,
             cameraTrackBallRadius: 2,
 
@@ -97,7 +97,7 @@ export class CoordinateSystem3D {
             drawAxesArrows: true,
             labelAxes: true,
             labelAxesColor: false,
-            axesColor: 'var(--font-color-light)',
+            axesColor: 'var(--font-color-subtle)',
             tickMarks: true,
             tickMarksColor: false,
             tickMarksColorAlt: false,
@@ -117,6 +117,7 @@ export class CoordinateSystem3D {
         if (isNaN(config.viewportY)) {
             config.viewportY = -config.viewportHeight / 2;
         }
+
 
         this.plot = new Plot(container, {
             x: config.x,
@@ -145,10 +146,12 @@ export class CoordinateSystem3D {
 
         let fov = config.cameraFieldOfView;
         let aspectRatio = config.viewportWidth / config.viewportHeight;
+
         let nearPlane = 0.1;
         let farPlane = 1000;
 
-        config.cameraPosition.z = -config.cameraPosition.z;
+        // TODO: saving the camera position no longer works with this in place
+        // config.cameraPosition.z = -config.cameraPosition.z;
         this.camera = new Camera(config.cameraPosition, config.cameraOrientation, fov, aspectRatio, nearPlane, farPlane);
 
         if(config.registerEventListeners) {
@@ -1277,6 +1280,42 @@ export class CoordinateSystem3D {
         }
         c.update();
         return c;
+    }
+
+    drawParallelepided( i:Vector3, j:Vector3, k:Vector3 ) {
+        let kj = new Vector3();
+        kj.addDependency(k, j);
+        kj.update = () => {
+            kj.set(k.add(j));
+        };
+        kj.update();
+
+        let kji = new Vector3();
+        kji.addDependency(k, j, i);
+        kji.update = () => {
+            kji.set(k.add(j).add(i));
+        };
+        kji.update();
+
+        let ki = new Vector3();
+        ki.addDependency(k, i);
+        ki.update = () => {
+            ki.set(k.add(i));
+        };
+        ki.update();
+
+        let ji = new Vector3();
+        ji.addDependency(j, i);
+        ji.update = () => {
+            ji.set(j.add(i));
+        };
+        ji.update();
+
+        let outline = this.path({
+            stroke: 'var(--font-color)',
+            opacity: '0.5'
+        }, k, kj, kji, ki, k, kj, j, ji, kji, ki, i, ji);
+        outline.addDependency()
     }
 
 

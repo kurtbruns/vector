@@ -18,3 +18,11 @@ export {
     Scene3D
 } from './Scene3D'
 
+export {
+    CoordinateSystem3D
+} from './CoordinateSystem3D'
+
+export {
+    Sphere
+} from './Sphere'
+

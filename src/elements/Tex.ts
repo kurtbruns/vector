@@ -40,7 +40,7 @@ export class Tex extends Group {
 
         this.classList.add('tex', 'mathjax');
         this.setAttribute('color', 'var(--font-color)');
-        this.root.setAttribute('font-size', '16px');
+        this.root.setAttribute('font-size', '18px');
 
         this.background = this.group();
         this.inner = this.group();
