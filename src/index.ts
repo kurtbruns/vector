@@ -119,6 +119,10 @@ export {
 } from './TransformationPlot';
 
 export {
+  TransformationPlot3D,
+} from './TransformationPlot3D';
+
+export {
   Vector2,
   Vector3,
   Quaternion,
