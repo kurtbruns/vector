@@ -1,5 +1,5 @@
-import { Definitions, Frame, Group, Player, PlotGridBased, Point, Scene } from "../../vector/src";
-import { SceneConfig } from "../../vector/src/Scene";
+import { Definitions, Frame, Group, Player, PlotGridBased, Point, Scene } from "./index";
+import { SceneConfig } from "./Scene";
 
 export interface ImageConfig extends SceneConfig {
     suffix?: string;
