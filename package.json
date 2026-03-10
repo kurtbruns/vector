@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kurtbruns/vector"
+    "url": "git+https://github.com/kurtbruns/vector.git"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
