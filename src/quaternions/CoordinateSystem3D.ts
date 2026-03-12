@@ -190,6 +190,7 @@ export class CoordinateSystem3D {
             }
         }
 
+
     }
 
     registerEventListeners(r = 2, invert = false) {
@@ -939,12 +940,7 @@ export class CoordinateSystem3D {
     vectorCoordinates2(v: Vector3, s: number = 1.5, prefix: string = ''): Tex {
 
         let format = (n: number): string => {
-            if (Number(n).toString().length > 2) {
-                return n.toFixed(2);
-            } else {
-                return Number(n).toString();
-            }
-            // return n.toFixed(2);
+            return parseFloat(n.toFixed(2)).toString();
         }
 
         let t = this.tex(v.add(v.copy().normalize().scale(s)), `${prefix}\\left[\\begin{array}{c} \\: ${v.x} \\: \\\\ \\: ${v.y} \\: \\\\ \\: ${v.z} \\: \\end{array}\\right]`)
@@ -1318,5 +1314,28 @@ export class CoordinateSystem3D {
         outline.addDependency()
     }
 
+    copyCameraButton(): HTMLButtonElement {
+        const cameraIcon = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" style="flex-shrink:0"><path fill="var(--font-color-subtle)" d="M200-320h400L462-500l-92 120-62-80-108 140Zm-40 160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h480q33 0 56.5 23.5T720-720v180l160-160v440L720-420v180q0 33-23.5 56.5T640-160H160Zm0-80h480v-480H160v480Zm0 0v-480 480Z"/></svg>`;
+        const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" style="flex-shrink:0"><path fill="var(--font-color-subtle)" d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg>`;
+
+        const btn = document.createElement('button');
+        btn.title = 'Copy Camera\'s orientation and position';
+        btn.ariaLabel = 'Copy Camera\'s orientation and position';
+        btn.innerHTML = cameraIcon;
+
+        btn.addEventListener('click', () => {
+            const o = this.camera.orientation;
+            const p = this.camera.position;
+            const snippet =
+                `cameraOrientation: new Quaternion(${o.w}, ${o.x}, ${o.y}, ${o.z}),\n` +
+                `cameraPosition: new Vector3(${p.x}, ${p.y}, ${p.z}),`;
+            navigator.clipboard.writeText(snippet).then(() => {
+                btn.innerHTML = checkIcon;
+                setTimeout(() => { btn.innerHTML = cameraIcon; }, 2000);
+            });
+        });
+
+        return btn;
+    }
 
 }

@@ -22,6 +22,9 @@
     "type": "git",
     "url": "git+https://github.com/kurtbruns/vector.git"
   },
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },

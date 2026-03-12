@@ -1,5 +1,3 @@
-import { CoordinateSystem, CoordinateSystemConfig } from "./CoordinateSystem";
-import { Scene3D } from "./quaternions";
 import { Scene, SceneMode } from "./Scene";
 import { Theme } from "./Theme";
 import { ExportTarget, bundle, download, saveAs } from "./util";
