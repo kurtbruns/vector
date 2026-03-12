@@ -55,7 +55,13 @@ See [the sandbox](https://github.com/kurtbruns/vector-sandbox) for an environmen
 git push origin main --follow-tags
 ```
 
-4. Publish the library to the npm registry: This should be the last step. After committing your changes and updating your version number, you're now ready to publish those changes to the npm registry.
+4. Ensure you are logged in to npm:
+
+```sh
+npm login
+```
+
+5. Publish the library to the npm registry: This should be the last step. After committing your changes and updating your version number, you're now ready to publish those changes to the npm registry.
 
 ```sh
 npm publish
