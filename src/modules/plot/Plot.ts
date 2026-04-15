@@ -778,7 +778,9 @@ export class Plot {
             if (this.getSVGMinX() !== 0) {
                 xAxisLine.attatchArrow(this.frame.definitions, true, options.axesColor)
             }
-            xAxisLine.attatchArrow(this.frame.definitions, false, options.axesColor)
+            if (this.getSVGMaxX() !== 0) {
+                xAxisLine.attatchArrow(this.frame.definitions, false, options.axesColor)
+            }
         }
 
 
@@ -786,8 +788,12 @@ export class Plot {
         let yAxisEnd = this.SVGToRelative(0, this.getSVGMaxY());
         let yAxisLine = this.axes.line(yAxisStart.x, yAxisStart.y, yAxisEnd.x, yAxisEnd.y)
         if (options.arrows) {
-            yAxisLine.attatchArrow(this.frame.definitions, true, options.axesColor)
-            yAxisLine.attatchArrow(this.frame.definitions, false, options.axesColor)
+            if (this.getSVGMinY() !== 0) {
+                yAxisLine.attatchArrow(this.frame.definitions, true, options.axesColor)
+            }
+            if (this.getSVGMaxY() !== 0) {
+                yAxisLine.attatchArrow(this.frame.definitions, false, options.axesColor)
+            }
         }
     }
 
