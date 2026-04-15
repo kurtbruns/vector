@@ -70,9 +70,9 @@ export class CoordinateSystem3D {
 
             // cameraOrientation: new Quaternion(-1, 0, 0, 0).multiply(Quaternion.fromAxisAngle(new Vector3(0, 0, 1), Math.PI)),
             cameraOrientation: new Quaternion(1, 0, 0, 0),
-            cameraPosition: new Vector3(0, 0,-20),
+            cameraPosition: new Vector3(0, 0, 20),
             cameraFieldOfView: 60,
-            cameraTrackBallRadius: 2,
+            cameraTrackBallRadius: 1,
 
             registerEventListeners: true,
 
@@ -135,7 +135,7 @@ export class CoordinateSystem3D {
             // axesColor: 'none',
             // big: true,
         })
-    
+
         this.foreground = this.plot.foreground;
         this.background = this.plot.frame.group();
         this.background.root.dataset.role = "background";
@@ -150,11 +150,16 @@ export class CoordinateSystem3D {
         let nearPlane = 0.1;
         let farPlane = 1000;
 
-        // TODO: saving the camera position no longer works with this in place
-        // config.cameraPosition.z = -config.cameraPosition.z;
+        // Negate z to match Camera.projectPoint's internal z-flip convention.
+        // Users pass world-space z (positive = in front of the scene).
+        // See: https://github.com/kurtbruns/vector/issues/28
+        if (config.cameraPosition.z < 0) {
+            console.warn('CoordinateSystem3D: cameraPosition.z is negative. The convention changed to positive z = facing the scene. If this is old code, negate your z value.');
+        }
+        config.cameraPosition.z = -config.cameraPosition.z;
         this.camera = new Camera(config.cameraPosition, config.cameraOrientation, fov, aspectRatio, nearPlane, farPlane);
 
-        if(config.registerEventListeners) {
+        if (config.registerEventListeners) {
             this.registerEventListeners(config.cameraTrackBallRadius, config.cameraTrackBallInvert);
         }
 
@@ -256,7 +261,7 @@ export class CoordinateSystem3D {
                     const q1 = Quaternion.fromVector(v1);
                     const q2 = Quaternion.fromVector(v2);
 
-                    let r = q2.multiply(q1.conjugate());
+                    let r = q2.multiply(q1.conjugate()).pow(0.5);
 
                     // Convert the global rotation to a local rotation
                     let localRotation = this.camera.orientation.conjugate().multiply(r).multiply(this.camera.orientation).normalize();
@@ -672,8 +677,8 @@ export class CoordinateSystem3D {
         this.zAxisLabel = this.tex(new Vector3(0, 0, 1).scale(c + options.a), 'z')
 
         if (options.color) {
-            this.xAxisLabel.setColorAll('x', 'var(--green)');
-            this.yAxisLabel.setColorAll('y', 'var(--red)');
+            this.xAxisLabel.setColorAll('x', 'var(--red)');
+            this.yAxisLabel.setColorAll('y', 'var(--green)');
             this.zAxisLabel.setColorAll('z', 'var(--blue)');
         }
 
@@ -1278,7 +1283,283 @@ export class CoordinateSystem3D {
         return c;
     }
 
-    drawParallelepided( i:Vector3, j:Vector3, k:Vector3 ) {
+    drawConeArrow(from: Vector3, to: Vector3, color: string = 'var(--font-color)', options: { opacity?: number, coneRadius?: number, coneHeight?: number, dashedBase?: boolean } = {}) {
+
+        const config = {
+            opacity: 1,
+            coneRadius: 0.35,
+            coneHeight: 0.8,
+            dashedBase: true,
+            ...options,
+        };
+
+        let dir = new Vector3();
+        dir.addDependency(from, to);
+        dir.update = () => {
+            dir.set(to.subtract(from));
+        };
+        dir.update();
+
+        let coneBase = new Vector3();
+        coneBase.addDependency(to, dir);
+        coneBase.update = () => {
+            coneBase.set(to.subtract(dir.normalize().scale(config.coneHeight)));
+        };
+        coneBase.update();
+
+        let line = this.line(from, coneBase, color, config.opacity);
+        this.drawCone(coneBase, dir, {
+            color,
+            radius: config.coneRadius,
+            height: config.coneHeight,
+            opacity: config.opacity,
+            dashedBase: config.dashedBase,
+        });
+    }
+
+    drawCone(position: Vector3, direction: Vector3, options: { color?: string, radius?: number, height?: number, segments?: number, opacity?: number, dashedBase?: boolean, baseStrokeDasharray?: string } = {}): Group {
+
+        let defaultOptions = {
+            color: 'var(--font-color)',
+            radius: 0.15,
+            height: 0.5,
+            segments: 72,
+            opacity: 0.85,
+            baseStrokeDasharray: '4 4',
+        };
+
+        options = { ...defaultOptions, ...options };
+
+        let group = this.plot.frame.group();
+
+        // Generate circle points for the cone base in the XY plane
+        let basePoints: Vector3[] = [];
+        for (let i = 0; i <= options.segments; i++) {
+            let angle = (2 * Math.PI * i / options.segments);
+            let x = Math.cos(angle) * options.radius;
+            let y = Math.sin(angle) * options.radius;
+            basePoints.push(new Vector3(x, y, 0));
+        }
+
+        // Compute the apex as a reactive Vector3
+        let apex = new Vector3();
+        apex.addDependency(position, direction);
+        apex.update = () => {
+            apex.set(position.add(direction.normalize().scale(options.height)));
+        };
+        apex.update();
+
+        // Base circle path — always drawn, visibility controlled by opacity
+        let base = group.path();
+        base.setAttribute('stroke', options.color);
+        base.setAttribute('fill', options.color);
+        base.setAttribute('fill-rule', 'nonzero');
+        base.setAttribute('fill-opacity', '0');
+        base.setAttribute('stroke-width', '1.5px');
+        base.setAttribute('stroke-opacity', '0.15');
+        base.addDependency(position, direction, apex, this.camera, this.camera.position);
+        base.update = () => {
+            let dir = direction.normalize();
+            let q = Quaternion.rotationToVector(dir);
+
+            // Project apex and base center for angular span check
+            let bv = this.camera.projectPoint(apex);
+            if (bv.z === 0) {
+                base.d = '';
+                return;
+            }
+
+            let cv = this.camera.projectPoint(position);
+            let mx = cv.x - bv.x;
+            let my = cv.y - bv.y;
+            let refLenSq = mx * mx + my * my;
+
+            let d = '';
+            let visiblePoints: { x: number, y: number }[] = [];
+            let maxAngle = -Infinity;
+            let minAngle = Infinity;
+
+            for (let j = 0; j < basePoints.length; j++) {
+                let point = basePoints[j].copy().apply(q).add(position);
+                let v = this.camera.projectPoint(point);
+                if (v.z !== 0) {
+                    visiblePoints.push(this.plot.viewportToFrame(v.x, v.y));
+
+                    if (refLenSq > 1e-10) {
+                        let nx = v.x - bv.x;
+                        let ny = v.y - bv.y;
+                        let angle = Math.atan2(ny * mx - nx * my, nx * mx + ny * my);
+                        if (angle > maxAngle) maxAngle = angle;
+                        if (angle < minAngle) minAngle = angle;
+                    }
+                }
+            }
+
+            if (visiblePoints.length > 0) {
+                d += `M ${visiblePoints[0].x.toFixed(3)} ${visiblePoints[0].y.toFixed(3)} `;
+                for (let i = 1; i < visiblePoints.length; i++) {
+                    d += `L ${visiblePoints[i].x.toFixed(3)} ${visiblePoints[i].y.toFixed(3)} `;
+                }
+                d += `L ${visiblePoints[0].x.toFixed(3)} ${visiblePoints[0].y.toFixed(3)} `;
+            }
+
+            base.d = visiblePoints.length === 0 ? '' : d;
+
+            // camera.position has z negated (see Camera.projectPoint z-flip)
+            let camWorld = new Vector3(this.camera.position.x, this.camera.position.y, -this.camera.position.z);
+            let toCamera = camWorld.subtract(position).normalize();
+            let dot = dir.dot(toCamera);
+            let apexInsideBase = refLenSq <= 1e-10 || maxAngle - minAngle >= Math.PI;
+
+            if (dot < 0 && !apexInsideBase) {
+                // Base faces camera, outline draws tangent lines → base provides fill
+                base.setAttribute('fill-opacity', '0.25');
+                base.setAttribute('stroke-opacity', '0.75');
+                base.setAttribute('stroke-dasharray', 'none');
+            } else if (apexInsideBase) {
+                // Outline draws full circle → no fill (avoid double)
+                base.setAttribute('fill-opacity', '0');
+                base.setAttribute('stroke-opacity', '0');
+                base.setAttribute('stroke-dasharray', 'none');
+            } else {
+                // Apex faces camera, base hidden → dashed faint stroke
+                base.setAttribute('fill-opacity', '0');
+                base.setAttribute('stroke-opacity', '0.5');
+                base.setAttribute('stroke-dasharray', options.dashedBase ? options.baseStrokeDasharray : 'none');
+            }
+        };
+        base.update();
+
+        // Cone outline path (tangent lines from base to apex + visible arc)
+        let outline = group.path();
+        let outlineOpacity = 0.45
+        outline.setAttribute('stroke', options.color);
+        outline.setAttribute('fill', options.color);
+        outline.setAttribute('fill-opacity', `${outlineOpacity}`);
+        outline.setAttribute('stroke-width', '1.5px');
+        outline.setAttribute('stroke-opacity', '1');
+
+        outline.addDependency(position, direction, apex, this.camera, this.camera.position);
+        outline.update = () => {
+            let u = position;
+            let dir = direction.normalize();
+            let q = Quaternion.rotationToVector(dir);
+
+            // Project apex in both viewport (for angle math) and frame (for drawing)
+            let b = this.camera.projectPoint(apex);
+            if (b.z === 0) {
+                outline.d = '';
+                return;
+            }
+            let a = this.plot.viewportToFrame(b.x, b.y);
+
+            // Reference direction: projected apex → projected base center
+            let cv = this.camera.projectPoint(u);
+            let mx = cv.x - b.x;
+            let my = cv.y - b.y;
+            let refLenSq = mx * mx + my * my;
+
+            let visiblePoints: { x: number, y: number }[] = [];
+            let max: [{ x: number, y: number }, number] = null;
+            let min: [{ x: number, y: number }, number] = null;
+            let startIndex: number = null;
+            let endIndex: number = null;
+
+            for (let j = 0; j < basePoints.length; j++) {
+                let point = basePoints[j].copy().apply(q).add(u);
+                let v = this.camera.projectPoint(point);
+                if (v.z !== 0) {
+                    let w = this.plot.viewportToFrame(v.x, v.y);
+                    visiblePoints.push(w);
+
+                    // Compute angle in viewport space (not frame space)
+                    let nx = v.x - b.x;
+                    let ny = v.y - b.y;
+                    let angle = refLenSq > 1e-10
+                        ? Math.atan2(ny * mx - nx * my, nx * mx + ny * my)
+                        : Math.atan2(ny, nx);
+
+                    if (max === null || max[1] < angle) {
+                        max = [w, angle];
+                        startIndex = j;
+                    }
+                    if (min === null || min[1] > angle) {
+                        min = [w, angle];
+                        endIndex = j;
+                    }
+                }
+            }
+
+            if (visiblePoints.length === 0) {
+                outline.d = '';
+                return;
+            }
+
+            let d = '';
+
+            if (refLenSq > 1e-10 && max[1] - min[1] < Math.PI) {
+                d += `M ${min[0].x.toFixed(3)} ${min[0].y.toFixed(3)} L ${a.x.toFixed(3)} ${a.y.toFixed(3)} L ${max[0].x.toFixed(3)} ${max[0].y.toFixed(3)}`;
+                if (startIndex < endIndex) {
+                    let i = startIndex;
+                    d += `M ${visiblePoints[i].x.toFixed(3)} ${visiblePoints[i].y.toFixed(3)} `;
+                    while (i <= endIndex) {
+                        d += `L ${visiblePoints[i].x.toFixed(3)} ${visiblePoints[i].y.toFixed(3)} `;
+                        i++;
+                    }
+                } else {
+                    let j = startIndex;
+                    d += `M ${visiblePoints[j].x.toFixed(3)} ${visiblePoints[j].y.toFixed(3)} `;
+                    while (j <= endIndex + visiblePoints.length) {
+                        d += `L ${visiblePoints[j % visiblePoints.length].x.toFixed(3)} ${visiblePoints[j % visiblePoints.length].y.toFixed(3)} `;
+                        j++;
+                    }
+
+                    if (max[1] - min[1] >= Math.PI) {
+                        d += `L ${visiblePoints[startIndex].x.toFixed(3)} ${visiblePoints[startIndex].y.toFixed(3)} `;
+                    }
+                }
+                outline.setAttribute('fill-opacity', `${outlineOpacity}`);
+                // outline.setAttribute('fill', `var(--pink)`);
+            } else {
+                // Apex projects inside base circle — draw full base circle
+                if (visiblePoints.length > 0) {
+                    d += `M ${visiblePoints[0].x.toFixed(3)} ${visiblePoints[0].y.toFixed(3)} `;
+                    for (let i = 1; i < visiblePoints.length; i++) {
+                        d += `L ${visiblePoints[i].x.toFixed(3)} ${visiblePoints[i].y.toFixed(3)} `;
+                    }
+                    d += `L ${visiblePoints[0].x.toFixed(3)} ${visiblePoints[0].y.toFixed(3)} `;
+                }
+                let camWorld = new Vector3(this.camera.position.x, this.camera.position.y, -this.camera.position.z);
+                let toCamera = camWorld.subtract(u).normalize();
+                let dot = dir.dot(toCamera);
+                outline.setAttribute('fill-opacity', dot > 0 ? `${outlineOpacity}` : '0.25');
+                // outline.setAttribute('fill', `var(--orange)`);
+            }
+
+            outline.d = d;
+        };
+
+        let apexDot = this.drawPoint(apex, { color: options.color, radius: 1.5, opacity: 0 });
+        group.appendChild(apexDot);
+
+        // Wrap outline update to also toggle apex dot visibility
+        let originalOutlineUpdate = outline.update;
+        outline.update = () => {
+            originalOutlineUpdate();
+            // Show dot only when apex projects inside the base (looking along axis)
+            let dir = direction.normalize();
+            let camWorld = new Vector3(this.camera.position.x, this.camera.position.y, -this.camera.position.z);
+            let toCamera = camWorld.subtract(position).normalize();
+            let dot = Math.abs(dir.dot(toCamera));
+            apexDot.setAttribute('opacity', dot > 0.92 ? `${options.opacity}` : '0');
+        };
+        outline.update();
+
+        group.setAttribute('opacity', options.opacity.toString());
+        return group;
+    }
+
+    drawParallelepided(i: Vector3, j: Vector3, k: Vector3) {
         let kj = new Vector3();
         kj.addDependency(k, j);
         kj.update = () => {
@@ -1328,7 +1609,7 @@ export class CoordinateSystem3D {
             const p = this.camera.position;
             const snippet =
                 `cameraOrientation: new Quaternion(${o.w}, ${o.x}, ${o.y}, ${o.z}),\n` +
-                `cameraPosition: new Vector3(${p.x}, ${p.y}, ${p.z}),`;
+                `cameraPosition: new Vector3(${p.x}, ${p.y}, ${-p.z}),`;
             navigator.clipboard.writeText(snippet).then(() => {
                 btn.innerHTML = checkIcon;
                 setTimeout(() => { btn.innerHTML = cameraIcon; }, 2000);
