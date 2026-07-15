@@ -71,7 +71,3 @@ The core pattern is a reactive dependency graph managed by `BaseNode` and `Contr
 ## Testing
 
 Jest 29 with ts-jest in jsdom environment. Tests live in `src/tests/` and as adjacent `.test.ts` files. Snapshot testing is used for SVG output verification.
-
-## Publishing
-
-See the `vector-publish` skill for the full publishing workflow. Uses `npm` (not yarn) for versioning and publishing. The `preversion` hook runs clean + build + test — if anything fails, the version bump silently aborts.
