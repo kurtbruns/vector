@@ -242,50 +242,11 @@ function createInlineStyledSvg(originalSvg: SVGElement, target: ExportTarget): S
             element.style.removeProperty('vector-effect')
         }
 
-        // Handle Figma specific styles.
-        if (target === ExportTarget.FIGMA && element.classList.contains('mathjax')) {
-            let fontSize = element.getAttribute('font-size') || '12px';
-            element.setAttribute('font-size', '12px');
-            let fontSizePx = parseFloat(fontSize.replace('px', ''));
-
-            if(element.firstElementChild.nextElementSibling) {
-                const currentTransform = element.firstElementChild.nextElementSibling.getAttribute('transform') || '';
-                element.firstElementChild.nextElementSibling.setAttribute('transform', `${currentTransform} scale(${1.1*fontSizePx / 12})`);
-            }
-        }
-
-        // Handle Figma specific styles.
-        if (target === ExportTarget.BROWSER && element.classList.contains('mathjax')) {
-            const background = element.firstElementChild.firstElementChild;
-            
-            // Hack to fix background rendering issues
-            if( background.tagName === 'rect' ) {
-                let s = 1.03
-                let width = Number(background.getAttribute('width'));
-                let height = Number(background.getAttribute('height'));
-                background.setAttribute('width', (width*s).toFixed(3));
-                background.setAttribute('height', (height*s*s).toFixed(3));
-            }
-            
-            // Hack to fix text rendering size for export targets
-            // Apply scaling to the inner group that contains the rendered MathJax content
-            if (element.firstElementChild && element.firstElementChild.nextElementSibling) {
-                const innerGroup = element.firstElementChild.nextElementSibling;
-                const currentTransform = innerGroup.getAttribute('transform') || '';
-                
-                // Get current font size to calculate appropriate scaling
-                const currentFontSize = elementStyles.getPropertyValue('font-size');
-                const fontSizePx = parseFloat(currentFontSize);
-                
-                // Calculate scaling factor based on font size
-                // Adjust this formula based on your specific needs
-                const scaleFactor = 1.09;
-                
-                // Apply the scaling transform
-                innerGroup.setAttribute('transform', `${currentTransform} scale(${scaleFactor.toFixed(3)})`);
-            }
-
-        }
+        // Note: MathJax glyphs are now sized to deterministic px at the source
+        // (Tex.resolveGlyphPx), so they render at the same size in every rasterizer.
+        // The former `ex`-compensation hacks here (font-size rewrite + glyph-group
+        // rescale for FIGMA, background/inner rescale for BROWSER) are no longer
+        // needed and were removed — they only ever applied to `ex`-based output.
     }
 
     function traverseDOMTree(node: Node, parentNode?: Element): void {

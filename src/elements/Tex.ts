@@ -7,6 +7,23 @@ import { GroupAttributes } from "./svg/group";
 type TexAttributes = 'font-size';
 
 /**
+ * Pixels per MathJax viewBox unit, per unit of font-size. MathJax's tex-svg output
+ * uses 1000 viewBox units = 1em, so 1/1000 resolves the glyph at its natural em size
+ * (1em = fontSize px) — font-independent, matching how KaTeX / the figma-mathtex-editor
+ * plugin render at a given size. This is the single calibration constant for label
+ * sizing; see resolveGlyphPx().
+ */
+const TEX_GLYPH_PX_PER_UNIT_EM = 1 / 1000;
+
+/**
+ * Default font-size (px) applied to a Tex label when none is specified. Chosen so
+ * font-size-natural sizing lands on roughly the previous on-page label size: the old
+ * `ex`-relative sizing at 18px matched the page font (Inter) x-height, ~1/0.811
+ * larger than natural, so 18 / 0.811 ≈ 22.
+ */
+const DEFAULT_TEX_FONT_SIZE = 22;
+
+/**
  * TeX class represents a mathematical expression rendered as SVG using MathJax
  */
 export class Tex extends Group {
@@ -15,6 +32,15 @@ export class Tex extends Group {
     private _y: number;
     private _scale: number;
     private _backgroundColor: string;
+
+    // Glyph size resolved deterministically from the MathJax viewBox and font-size
+    // (see resolveGlyphPx). Used to size and center the background without measuring
+    // the live DOM, so it is stable regardless of which font is loaded or when.
+    private _glyphWidth: number = 0;
+    private _glyphHeight: number = 0;
+
+    // Whether alignCenter() was requested, so replace() can re-center on the new size.
+    private _centered: boolean = false;
 
     private inner: Group;
     private background: Group;
@@ -40,11 +66,15 @@ export class Tex extends Group {
 
         this.classList.add('tex', 'mathjax');
         this.setAttribute('color', 'var(--font-color)');
-        this.root.setAttribute('font-size', '18px');
+        this.root.setAttribute('font-size', `${DEFAULT_TEX_FONT_SIZE}px`);
 
         this.background = this.group();
         this.inner = this.group();
         this.inner.root.appendChild(this.rendered);
+
+        // Resolve the MathJax `ex`-based dimensions to deterministic px up front so
+        // the glyph renders at a stable, font-independent size everywhere.
+        this.resolveGlyphPx();
 
         // this._scale = 20/18;
         this._scale = 1;
@@ -197,7 +227,11 @@ export class Tex extends Group {
         this.inner.root.removeChild(this.rendered);
         this.inner.root.appendChild(rendered);
         this.rendered = rendered;
+        this.resolveGlyphPx();
         this.drawBackground(true, backgroundColor);
+        if (this._centered) {
+            this.applyCenter();
+        }
         return this;
     }
 
@@ -388,10 +422,40 @@ export class Tex extends Group {
     }
 
     alignCenter(): Tex {
-        let bbox = this.rendered.getBoundingClientRect();
-        this.inner.setAttribute('transform', `translate(${-bbox.width / 2}, ${-bbox.height / 2}) scale(${this._scale})`);
-        this.background.setAttribute('transform', `translate(${-bbox.width / 2}, ${-bbox.height / 2}) scale(${this._scale})`);
+        this._centered = true;
+        this.applyCenter();
         return this;
+    }
+
+    private applyCenter(): void {
+        const tx = -(this._glyphWidth * this._scale) / 2;
+        const ty = -(this._glyphHeight * this._scale) / 2;
+        this.inner.setAttribute('transform', `translate(${tx}, ${ty}) scale(${this._scale})`);
+        this.background.setAttribute('transform', `translate(${tx}, ${ty}) scale(${this._scale})`);
+    }
+
+    /**
+     * Resolves the MathJax `<svg>`'s `ex`-based dimensions to deterministic px in the
+     * figure's user space, computed from its `viewBox` and the label's font-size:
+     * `px = viewBoxDimension * fontSize * TEX_GLYPH_PX_PER_UNIT_EM`. This is
+     * font-independent (no reliance on the page font's x-height or on when a webfont
+     * loads) and synchronous, so the glyph renders at the same natural size in the
+     * browser and in headless rasterizers (resvg), and its px `width`/`height` let the
+     * export path treat it as already-resolved. Called once at construction and again
+     * whenever `replace()` swaps in a new expression.
+     */
+    private resolveGlyphPx(): void {
+        const viewBox = (this.rendered.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+        const fontSize = parseFloat(this.root.getAttribute('font-size')) || DEFAULT_TEX_FONT_SIZE;
+        const vbWidth = viewBox.length === 4 ? viewBox[2] : 0;
+        const vbHeight = viewBox.length === 4 ? viewBox[3] : 0;
+        this._glyphWidth = vbWidth * fontSize * TEX_GLYPH_PX_PER_UNIT_EM;
+        this._glyphHeight = vbHeight * fontSize * TEX_GLYPH_PX_PER_UNIT_EM;
+        if (this._glyphWidth > 0 && this._glyphHeight > 0) {
+            // Unitless px in the parent user space (replaces MathJax's `ex` units).
+            this.rendered.setAttribute('width', `${this._glyphWidth}`);
+            this.rendered.setAttribute('height', `${this._glyphHeight}`);
+        }
     }
 
     removeBackground() {
@@ -403,29 +467,32 @@ export class Tex extends Group {
         let bottom = 3 + increaseSize;
         let left = 4 + increaseSize;
         let right = 4 + increaseSize;
-        let groupBbox = this.rendered.getBoundingClientRect();
+
+        // The glyph occupies [0, 0, _glyphWidth, _glyphHeight] in the inner group's
+        // user space (resolveGlyphPx). Size the rectangle from those known dimensions
+        // and offset it by the symmetric padding, so the background is concentric with
+        // the glyph by construction — no live measurement, no font-load dependency.
         let rectangle = new Rectangle(
             0,
             0,
-            groupBbox.width / this._scale + left + right,
-            groupBbox.height / this._scale + top + bottom
+            this._glyphWidth + left + right,
+            this._glyphHeight + top + bottom
         );
         rectangle.setAttribute('fill', backgroundColor);
-        
+
         if(replace) {
             // TODO: should check that its a rect
             this.background.root.firstChild.remove()
             rectangle.setAttribute('fill', backgroundColor);
         }
-        
+
         this.background.root.prepend(rectangle.root);
 
         // TODO: this seems weird
         this._backgroundColor = backgroundColor;
 
-        let rectbbox = rectangle.root.getBoundingClientRect();
-        rectangle.x += groupBbox.x - rectbbox.x - left;
-        rectangle.y += groupBbox.y - rectbbox.y - right;
+        rectangle.x = -left;
+        rectangle.y = -top;
 
         return rectangle;
     }
