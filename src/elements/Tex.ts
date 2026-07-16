@@ -53,7 +53,11 @@ export class Tex extends Group {
     private rendered: SVGSVGElement;
 
     /**
-     * Constructor takes a string 's' representing the TeX to be rendered and optional 'x' and 'y' coordinates to position the SVG element
+     * MathJax must already be loaded as a global. The warnings below are advisory only.
+     * If MathJax is missing, the tex2svg call right after them still throws.
+     *
+     * Renders synchronously at DEFAULT_TEX_FONT_SIZE and draws no background. Call
+     * drawBackground() to add one.
      */
     constructor(s: string, x: number, y: number) {
 
@@ -82,7 +86,6 @@ export class Tex extends Group {
         // the glyph renders at a stable, font-independent size everywhere.
         this.resolveGlyphPx();
 
-        // this._scale = 20/18;
         this._scale = 1;
         this.inner.setAttribute('transform', `scale(${this._scale})`);
 
@@ -91,7 +94,9 @@ export class Tex extends Group {
     }
 
     /**
-     * Moves t1 to t2
+     * Shifts t1 so its rendered center lines up with t2's. Measures both with
+     * getBoundingClientRect, so both labels must already be laid out in the document.
+     * The result is meaningless for a detached or unrendered frame.
      */
     static moveTo (t1:Tex, t2:Tex) {
 
@@ -110,7 +115,11 @@ export class Tex extends Group {
     }
 
     /**
-     * Aligns t2 to t1
+     * Shifts t2 so its `s2` part lands on t1's `s1` part, leaving t1 where it is. `s2`
+     * defaults to `s1`. Measures the live DOM, as static moveTo does.
+     *
+     * @throws TypeError if either expression has no matching part. getPartsByTex
+     * returns null in that case, and this indexes `[0]` into it.
      */
     static alignBy(t1:Tex, t2:Tex, s1:string, s2?:string, occurrence: number = 0) {
 
@@ -151,6 +160,9 @@ export class Tex extends Group {
         t2.shift(t_eq_tex.x - r_teq_tex.x, 0);
     }
 
+    /**
+     * @deprecated Use `tex.animate.setOpacityOfParts` instead. Warns at runtime.
+     */
     static setOpacityOfTex = (t:SVGElement[], value:number) => {
 
         console.warn('This method is deprecated. Please use this.animate.setOpacityOfParts instead.');
@@ -213,7 +225,10 @@ export class Tex extends Group {
         return this;
     }
 
-    // comment inherited from base class
+    /**
+     * Setting `font-size` re-resolves the glyph size and resizes the background in
+     * place. Every other attribute passes through to the base implementation.
+     */
     setAttribute(name: TexAttributes | GroupAttributes | CoreAttributes | PresentationAttributes, value: string): Group {
         this.root.setAttribute(name, value);
 
@@ -235,6 +250,11 @@ export class Tex extends Group {
         this.background.setAttribute('opacity', x.toFixed(2));
     }
 
+    /**
+     * Swaps in a new expression, preserving the current background color, scale, and
+     * centering. Detaches the old glyph nodes, so any element references previously
+     * handed out by getMatchesByTex / getPartsByTex / getFirstMatch go stale.
+     */
     replace(s:string, backgroundColor = this._backgroundColor) : Tex {
 
         let output = MathJax.tex2svg(s, {});
@@ -291,7 +311,7 @@ export class Tex extends Group {
          * Traverses the tree looking for exact matching nodes and sequences of matching nodes
          */
         function traverse(node: Element) {
-            Array.from(node.children).forEach((child, index, children) => {
+            Array.from(node.children).forEach((child) => {
 
                 // Check if the child node is a deep match
                 if (nodeMatches(child as Element, subtree)) {
@@ -325,6 +345,10 @@ export class Tex extends Group {
         return matches;
     }
 
+    /**
+     * Fills every structural match of `tex`. Does nothing when `tex` does not occur.
+     * Compare setColor, which throws on a missing match.
+     */
     setColorAll(tex: string, color: string) : Tex {
         this.getMatchesByTex(tex).forEach(matchedNodes => {
             matchedNodes.forEach(node => {
@@ -335,6 +359,12 @@ export class Tex extends Group {
         return this;
     }
 
+    /**
+     * Fills the `index`-th structural match of `tex`.
+     *
+     * @throws if `tex` does not occur in this label, or `index` is out of range. Use
+     * setColorAll when a missing match should be tolerated.
+     */
     setColor(tex: string, color: string, index: number = 0): Tex {
         const matches = this.getMatchesByTex(tex);
     
@@ -358,7 +388,12 @@ export class Tex extends Group {
 
     // TODO: ability to chain calls to getMatches
 
-    getFirstMatch(tex: string): SVGElement[] | null {
+    /**
+     * Returns the first structural match for `tex`, or undefined when the expression
+     * does not occur in this label. That is undefined rather than an empty array, so
+     * callers must guard before indexing.
+     */
+    getFirstMatch(tex: string): SVGElement[] | undefined {
 
         let output = MathJax.tex2svg(tex, {});
         let matchRendered = output.firstChild as SVGSVGElement;
@@ -377,9 +412,10 @@ export class Tex extends Group {
     }
 
     /**
-     * Returns one or more collections of elements that match the provided tex string's structure.
+     * Returns every structural match for `tex`. Yields an empty array when nothing
+     * matches, never null, so the result is always safe to iterate.
      */
-    getMatchesByTex(tex: string): SVGElement[][] | null {
+    getMatchesByTex(tex: string): SVGElement[][] {
 
         let output = MathJax.tex2svg(tex, {});
         let matchRendered = output.firstChild as SVGSVGElement;
@@ -394,20 +430,18 @@ export class Tex extends Group {
     }
 
     /**
-     * Finds all SVG elements in the rendered document that correspond to a specific TeX string.
-     * This method utilizes MathJax to render the TeX string to SVG and then queries the rendered output
-     * for elements with specific data attributes that match the rendered TeX expression.
+     * Finds the elements corresponding to `str`. Looks for an exact structural match at
+     * `occurrence` first, and falls back to matching on glyph (`data-c`) identity.
      *
-     * @param str The TeX string to be matched in the rendered document.
-     * @returns An array of SVG elements corresponding to the TeX string, or null if none are found.
+     * Returns null when `str` renders to no glyphs at all. The align helpers index
+     * `[0]` into this result without guarding, so a null shows up there as a TypeError
+     * rather than a quiet no-op.
      */
     getPartsByTex(str: string, occurrence: number = 0): SVGElement[] | null {
 
         // Render the sub-expression
         let output = MathJax.tex2svg(str, {});
         let rendered = output.firstChild as SVGSVGElement;
-
-        // console.log(TreeNode.convertTreeToDOT(TreeNode.buildTree(flattenSVG(this.rendered))));
 
         // Extract data-c attributes
         const dataCAttributes = Array.from(rendered.querySelectorAll('[data-c]'))
@@ -433,12 +467,21 @@ export class Tex extends Group {
         return mainContentElements;
     }
 
+    /**
+     * Sets the glyph scale. Overwrites the inner transform outright, so calling this
+     * after alignCenter() drops the centering translate. Call alignCenter() again
+     * afterwards to put it back.
+     */
     scale(s: number) {
         this._scale = s;
         this.inner.setAttribute('transform', `scale(${this._scale})`);
         return this;
     }
 
+    /**
+     * Centers the glyph on its origin and keeps it centered across later replace()
+     * and font-size changes.
+     */
     alignCenter(): Tex {
         this._centered = true;
         this.applyCenter();
@@ -494,10 +537,20 @@ export class Tex extends Group {
         this._backgroundRect.y = -vertical;
     }
 
+    /**
+     * Hides the background by zeroing its opacity. The rectangle stays in the DOM, so
+     * drawBackground(replace) still finds it and resizeBackground still tracks it.
+     */
     removeBackground() {
         this.background.setAttribute('opacity', '0');
     }
 
+    /**
+     * Draws a background rectangle sized to the resolved glyph box plus padding, and
+     * records it so a later font-size change can resize it in place.
+     *
+     * @param replace drops the existing background first. Throws if none was drawn.
+     */
     drawBackground(replace:boolean = false, backgroundColor = 'var(--background)', increaseSize:number = 0) {
         let top = 3 + increaseSize;
         let bottom = 3 + increaseSize;
@@ -535,12 +588,16 @@ export class Tex extends Group {
         return rectangle;
     }
 
+    /**
+     * Moves the label by a delta from its current position. See moveTo for absolute
+     * positioning.
+     */
     shift(point: { x: number, y: number }): Tex;
 
     shift(x: number, y: number): Tex;
 
-    shift(x: any, y?: any): Tex {
-        let pointX, pointY;
+    shift(x: number | { x: number, y: number }, y?: number): Tex {
+        let pointX: number, pointY: number;
         if (typeof x === 'object') {
             pointX = x.x;
             pointY = x.y;
@@ -554,22 +611,15 @@ export class Tex extends Group {
     }
 
     /**
-    * Moves to a point provided as an object.
-    * @param point An object that represents the point to move to.
-    * @returns The instance of the class for chaining.
-    */
+     * Moves the label to an absolute position in the parent's user space. See shift
+     * for relative movement.
+     */
     moveTo(point: { x: number, y: number }): Tex;
 
-    /**
-    * Moves to a point provided as two separate numbers.
-    * @param x The x value of the point to move to.
-    * @param y The y value of the point to move to.
-    * @returns The instance of the class for chaining.
-    */
     moveTo(x: number, y: number): Tex;
 
-    moveTo(x: any, y?: any): Tex {
-        let pointX, pointY;
+    moveTo(x: number | { x: number, y: number }, y?: number): Tex {
+        let pointX: number, pointY: number;
         if (typeof x === 'object') {
             pointX = x.x;
             pointY = x.y;
@@ -588,6 +638,11 @@ export class Tex extends Group {
         return this;
     }
 
+    /**
+     * Animation factories for Scene. Each returns a callback taking alpha in [0, 1].
+     * The callback captures its start state the first time it runs, so it cannot be
+     * replayed from a new starting value. Build a fresh one for each animation.
+     */
     get animate() {
 
         return {
@@ -721,64 +776,4 @@ export class Tex extends Group {
             },
         };
     }
-}
-
-
-
-class TreeNode {
-    parent: TreeNode | null;
-    children: TreeNode[];
-    element: Element | Document;
-
-    constructor(element: Element | Document, parent: TreeNode | null = null) {
-        this.element = element;
-        this.parent = parent;
-        this.children = [];
-    }
-
-    static buildTree(node: Element | Document, parent: TreeNode | null = null): TreeNode {
-        let treeNode = new TreeNode(node, parent);
-
-        if (node instanceof Element) {
-            for (let child of Array.from(node.children)) {
-                treeNode.children.push(this.buildTree(child, treeNode));
-            }
-        }
-
-        return treeNode;
-    }
-
-    static convertTreeToDOT(tree: TreeNode): string {
-        let dotString: string = "digraph DOMTree {\n";
-        let nodeIndex: number = 0;
-        let nodeLabels: Map<TreeNode, string> = new Map();
-
-        function getLabel(node: TreeNode): string {
-            if (!nodeLabels.has(node)) {
-                let mml = (node.element as HTMLElement).getAttribute('data-mml-node');
-                let c = (node.element as HTMLElement).getAttribute('data-c');
-
-                let label = `${node.element.nodeName}-${mml === null ? 'c-' + c : 'node-' + mml}-${nodeIndex++}`;
-                nodeLabels.set(node, label);
-            }
-            return nodeLabels.get(node);
-        }
-
-        function traverseTree(node: TreeNode): void {
-            let nodeLabel = getLabel(node);
-            if (node.parent) {
-                let parentLabel = getLabel(node.parent);
-                dotString += `  "${parentLabel}" -> "${nodeLabel}"\n`;
-            }
-
-            node.children.forEach(child => traverseTree(child));
-        }
-
-        traverseTree(tree);
-        dotString += "}";
-
-        return dotString;
-    }
-
-
 }

@@ -1,9 +1,10 @@
 {
+  "root": true,
   "parser": "@typescript-eslint/parser",
   "rules": {
     "prefer-template": "off",
     "no-var": 1,
-    "no-unused-vars": 1,
+    "no-unused-vars": "off",
     "camelcase": 1,
     "no-nested-ternary": 1,
     "no-console": 1,

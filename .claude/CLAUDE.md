@@ -62,6 +62,14 @@ The core pattern is a reactive dependency graph managed by `BaseNode` and `Contr
 - Prettier: 4-space tabs, single quotes, trailing comma ES5, 100 char print width, semicolons.
 - TypeScript strict mode is OFF. No strict null checks.
 - Target: ES2020. Module: ES2020.
+- Write comments in simple, plain language. IMPORTANT: avoid em dashes. Use a period, a
+  comma, or parentheses instead.
+- JSDoc goes on public API only, and states only what the signature cannot: thrown
+  errors, `@deprecated`, silent no-ops, invalidated references, call-order constraints.
+  IMPORTANT: never restate a type. `@param x The x value of the point` is noise because
+  the signature already says it. If a doc comment would survive deleting the types, cut it.
+- Because strict mode is off, a `| null` return is unchecked by the compiler. Keep such
+  return types honest with the code, since callers rely on them as the only signal.
 
 ## Build Outputs
 
