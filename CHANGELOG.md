@@ -4,6 +4,20 @@ All notable changes to `@kurtbruns/vector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.3] - 2026-07-16
+### Fixed
+- `Tex.setAttribute('font-size', ...)` resizes the label again. Before 0.11.0, sizing came from
+  MathJax's `ex` units, which scale with font-size, so setting font-size after construction worked.
+  0.11.0 resolved the glyph to px once in the constructor, which left later font-size changes writing
+  the attribute but never resizing anything. Setting font-size now re-resolves the glyph, resizes the
+  background, and re-centers when `alignCenter()` is in effect.
+  **Upgrade note:** labels that set font-size after construction have been rendering at the default
+  22px. They will now render at the size they ask for, so re-inspect those labels after upgrading.
+### Changed
+- `getMatchesByTex()` no longer declares `| null`. It returns `[]` when nothing matches, and never
+  returned null. `getFirstMatch()` declares `| undefined` rather than `| null`, which is what it
+  actually returns for no match. Both are type-only corrections; runtime behavior is unchanged.
+
 ## [0.11.2] - 2026-07-16
 ### Fixed
 - Exported SVGs now bake the computed `color`. `Tex` sets `color: var(--font-color)`, and a CSS custom
