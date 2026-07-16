@@ -4,6 +4,16 @@ All notable changes to `@kurtbruns/vector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.2] - 2026-07-16
+### Fixed
+- Exported SVGs now bake the computed `color`. `Tex` sets `color: var(--font-color)`, and a CSS custom
+  property cannot resolve in an export — an SVG referenced by `<img>` is isolated from the page's CSS —
+  so any `currentColor` paint fell back to black instead of the theme's color.
+- `ILLUSTRATOR` / `FIGMA` exports no longer carry the `vector-<hash>` scoping class. The hash derives
+  from the build clock (`Theme.id`), so an unchanged drawing serialized to different bytes on every
+  export, churning diffs for consumers who commit their SVGs. The class scopes nothing in a standalone
+  export — the styles it contributed are already inlined by that point.
+
 ## [0.11.1] - 2026-07-15
 ### Changed
 - `Frame.tex()` / `Plot.tex()` now set a `data-tex` attribute on the rendered group instead of `id`.

@@ -1,6 +1,6 @@
 import { flattenSVG } from "../util";
 import { interpolateColor } from "../Color";
-import { Group, Rectangle, SVG } from "./svg";
+import { Group, Rectangle } from "./svg";
 import { CoreAttributes, PresentationAttributes } from "./svg/base-element";
 import { GroupAttributes } from "./svg/group";
 

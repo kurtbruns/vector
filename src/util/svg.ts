@@ -225,7 +225,10 @@ function createInlineStyledSvg(originalSvg: SVGElement, target: ExportTarget): S
         const elementStyles = window.getComputedStyle(element);
         const parentStyles = parentElement ? window.getComputedStyle(parentElement) : null;
 
+        // `color` carries Tex's var(--font-color), which cannot resolve in an
+        // export — page CSS does not reach an SVG referenced by <img>.
         const styleAttributes = [
+            'color',
             'fill', 'fill-opacity', 'opacity',
             'font', 'font-family', 'font-size',
             'stroke', 'stroke-width', 'stroke-opacity',
@@ -269,6 +272,23 @@ function createInlineStyledSvg(originalSvg: SVGElement, target: ExportTarget): S
     }
 
     traverseDOMTree(copiedSvg);
+
+    // Theme.id hashes the build clock, so this class differs on every capture and
+    // churns otherwise-identical exports. Must come after traverseDOMTree, which
+    // needs it to bake the CSS it scopes.
+    if ([ExportTarget.ILLUSTRATOR, ExportTarget.FIGMA].includes(target)) {
+        const stripScopeClass = (element: Element): void => {
+            Array.from(element.classList)
+                .filter((name) => /^vector-[a-z0-9]+$/.test(name))
+                .forEach((name) => element.classList.remove(name));
+            if (element.classList.length === 0) {
+                element.removeAttribute('class');
+            }
+        };
+        stripScopeClass(copiedSvg);
+        copiedSvg.querySelectorAll('[class]').forEach(stripScopeClass);
+    }
+
     document.body.removeChild(copiedSvg);
 
     return copiedSvg;
