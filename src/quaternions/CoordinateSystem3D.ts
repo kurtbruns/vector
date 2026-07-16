@@ -974,7 +974,7 @@ export class CoordinateSystem3D {
         l.setAttribute('stroke', color);
         l.setAttribute('opacity', opacity.toString());
         l.setAttribute('stroke-width', '1.5px');
-        l.attatchArrow(this.plot.frame.definitions, false, color);
+        l.attachArrow(this.plot.frame.definitions, false, color);
 
         l.addDependency(v1, v2);
         l.update = () => {
@@ -1194,8 +1194,8 @@ export class CoordinateSystem3D {
         axis.setAttribute('stroke', options.color)
         axis.setAttribute('stroke-width', '1.5px');
         if (options.arrows) {
-            axis.attatchArrow(this.plot.frame.definitions, true, options.color);
-            axis.attatchArrow(this.plot.frame.definitions, false, options.color);
+            axis.attachArrow(this.plot.frame.definitions, true, options.color);
+            axis.attachArrow(this.plot.frame.definitions, false, options.color);
         }
 
         axis.addDependency(start, end);

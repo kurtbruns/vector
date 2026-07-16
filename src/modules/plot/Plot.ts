@@ -776,10 +776,10 @@ export class Plot {
         let xAxisLine = this.axes.line(xAxisStart.x, xAxisStart.y, xAxisEnd.x, xAxisEnd.y)
         if (options.arrows) {
             if (this.getSVGMinX() !== 0) {
-                xAxisLine.attatchArrow(this.frame.definitions, true, options.axesColor)
+                xAxisLine.attachArrow(this.frame.definitions, true, options.axesColor)
             }
             if (this.getSVGMaxX() !== 0) {
-                xAxisLine.attatchArrow(this.frame.definitions, false, options.axesColor)
+                xAxisLine.attachArrow(this.frame.definitions, false, options.axesColor)
             }
         }
 
@@ -789,10 +789,10 @@ export class Plot {
         let yAxisLine = this.axes.line(yAxisStart.x, yAxisStart.y, yAxisEnd.x, yAxisEnd.y)
         if (options.arrows) {
             if (this.getSVGMinY() !== 0) {
-                yAxisLine.attatchArrow(this.frame.definitions, true, options.axesColor)
+                yAxisLine.attachArrow(this.frame.definitions, true, options.axesColor)
             }
             if (this.getSVGMaxY() !== 0) {
-                yAxisLine.attatchArrow(this.frame.definitions, false, options.axesColor)
+                yAxisLine.attachArrow(this.frame.definitions, false, options.axesColor)
             }
         }
     }
@@ -1718,7 +1718,7 @@ export class Plot {
         let v = this.foreground.line(0, 0, 0, 0);
         v.setAttribute('stroke-width', '1.5');
         v.setAttribute('stroke', color);
-        let m = v.attatchArrow(this.frame.definitions, false, color);
+        let m = v.attachArrow(this.frame.definitions, false, color);
         v.update = () => {
 
             let fp1 = this.viewportToFrame(o.x, o.y);
@@ -1736,7 +1736,7 @@ export class Plot {
 
     displayArrow(p1: Point, p2: Point, color: string = 'var(--font-color)'): Line {
         let v = this.frame.line(0, 0, 0, 0);
-        v.attatchArrow(this.frame.definitions, false, color);
+        v.attachArrow(this.frame.definitions, false, color);
         v.setAttribute('stroke-width', '1.5');
         v.setAttribute('stroke', color);
         v.addDependency(p1, p2);

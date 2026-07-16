@@ -1053,7 +1053,7 @@ export class Scene3D {
         l.setAttribute('stroke', color);
         l.setAttribute('opacity', opacity.toString());
         l.setAttribute('stroke-width', '1.5px');
-        l.attatchArrow(this.viewPort.defs, false, color);
+        l.attachArrow(this.viewPort.defs, false, color);
 
         l.addDependency(v1, v2);
         l.update = () => {
@@ -1273,8 +1273,8 @@ export class Scene3D {
         axis.setAttribute('stroke', options.color)
         axis.setAttribute('stroke-width', '1.5px');
         if (options.arrows) {
-            axis.attatchArrow(this.viewPort.defs, true, options.color);
-            axis.attatchArrow(this.viewPort.defs, false, options.color);
+            axis.attachArrow(this.viewPort.defs, true, options.color);
+            axis.attachArrow(this.viewPort.defs, false, options.color);
         }
 
         axis.addDependency(start, end);

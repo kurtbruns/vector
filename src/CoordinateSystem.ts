@@ -176,16 +176,16 @@ export class CoordinateSystem extends Scene {
         xAxis.setAttribute('stroke-width', '1.5');
         xAxis.setAttribute('stroke', axesColor);
         if (axesArrows) {
-            xAxis.attatchArrow(this.defs, true, axesColor);
-            xAxis.attatchArrow(this.defs, false, axesColor);
+            xAxis.attachArrow(this.defs, true, axesColor);
+            xAxis.attachArrow(this.defs, false, axesColor);
         }
 
         let yAxis = this.axes.line(origin.x, p1.y, origin.x, p2.y);
         yAxis.setAttribute('stroke-width', '1.5');
         yAxis.setAttribute('stroke', axesColor);
         if (axesArrows) {
-            yAxis.attatchArrow(this.defs, true, axesColor);
-            yAxis.attatchArrow(this.defs, false, axesColor);
+            yAxis.attachArrow(this.defs, true, axesColor);
+            yAxis.attachArrow(this.defs, false, axesColor);
         }
 
         if (axesLabels) {
@@ -399,7 +399,7 @@ export class CoordinateSystem extends Scene {
         let v = this.frame.line(0, 0, 0, 0);
         v.setAttribute('stroke-width', '1.5');
         v.setAttribute('stroke', color);
-        let m = v.attatchArrow(this.defs, false, color);
+        let m = v.attachArrow(this.defs, false, color);
         v.update = () => {
 
             let fp1 = this.plot.SVGToRelative(p1.x, p1.y);

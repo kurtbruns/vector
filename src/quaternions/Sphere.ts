@@ -89,7 +89,7 @@ export class Sphere extends QObject {
 
         return path;
         // this.viewPort.pathArrow(path)
-        // path.attatchArrow(this.viewPort.defs, true);
+        // path.attachArrow(this.viewPort.defs, true);
 
     }
 
@@ -406,7 +406,7 @@ export class Sphere extends QObject {
 
         return path;
         // this.viewPort.pathArrow(path)
-        // path.attatchArrow(this.viewPort.defs, true);
+        // path.attachArrow(this.viewPort.defs, true);
 
     }
 
@@ -419,7 +419,7 @@ export class Sphere extends QObject {
         l.setAttribute('stroke', color);
         l.setAttribute('opacity', opacity.toString());
         l.setAttribute('stroke-width', '1.5px');
-        l.attatchArrow(this.coordinateSystem.plot.frame.definitions, false, color);
+        l.attachArrow(this.coordinateSystem.plot.frame.definitions, false, color);
 
         l.addDependency(v1, v2, this.camera.orientation);
         l.update = () => {

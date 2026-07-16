@@ -140,10 +140,10 @@ export class PlotGridBased extends Grid {
 
         if (arrows) {
             let defs = this.defs();
-            xAxis.attatchArrow(defs, true, color);
-            xAxis.attatchArrow(defs, false, color);
-            yAxis.attatchArrow(defs, true, color);
-            yAxis.attatchArrow(defs, false, color);
+            xAxis.attachArrow(defs, true, color);
+            xAxis.attachArrow(defs, false, color);
+            yAxis.attachArrow(defs, true, color);
+            yAxis.attachArrow(defs, false, color);
         }
 
         return axisGroup;

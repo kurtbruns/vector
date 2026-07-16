@@ -91,8 +91,10 @@ export abstract class Shape extends BaseElement {
 
     /**
      * Attaches an arrow to the start or end of the path.
+     *
+     * @throws Error if `defs` is undefined.
      */
-    attatchArrow(defs: Definitions, start: boolean = true, color?: string) : Marker {
+    attachArrow(defs: Definitions, start: boolean = true, color?: string) : Marker {
         if (defs === undefined) {
             throw new Error(`Undefined definitions: ${this}`);
         }
@@ -145,5 +147,12 @@ export abstract class Shape extends BaseElement {
         }
 
         return marker;
+    }
+
+    /**
+     * @deprecated Misspelled. Use `attachArrow`, which this forwards to unchanged.
+     */
+    attatchArrow(defs: Definitions, start: boolean = true, color?: string) : Marker {
+        return this.attachArrow(defs, start, color);
     }
 }
