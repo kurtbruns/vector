@@ -8,7 +8,7 @@
   "types": "dist/lib/index.d.ts",
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "cross-env NODE_ENV=production webpack --config webpack.config.js && yarn tsc",
+    "build": "cross-env NODE_ENV=production webpack --config webpack.config.js && npm run tsc",
     "test": "jest",
     "test:update": "jest -u",
     "tsc": "tsc --declaration true --sourceMap false --skipLibCheck",

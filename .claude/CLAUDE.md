@@ -9,18 +9,16 @@ Vector is a TypeScript library for creating interactive math/vector graphics in 
 ## Commands
 
 ```bash
-yarn build              # Webpack UMD bundle + tsc compilation
-yarn test               # Run all Jest tests
-yarn test -- path/to/test.ts  # Run a single test file
-yarn test:update        # Update Jest snapshots
-yarn watch              # tsc watch mode
-yarn lint               # ESLint check
-yarn lint:fix           # ESLint auto-fix
-yarn prettify           # Prettier format all src files
-yarn clean              # Remove dist/
+npm run build            # Webpack UMD bundle + tsc compilation
+npm test                 # Run all Jest tests
+npm test -- path/to/test.ts   # Run a single test file
+npm run test:update      # Update Jest snapshots
+npm run watch            # tsc watch mode
+npm run lint             # ESLint check
+npm run lint:fix         # ESLint auto-fix
+npm run prettify         # Prettier format all src files
+npm run clean            # Remove dist/
 ```
-
-Uses `yarn` (not npm) for builds (`cross-env` + webpack + `yarn tsc`). Publishing uses `npm` — see Publishing section below.
 
 ## Architecture
 

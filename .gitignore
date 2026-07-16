@@ -15,15 +15,9 @@ website
 src/**/*.js
 src/**/*.map.js
 
-# https://yarnpkg.com/advanced/qa#which-files-should-be-gitignored
-.yarn/*
-!.yarn/releases
-!.yarn/plugins
-!.yarn/sdks
-!.yarn/versions
+# This project is npm-only; package-lock.json is the single lockfile.
+# A stray yarn.lock resolves a divergent tree that `npm audit` never sees,
+# and yarn 1's audit endpoint was retired by the registry in July 2026.
+yarn.lock
+.yarn/
 .pnp.*
-website/.yarn/*
-!website/.yarn/releases
-!website/.yarn/plugins
-!website/.yarn/sdks
-!website/.yarn/versions/package-lock.json
