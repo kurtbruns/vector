@@ -166,7 +166,7 @@ export class Frame extends SVG {
      */
     tex(s: string, x: number = 0, y: number = 0, background: boolean = true, backgroundColor = 'var(--background)'): Tex {
         let tex = this.appendChild(new Tex(s, x, y));
-        tex.setAttribute('id', s);
+        tex.root.setAttribute('data-tex', s);
 
         let r = tex.drawBackground(false, backgroundColor);
         if(!background) {

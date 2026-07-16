@@ -176,6 +176,15 @@ export function flattenSVG(svgElement: SVGSVGElement): SVGSVGElement {
 
         const clonedElement = originalElement.cloneNode(true) as SVGElement;
 
+        // The original lives in <defs> and is addressed by its id via <use>.
+        // MathJax defines each glyph once and references it with many <use>s, so
+        // keeping the id on every clone yields duplicate ids in the flattened
+        // output — invalid markup and dead weight, since nothing references them
+        // once the <use>s are inlined and <defs> is dropped below. Strip the id
+        // from the clone and any descendants.
+        clonedElement.removeAttribute('id');
+        clonedElement.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+
         // Copy attributes from <use> to the cloned element
         Array.from(useElement.attributes).forEach(attr => {
             if (attr.name !== 'xlink:href' && attr.name !== 'href') {
