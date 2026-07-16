@@ -42,6 +42,12 @@ export class Tex extends Group {
     // Whether alignCenter() was requested, so replace() can re-center on the new size.
     private _centered: boolean = false;
 
+    // The live background rectangle and the padding it was drawn with, so a font-size
+    // change can resize it in place rather than rebuild it (which would drop the
+    // caller's fill — Frame.tex() paints 'transparent' for background-less labels).
+    private _backgroundRect: Rectangle;
+    private _backgroundIncrease: number = 0;
+
     private inner: Group;
     private background: Group;
     private rendered: SVGSVGElement;
@@ -210,6 +216,18 @@ export class Tex extends Group {
     // comment inherited from base class
     setAttribute(name: TexAttributes | GroupAttributes | CoreAttributes | PresentationAttributes, value: string): Group {
         this.root.setAttribute(name, value);
+
+        // The glyph's px size is derived from font-size (resolveGlyphPx), which only
+        // runs at construction and on replace(). Without re-resolving here, setting
+        // font-size after construction would silently do nothing.
+        if (name === 'font-size') {
+            this.resolveGlyphPx();
+            this.resizeBackground();
+            if (this._centered) {
+                this.applyCenter();
+            }
+        }
+
         return this;
     }
 
@@ -458,6 +476,24 @@ export class Tex extends Group {
         }
     }
 
+    /**
+     * Resizes the existing background rectangle to the current glyph dimensions,
+     * keeping the padding and fill it was drawn with. Mutates in place rather than
+     * rebuilding, so a caller's fill override (notably the 'transparent' that
+     * Frame.tex() applies for background-less labels) survives a resize.
+     */
+    private resizeBackground(): void {
+        if (!this._backgroundRect) {
+            return;
+        }
+        const vertical = 3 + this._backgroundIncrease;
+        const horizontal = 4 + this._backgroundIncrease;
+        this._backgroundRect.width = this._glyphWidth + horizontal * 2;
+        this._backgroundRect.height = this._glyphHeight + vertical * 2;
+        this._backgroundRect.x = -horizontal;
+        this._backgroundRect.y = -vertical;
+    }
+
     removeBackground() {
         this.background.setAttribute('opacity', '0');
     }
@@ -490,6 +526,8 @@ export class Tex extends Group {
 
         // TODO: this seems weird
         this._backgroundColor = backgroundColor;
+        this._backgroundRect = rectangle;
+        this._backgroundIncrease = increaseSize;
 
         rectangle.x = -left;
         rectangle.y = -top;

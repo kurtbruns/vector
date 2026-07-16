@@ -92,6 +92,42 @@ describe('Tex deterministic glyph sizing', () => {
         expect(rect.y).toBeCloseTo(-3, 5);
     });
 
+    it('re-resolves the glyph size when font-size is set after construction', () => {
+        const tex = new Tex('\\frac{\\pi}{4}', 0, 0);
+        document.body.appendChild(tex.root);
+
+        tex.setAttribute('font-size', '11px');
+
+        const svg = tex.root.querySelector('svg') as SVGElement;
+        expect(parseFloat(svg.getAttribute('width') as string)).toBeCloseTo(1010 * 11 * C, 5);
+        expect(parseFloat(svg.getAttribute('height') as string)).toBeCloseTo(1793 * 11 * C, 5);
+    });
+
+    it('resizes the background to match a font-size set after construction', () => {
+        const tex = new Tex('\\frac{\\pi}{4}', 0, 0);
+        document.body.appendChild(tex.root);
+        const rect = tex.drawBackground();
+
+        tex.setAttribute('font-size', '11px');
+
+        expect(rect.width).toBeCloseTo(1010 * 11 * C + 8, 5);
+        expect(rect.height).toBeCloseTo(1793 * 11 * C + 6, 5);
+        expect(rect.x).toBeCloseTo(-4, 5);
+        expect(rect.y).toBeCloseTo(-3, 5);
+    });
+
+    it('preserves a caller-set background fill across a font-size change', () => {
+        const tex = new Tex('\\frac{\\pi}{4}', 0, 0);
+        document.body.appendChild(tex.root);
+        const rect = tex.drawBackground();
+        // Frame.tex() paints this for background-less labels; a resize must not drop it.
+        rect.setAttribute('fill', 'transparent');
+
+        tex.setAttribute('font-size', '11px');
+
+        expect(rect.root.getAttribute('fill')).toBe('transparent');
+    });
+
     it('re-resolves the glyph size when replace() swaps the expression', () => {
         const tex = new Tex('\\frac{\\pi}{4}', 0, 0);
         document.body.appendChild(tex.root);
