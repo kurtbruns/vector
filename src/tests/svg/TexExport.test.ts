@@ -57,3 +57,25 @@ describe('bundle() does not ex-compensate MathJax', () => {
         expect(out).not.toContain('font-size="12px"');
     });
 });
+
+describe('bundle() generator provenance stamp', () => {
+    // Exported SVGs carry no watermark (only rasters do), so a `<desc>` marks
+    // their origin — the analog of Hugo's `<meta name="generator">`. It is added
+    // only for the on-disk export targets, never for browser render output.
+
+    it('stamps a <desc> naming @kurtbruns/vector for FIGMA export', () => {
+        const out = bundle(buildTex('22.434547'), ExportTarget.FIGMA);
+        expect(out).toContain('<desc');
+        expect(out).toContain('@kurtbruns/vector');
+    });
+
+    it('stamps the same for ILLUSTRATOR export', () => {
+        const out = bundle(buildTex('22.434547'), ExportTarget.ILLUSTRATOR);
+        expect(out).toContain('@kurtbruns/vector');
+    });
+
+    it('does NOT stamp browser render output', () => {
+        const out = bundle(buildTex('22.434547'), ExportTarget.BROWSER);
+        expect(out).not.toContain('@kurtbruns/vector');
+    });
+});
